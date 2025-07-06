@@ -8,6 +8,10 @@
 *.so
 *.dylib
 
+# Project binaries
+voidmesh-api
+api
+
 # Test binary, built with `go test -c`
 *.test
 
@@ -27,6 +31,28 @@ go.work.sum
 # env file
 .env
 
+# Database files
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+
+# Logs
+*.log
+logs/
+
 # Editor/IDE
-# .idea/
-# .vscode/
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
