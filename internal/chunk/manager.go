@@ -110,7 +110,11 @@ func (m *Manager) determineBehaviorFromSeed(chunkX, chunkZ, localX, localZ int64
 }
 
 func (m *Manager) LoadChunk(ctx context.Context, chunkX, chunkZ int64) (*ChunkResponse, error) {
+	log.Debug("Loading chunk", "chunk_x", chunkX, "chunk_z", chunkZ)
+	start := time.Now()
+
 	// Ensure chunk exists
+	log.Debug("Ensuring chunk exists in database", "chunk_x", chunkX, "chunk_z", chunkZ)
 	err := m.queries.CreateChunk(ctx, db.CreateChunkParams{
 		ChunkX: chunkX,
 		ChunkZ: chunkZ,
@@ -119,15 +123,19 @@ func (m *Manager) LoadChunk(ctx context.Context, chunkX, chunkZ int64) (*ChunkRe
 		log.Error("failed to create chunk", "error", err, "chunk_x", chunkX, "chunk_z", chunkZ)
 		return nil, fmt.Errorf("failed to create chunk: %w", err)
 	}
+	log.Debug("Chunk ensured in database", "chunk_x", chunkX, "chunk_z", chunkZ)
 
 	// Generate nodes if needed
+	log.Debug("Starting node generation", "chunk_x", chunkX, "chunk_z", chunkZ)
 	err = m.generateNodes(ctx, chunkX, chunkZ)
 	if err != nil {
 		log.Error("failed to generate nodes", "error", err, "chunk_x", chunkX, "chunk_z", chunkZ)
 		return nil, fmt.Errorf("failed to generate nodes: %w", err)
 	}
+	log.Debug("Node generation completed", "chunk_x", chunkX, "chunk_z", chunkZ)
 
 	// Load active nodes
+	log.Debug("Loading active nodes from database", "chunk_x", chunkX, "chunk_z", chunkZ)
 	dbNodes, err := m.queries.GetChunkNodes(ctx, db.GetChunkNodesParams{
 		ChunkX: chunkX,
 		ChunkZ: chunkZ,
@@ -136,6 +144,7 @@ func (m *Manager) LoadChunk(ctx context.Context, chunkX, chunkZ int64) (*ChunkRe
 		log.Error("failed to get chunk nodes", "error", err, "chunk_x", chunkX, "chunk_z", chunkZ)
 		return nil, fmt.Errorf("failed to get chunk nodes: %w", err)
 	}
+	log.Debug("Loaded nodes from database", "chunk_x", chunkX, "chunk_z", chunkZ, "node_count", len(dbNodes))
 
 	// Convert to response format
 	nodes := make([]ResourceNode, len(dbNodes))
@@ -163,6 +172,7 @@ func (m *Manager) LoadChunk(ctx context.Context, chunkX, chunkZ int64) (*ChunkRe
 		}
 	}
 
+	log.Debug("Chunk loading completed", "chunk_x", chunkX, "chunk_z", chunkZ, "total_nodes", len(nodes), "duration", time.Since(start))
 	return &ChunkResponse{
 		ChunkX: chunkX,
 		ChunkZ: chunkZ,
@@ -456,6 +466,9 @@ func (m *Manager) respawnNodes(ctx context.Context, chunkX, chunkZ int64) error 
 }
 
 func (m *Manager) StartHarvest(ctx context.Context, nodeID, playerID int64) (*HarvestSession, error) {
+	log.Debug("Starting harvest session", "node_id", nodeID, "player_id", playerID)
+	start := time.Now()
+
 	tx, err := m.db.BeginTx(ctx, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to begin transaction: %w", err)
@@ -507,6 +520,7 @@ func (m *Manager) StartHarvest(ctx context.Context, nodeID, playerID int64) (*Ha
 		return nil, fmt.Errorf("failed to commit transaction: %w", err)
 	}
 
+	log.Debug("Harvest session created successfully", "node_id", nodeID, "player_id", playerID, "session_id", session.SessionID, "duration", time.Since(start))
 	startedAt := time.Now()
 	if session.StartedAt.Valid {
 		startedAt = session.StartedAt.Time
@@ -533,6 +547,9 @@ func (m *Manager) StartHarvest(ctx context.Context, nodeID, playerID int64) (*Ha
 }
 
 func (m *Manager) HarvestResource(ctx context.Context, sessionID int64, harvestAmount int64) (*HarvestResponse, error) {
+	log.Debug("Processing harvest request", "session_id", sessionID, "harvest_amount", harvestAmount)
+	start := time.Now()
+
 	tx, err := m.db.BeginTx(ctx, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to begin transaction: %w", err)
@@ -571,6 +588,8 @@ func (m *Manager) HarvestResource(ctx context.Context, sessionID int64, harvestA
 		actualHarvest = node.CurrentYield
 	}
 
+	log.Debug("Harvest amount calculated", "session_id", sessionID, "requested", harvestAmount, "actual", actualHarvest, "node_yield", node.CurrentYield)
+
 	if actualHarvest <= 0 {
 		return nil, fmt.Errorf("node is depleted")
 	}
@@ -587,6 +606,7 @@ func (m *Manager) HarvestResource(ctx context.Context, sessionID int64, harvestA
 
 	// If node is depleted, set respawn timer
 	if newYield <= 0 {
+		log.Debug("Node depleted, setting respawn timer", "node_id", session.NodeID, "node_type", node.NodeType)
 		nodeSubtype := int64(0)
 		if node.NodeSubtype.Valid {
 			nodeSubtype = node.NodeSubtype.Int64
@@ -607,6 +627,7 @@ func (m *Manager) HarvestResource(ctx context.Context, sessionID int64, harvestA
 		}
 
 		respawnTime := time.Now().Add(time.Duration(hours) * time.Hour)
+		log.Debug("Node respawn scheduled", "node_id", session.NodeID, "respawn_hours", hours, "respawn_time", respawnTime)
 		err = txQueries.DeactivateNode(ctx, db.DeactivateNodeParams{
 			RespawnTimer: sql.NullTime{Time: respawnTime, Valid: true},
 			NodeID:       session.NodeID,
@@ -641,6 +662,7 @@ func (m *Manager) HarvestResource(ctx context.Context, sessionID int64, harvestA
 		return nil, fmt.Errorf("failed to commit transaction: %w", err)
 	}
 
+	log.Debug("Harvest transaction completed", "session_id", sessionID, "harvested", actualHarvest, "new_yield", newYield, "duration", time.Since(start))
 	currentGathered := int64(0)
 	if session.ResourcesGathered.Valid {
 		currentGathered = session.ResourcesGathered.Int64
@@ -655,27 +677,46 @@ func (m *Manager) HarvestResource(ctx context.Context, sessionID int64, harvestA
 }
 
 func (m *Manager) RegenerateResources(ctx context.Context) error {
+	log.Debug("Starting resource regeneration")
+	start := time.Now()
+
 	err := m.queries.RegenerateNodeYield(ctx)
 	if err != nil {
+		log.Error("Failed to regenerate node yield", "error", err, "duration", time.Since(start))
 		return fmt.Errorf("failed to regenerate node yield: %w", err)
 	}
+
+	log.Debug("Resource regeneration completed", "duration", time.Since(start))
 	return nil
 }
 
 func (m *Manager) CleanupExpiredSessions(ctx context.Context) error {
+	log.Debug("Starting session cleanup")
+	start := time.Now()
 	cutoff := time.Now().Add(-SessionTimeout * time.Minute)
+	log.Debug("Session cleanup cutoff calculated", "cutoff", cutoff, "timeout_minutes", SessionTimeout)
+
 	err := m.queries.CleanupExpiredSessions(ctx, sql.NullTime{Time: cutoff, Valid: true})
 	if err != nil {
+		log.Error("Failed to cleanup expired sessions", "error", err, "duration", time.Since(start))
 		return fmt.Errorf("failed to cleanup expired sessions: %w", err)
 	}
+
+	log.Debug("Session cleanup completed", "duration", time.Since(start))
 	return nil
 }
 
 func (m *Manager) GetPlayerSessions(ctx context.Context, playerID int64) ([]HarvestSession, error) {
+	log.Debug("Getting player sessions", "player_id", playerID)
+	start := time.Now()
+
 	dbSessions, err := m.queries.GetPlayerSessions(ctx, playerID)
 	if err != nil {
+		log.Error("Failed to get player sessions", "error", err, "player_id", playerID, "duration", time.Since(start))
 		return nil, fmt.Errorf("failed to get player sessions: %w", err)
 	}
+
+	log.Debug("Retrieved player sessions", "player_id", playerID, "session_count", len(dbSessions), "duration", time.Since(start))
 
 	sessions := make([]HarvestSession, len(dbSessions))
 	for i, session := range dbSessions {
@@ -704,5 +745,6 @@ func (m *Manager) GetPlayerSessions(ctx context.Context, playerID int64) ([]Harv
 		}
 	}
 
+	log.Debug("Player sessions processed", "player_id", playerID, "total_sessions", len(sessions))
 	return sessions, nil
 }
