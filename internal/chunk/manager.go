@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"math"
 	"math/rand"
 	"time"
 
@@ -85,6 +86,8 @@ func (m *Manager) LoadChunk(ctx context.Context, chunkX, chunkZ int64) (*ChunkRe
 }
 
 func (m *Manager) generateNodes(ctx context.Context, chunkX, chunkZ int64) error {
+	log.Debug("starting node generation", "chunk_x", chunkX, "chunk_z", chunkZ)
+
 	// Check if we need to spawn daily nodes
 	err := m.spawnDailyNodes(ctx, chunkX, chunkZ)
 	if err != nil {
@@ -103,22 +106,29 @@ func (m *Manager) generateNodes(ctx context.Context, chunkX, chunkZ int64) error
 		return fmt.Errorf("failed to respawn nodes: %w", err)
 	}
 
+	log.Debug("completed node generation", "chunk_x", chunkX, "chunk_z", chunkZ)
 	return nil
 }
 
 func (m *Manager) spawnDailyNodes(ctx context.Context, chunkX, chunkZ int64) error {
-	today := time.Now()
+	// Get today's date as a string for the SQL DATE() comparison
+	todayStr := time.Now().Format("2006-01-02")
+
+	log.Debug("checking daily node spawn", "chunk_x", chunkX, "chunk_z", chunkZ, "date", todayStr)
 
 	count, err := m.queries.GetDailyNodeCount(ctx, db.GetDailyNodeCountParams{
-		ChunkX:    chunkX,
-		ChunkZ:    chunkZ,
-		SpawnedAt: sql.NullTime{Time: today, Valid: true},
+		ChunkX: chunkX,
+		ChunkZ: chunkZ,
+		Date:   time.Now(), // SQL will extract date part
 	})
 	if err != nil {
 		return fmt.Errorf("failed to get daily node count: %w", err)
 	}
 
+	log.Debug("daily node count check", "chunk_x", chunkX, "chunk_z", chunkZ, "existing_count", count)
+
 	if count > 0 {
+		log.Debug("skipping daily spawn - already spawned today", "chunk_x", chunkX, "chunk_z", chunkZ)
 		return nil // Already spawned today
 	}
 
@@ -128,16 +138,24 @@ func (m *Manager) spawnDailyNodes(ctx context.Context, chunkX, chunkZ int64) err
 		return fmt.Errorf("failed to get spawn templates: %w", err)
 	}
 
+	log.Debug("spawning daily nodes", "chunk_x", chunkX, "chunk_z", chunkZ, "template_count", len(templates))
+
 	for _, template := range templates {
 		spawnWeight := int64(1)
 		if template.SpawnWeight.Valid {
 			spawnWeight = template.SpawnWeight.Int64
 		}
+
+		log.Debug("spawning daily nodes from template", "chunk_x", chunkX, "chunk_z", chunkZ, "template_id", template.TemplateID, "node_type", template.NodeType, "spawn_weight", spawnWeight)
+
+		// For daily spawning, spawn weight determines how many times we attempt to spawn this template
 		for i := int64(0); i < spawnWeight; i++ {
 			err := m.spawnNode(ctx, chunkX, chunkZ, template)
 			if err != nil {
-				log.Error("failed to spawn daily node", "error", err)
+				log.Error("failed to spawn daily node cluster", "error", err, "template_id", template.TemplateID, "attempt", i)
 				// Continue with other nodes
+			} else {
+				log.Debug("successfully spawned daily node cluster", "chunk_x", chunkX, "chunk_z", chunkZ, "template_id", template.TemplateID, "node_type", template.NodeType, "attempt", i)
 			}
 		}
 	}
@@ -154,27 +172,82 @@ func (m *Manager) spawnRandomNodes(ctx context.Context, chunkX, chunkZ int64) er
 		return fmt.Errorf("failed to get random node count: %w", err)
 	}
 
-	// Maintain 2-5 random nodes per chunk
-	maxRandomNodes := int64(5)
-	if activeCount < maxRandomNodes {
+	log.Debug("random node count check", "chunk_x", chunkX, "chunk_z", chunkZ, "active_count", activeCount)
+
+	// Maintain 2-5 random nodes per chunk - only spawn if below minimum
+	minRandomNodes := int64(2)
+
+	if activeCount < minRandomNodes {
 		templates, err := m.queries.GetSpawnTemplates(ctx, RandomSpawn)
 		if err != nil {
 			return fmt.Errorf("failed to get spawn templates: %w", err)
 		}
 
+		// Spawn enough nodes to reach minimum
+		nodesToSpawn := minRandomNodes - activeCount
+		log.Debug("spawning random nodes", "chunk_x", chunkX, "chunk_z", chunkZ, "current_count", activeCount, "min", minRandomNodes, "to_spawn", nodesToSpawn)
+
 		if len(templates) > 0 {
-			template := templates[rand.Intn(len(templates))]
-			err := m.spawnNode(ctx, chunkX, chunkZ, template)
-			if err != nil {
-				log.Error("failed to spawn random node", "error", err)
+			// Group templates by cluster requirements to avoid spawning too many clusters
+			for _, template := range templates {
+				// Check if we should spawn this template based on spawn weight
+				spawnWeight := int64(1)
+				if template.SpawnWeight.Valid {
+					spawnWeight = template.SpawnWeight.Int64
+				}
+
+				// Simple spawn probability based on weight
+				if rand.Int63n(100) < spawnWeight*10 {
+					err := m.spawnNode(ctx, chunkX, chunkZ, template)
+					if err != nil {
+						log.Error("failed to spawn random node cluster", "error", err, "template_id", template.TemplateID, "node_type", template.NodeType)
+					} else {
+						log.Debug("successfully spawned random node cluster", "chunk_x", chunkX, "chunk_z", chunkZ, "template_id", template.TemplateID, "node_type", template.NodeType)
+					}
+				}
 			}
 		}
+	} else {
+		log.Debug("skipping random spawn - minimum nodes exist", "chunk_x", chunkX, "chunk_z", chunkZ, "active_count", activeCount, "min", minRandomNodes)
 	}
 
 	return nil
 }
 
 func (m *Manager) spawnNode(ctx context.Context, chunkX, chunkZ int64, template db.NodeSpawnTemplate) error {
+	// Use cluster spawning if cluster parameters are defined
+	clusterSizeMin := int64(1)
+	clusterSizeMax := int64(1)
+	clusterSpreadMin := int64(0)
+	clusterSpreadMax := int64(0)
+	clustersPerChunk := int64(1)
+
+	if template.ClusterSizeMin.Valid {
+		clusterSizeMin = template.ClusterSizeMin.Int64
+	}
+	if template.ClusterSizeMax.Valid {
+		clusterSizeMax = template.ClusterSizeMax.Int64
+	}
+	if template.ClusterSpreadMin.Valid {
+		clusterSpreadMin = template.ClusterSpreadMin.Int64
+	}
+	if template.ClusterSpreadMax.Valid {
+		clusterSpreadMax = template.ClusterSpreadMax.Int64
+	}
+	if template.ClustersPerChunk.Valid {
+		clustersPerChunk = template.ClustersPerChunk.Int64
+	}
+
+	// If cluster parameters indicate clustering, use cluster spawning
+	if clusterSizeMax > 1 || clusterSpreadMax > 0 {
+		return m.spawnNodeCluster(ctx, chunkX, chunkZ, template, clusterSizeMin, clusterSizeMax, clusterSpreadMin, clusterSpreadMax, clustersPerChunk)
+	}
+
+	// Otherwise, use single node spawning
+	return m.spawnSingleNode(ctx, chunkX, chunkZ, template)
+}
+
+func (m *Manager) spawnSingleNode(ctx context.Context, chunkX, chunkZ int64, template db.NodeSpawnTemplate) error {
 	// Find random position
 	localX := int64(rand.Intn(ChunkSize))
 	localZ := int64(rand.Intn(ChunkSize))
@@ -194,6 +267,98 @@ func (m *Manager) spawnNode(ctx context.Context, chunkX, chunkZ int64, template 
 		return nil // Position occupied
 	}
 
+	return m.createNodeAtPosition(ctx, chunkX, chunkZ, localX, localZ, template)
+}
+
+func (m *Manager) spawnNodeCluster(ctx context.Context, chunkX, chunkZ int64, template db.NodeSpawnTemplate, clusterSizeMin, clusterSizeMax, clusterSpreadMin, clusterSpreadMax, clustersPerChunk int64) error {
+	// Generate clusters for this template
+	for i := int64(0); i < clustersPerChunk; i++ {
+		// Find cluster center
+		centerX := int64(rand.Intn(ChunkSize))
+		centerZ := int64(rand.Intn(ChunkSize))
+
+		// Determine cluster size
+		clusterSize := clusterSizeMin
+		if clusterSizeMax > clusterSizeMin {
+			clusterSize = clusterSizeMin + int64(rand.Intn(int(clusterSizeMax-clusterSizeMin+1)))
+		}
+
+		log.Debug("spawning cluster", "chunk_x", chunkX, "chunk_z", chunkZ, "center_x", centerX, "center_z", centerZ, "cluster_size", clusterSize, "template_id", template.TemplateID)
+
+		// Spawn nodes in cluster
+		for j := int64(0); j < clusterSize; j++ {
+			// Find position within cluster spread
+			localX, localZ := m.findClusterPosition(centerX, centerZ, clusterSpreadMin, clusterSpreadMax)
+
+			// Check if position is occupied
+			existing, err := m.queries.CheckNodePosition(ctx, db.CheckNodePositionParams{
+				ChunkX: chunkX,
+				ChunkZ: chunkZ,
+				LocalX: localX,
+				LocalZ: localZ,
+			})
+			if err != nil {
+				log.Error("failed to check node position in cluster", "error", err, "local_x", localX, "local_z", localZ)
+				continue
+			}
+
+			if existing > 0 {
+				continue // Position occupied, try next node
+			}
+
+			// Create the node
+			err = m.createNodeAtPosition(ctx, chunkX, chunkZ, localX, localZ, template)
+			if err != nil {
+				log.Error("failed to create node in cluster", "error", err, "local_x", localX, "local_z", localZ)
+				continue
+			}
+		}
+	}
+
+	return nil
+}
+
+func (m *Manager) findClusterPosition(centerX, centerZ, spreadMin, spreadMax int64) (int64, int64) {
+	// Calculate spread distance
+	spreadDistance := spreadMin
+	if spreadMax > spreadMin {
+		spreadDistance = spreadMin + int64(rand.Intn(int(spreadMax-spreadMin+1)))
+	}
+
+	// If no spread, return center
+	if spreadDistance == 0 {
+		return centerX, centerZ
+	}
+
+	// Generate random angle
+	angle := rand.Float64() * 2.0 * 3.14159265359 // 2π
+
+	// Calculate offset
+	offsetX := int64(float64(spreadDistance) * math.Cos(angle))
+	offsetZ := int64(float64(spreadDistance) * math.Sin(angle))
+
+	// Calculate new position
+	newX := centerX + offsetX
+	newZ := centerZ + offsetZ
+
+	// Clamp to chunk boundaries
+	if newX < 0 {
+		newX = 0
+	}
+	if newX >= ChunkSize {
+		newX = ChunkSize - 1
+	}
+	if newZ < 0 {
+		newZ = 0
+	}
+	if newZ >= ChunkSize {
+		newZ = ChunkSize - 1
+	}
+
+	return newX, newZ
+}
+
+func (m *Manager) createNodeAtPosition(ctx context.Context, chunkX, chunkZ, localX, localZ int64, template db.NodeSpawnTemplate) error {
 	// Generate yield
 	yield := template.MinYield + int64(rand.Intn(int(template.MaxYield-template.MinYield+1)))
 
@@ -207,7 +372,7 @@ func (m *Manager) spawnNode(ctx context.Context, chunkX, chunkZ int64, template 
 		regenRate = template.RegenerationRate.Int64
 	}
 
-	_, err = m.queries.CreateNode(ctx, db.CreateNodeParams{
+	_, err := m.queries.CreateNode(ctx, db.CreateNodeParams{
 		ChunkX:           chunkX,
 		ChunkZ:           chunkZ,
 		LocalX:           localX,
