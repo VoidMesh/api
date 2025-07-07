@@ -9,8 +9,7 @@
 *.dylib
 
 # Project binaries
-voidmesh-api
-api
+/voidmesh-api
 
 # Test binary, built with `go test -c`
 *.test
