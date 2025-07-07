@@ -18,6 +18,7 @@ type Querier interface {
 	CreateNode(ctx context.Context, arg CreateNodeParams) (int64, error)
 	DeactivateNode(ctx context.Context, arg DeactivateNodeParams) error
 	GetChunk(ctx context.Context, arg GetChunkParams) (Chunk, error)
+	GetChunkNodeCount(ctx context.Context, arg GetChunkNodeCountParams) (int64, error)
 	GetChunkNodes(ctx context.Context, arg GetChunkNodesParams) ([]ResourceNode, error)
 	GetDailyNodeCount(ctx context.Context, arg GetDailyNodeCountParams) (int64, error)
 	GetHarvestSession(ctx context.Context, sessionID int64) (HarvestSession, error)
@@ -27,9 +28,11 @@ type Querier interface {
 	GetPlayerSessions(ctx context.Context, playerID int64) ([]HarvestSession, error)
 	GetRandomNodeCount(ctx context.Context, arg GetRandomNodeCountParams) (int64, error)
 	GetRespawnDelay(ctx context.Context, arg GetRespawnDelayParams) (sql.NullInt64, error)
-	GetSpawnTemplates(ctx context.Context, spawnType int64) ([]NodeSpawnTemplate, error)
+	GetSpawnTemplates(ctx context.Context) ([]NodeSpawnTemplate, error)
+	GetWorldConfig(ctx context.Context, configKey string) (string, error)
 	ReactivateNode(ctx context.Context, arg ReactivateNodeParams) error
 	RegenerateNodeYield(ctx context.Context) error
+	SetWorldConfig(ctx context.Context, arg SetWorldConfigParams) error
 	UpdateChunkModified(ctx context.Context, arg UpdateChunkModifiedParams) error
 	UpdateNodeYield(ctx context.Context, arg UpdateNodeYieldParams) error
 	UpdateSessionActivity(ctx context.Context, arg UpdateSessionActivityParams) error

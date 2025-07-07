@@ -35,21 +35,25 @@ type HarvestSession struct {
 }
 
 type NodeSpawnTemplate struct {
-	TemplateID        int64          `json:"template_id"`
-	NodeType          int64          `json:"node_type"`
-	NodeSubtype       sql.NullInt64  `json:"node_subtype"`
-	SpawnType         int64          `json:"spawn_type"`
-	MinYield          int64          `json:"min_yield"`
-	MaxYield          int64          `json:"max_yield"`
-	RegenerationRate  sql.NullInt64  `json:"regeneration_rate"`
-	RespawnDelayHours sql.NullInt64  `json:"respawn_delay_hours"`
-	SpawnWeight       sql.NullInt64  `json:"spawn_weight"`
-	BiomeRestriction  sql.NullString `json:"biome_restriction"`
-	ClusterSizeMin    sql.NullInt64  `json:"cluster_size_min"`
-	ClusterSizeMax    sql.NullInt64  `json:"cluster_size_max"`
-	ClusterSpreadMin  sql.NullInt64  `json:"cluster_spread_min"`
-	ClusterSpreadMax  sql.NullInt64  `json:"cluster_spread_max"`
-	ClustersPerChunk  sql.NullInt64  `json:"clusters_per_chunk"`
+	TemplateID        int64           `json:"template_id"`
+	NodeType          int64           `json:"node_type"`
+	NodeSubtype       sql.NullInt64   `json:"node_subtype"`
+	SpawnType         int64           `json:"spawn_type"`
+	MinYield          int64           `json:"min_yield"`
+	MaxYield          int64           `json:"max_yield"`
+	RegenerationRate  sql.NullInt64   `json:"regeneration_rate"`
+	RespawnDelayHours sql.NullInt64   `json:"respawn_delay_hours"`
+	SpawnWeight       sql.NullInt64   `json:"spawn_weight"`
+	BiomeRestriction  sql.NullString  `json:"biome_restriction"`
+	ClusterSizeMin    sql.NullInt64   `json:"cluster_size_min"`
+	ClusterSizeMax    sql.NullInt64   `json:"cluster_size_max"`
+	ClusterSpreadMin  sql.NullInt64   `json:"cluster_spread_min"`
+	ClusterSpreadMax  sql.NullInt64   `json:"cluster_spread_max"`
+	ClustersPerChunk  sql.NullInt64   `json:"clusters_per_chunk"`
+	NoiseScale        sql.NullFloat64 `json:"noise_scale"`
+	NoiseThreshold    sql.NullFloat64 `json:"noise_threshold"`
+	NoiseOctaves      sql.NullInt64   `json:"noise_octaves"`
+	NoisePersistence  sql.NullFloat64 `json:"noise_persistence"`
 }
 
 type ResourceNode struct {
@@ -68,4 +72,10 @@ type ResourceNode struct {
 	RespawnTimer     sql.NullTime  `json:"respawn_timer"`
 	SpawnType        int64         `json:"spawn_type"`
 	IsActive         sql.NullInt64 `json:"is_active"`
+}
+
+type WorldConfig struct {
+	ConfigKey   string       `json:"config_key"`
+	ConfigValue string       `json:"config_value"`
+	CreatedAt   sql.NullTime `json:"created_at"`
 }

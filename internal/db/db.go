@@ -48,6 +48,9 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	if q.getChunkStmt, err = db.PrepareContext(ctx, getChunk); err != nil {
 		return nil, fmt.Errorf("error preparing query GetChunk: %w", err)
 	}
+	if q.getChunkNodeCountStmt, err = db.PrepareContext(ctx, getChunkNodeCount); err != nil {
+		return nil, fmt.Errorf("error preparing query GetChunkNodeCount: %w", err)
+	}
 	if q.getChunkNodesStmt, err = db.PrepareContext(ctx, getChunkNodes); err != nil {
 		return nil, fmt.Errorf("error preparing query GetChunkNodes: %w", err)
 	}
@@ -78,11 +81,17 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	if q.getSpawnTemplatesStmt, err = db.PrepareContext(ctx, getSpawnTemplates); err != nil {
 		return nil, fmt.Errorf("error preparing query GetSpawnTemplates: %w", err)
 	}
+	if q.getWorldConfigStmt, err = db.PrepareContext(ctx, getWorldConfig); err != nil {
+		return nil, fmt.Errorf("error preparing query GetWorldConfig: %w", err)
+	}
 	if q.reactivateNodeStmt, err = db.PrepareContext(ctx, reactivateNode); err != nil {
 		return nil, fmt.Errorf("error preparing query ReactivateNode: %w", err)
 	}
 	if q.regenerateNodeYieldStmt, err = db.PrepareContext(ctx, regenerateNodeYield); err != nil {
 		return nil, fmt.Errorf("error preparing query RegenerateNodeYield: %w", err)
+	}
+	if q.setWorldConfigStmt, err = db.PrepareContext(ctx, setWorldConfig); err != nil {
+		return nil, fmt.Errorf("error preparing query SetWorldConfig: %w", err)
 	}
 	if q.updateChunkModifiedStmt, err = db.PrepareContext(ctx, updateChunkModified); err != nil {
 		return nil, fmt.Errorf("error preparing query UpdateChunkModified: %w", err)
@@ -138,6 +147,11 @@ func (q *Queries) Close() error {
 			err = fmt.Errorf("error closing getChunkStmt: %w", cerr)
 		}
 	}
+	if q.getChunkNodeCountStmt != nil {
+		if cerr := q.getChunkNodeCountStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing getChunkNodeCountStmt: %w", cerr)
+		}
+	}
 	if q.getChunkNodesStmt != nil {
 		if cerr := q.getChunkNodesStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing getChunkNodesStmt: %w", cerr)
@@ -188,6 +202,11 @@ func (q *Queries) Close() error {
 			err = fmt.Errorf("error closing getSpawnTemplatesStmt: %w", cerr)
 		}
 	}
+	if q.getWorldConfigStmt != nil {
+		if cerr := q.getWorldConfigStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing getWorldConfigStmt: %w", cerr)
+		}
+	}
 	if q.reactivateNodeStmt != nil {
 		if cerr := q.reactivateNodeStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing reactivateNodeStmt: %w", cerr)
@@ -196,6 +215,11 @@ func (q *Queries) Close() error {
 	if q.regenerateNodeYieldStmt != nil {
 		if cerr := q.regenerateNodeYieldStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing regenerateNodeYieldStmt: %w", cerr)
+		}
+	}
+	if q.setWorldConfigStmt != nil {
+		if cerr := q.setWorldConfigStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing setWorldConfigStmt: %w", cerr)
 		}
 	}
 	if q.updateChunkModifiedStmt != nil {
@@ -260,6 +284,7 @@ type Queries struct {
 	createNodeStmt             *sql.Stmt
 	deactivateNodeStmt         *sql.Stmt
 	getChunkStmt               *sql.Stmt
+	getChunkNodeCountStmt      *sql.Stmt
 	getChunkNodesStmt          *sql.Stmt
 	getDailyNodeCountStmt      *sql.Stmt
 	getHarvestSessionStmt      *sql.Stmt
@@ -270,8 +295,10 @@ type Queries struct {
 	getRandomNodeCountStmt     *sql.Stmt
 	getRespawnDelayStmt        *sql.Stmt
 	getSpawnTemplatesStmt      *sql.Stmt
+	getWorldConfigStmt         *sql.Stmt
 	reactivateNodeStmt         *sql.Stmt
 	regenerateNodeYieldStmt    *sql.Stmt
+	setWorldConfigStmt         *sql.Stmt
 	updateChunkModifiedStmt    *sql.Stmt
 	updateNodeYieldStmt        *sql.Stmt
 	updateSessionActivityStmt  *sql.Stmt
@@ -289,6 +316,7 @@ func (q *Queries) WithTx(tx *sql.Tx) *Queries {
 		createNodeStmt:             q.createNodeStmt,
 		deactivateNodeStmt:         q.deactivateNodeStmt,
 		getChunkStmt:               q.getChunkStmt,
+		getChunkNodeCountStmt:      q.getChunkNodeCountStmt,
 		getChunkNodesStmt:          q.getChunkNodesStmt,
 		getDailyNodeCountStmt:      q.getDailyNodeCountStmt,
 		getHarvestSessionStmt:      q.getHarvestSessionStmt,
@@ -299,8 +327,10 @@ func (q *Queries) WithTx(tx *sql.Tx) *Queries {
 		getRandomNodeCountStmt:     q.getRandomNodeCountStmt,
 		getRespawnDelayStmt:        q.getRespawnDelayStmt,
 		getSpawnTemplatesStmt:      q.getSpawnTemplatesStmt,
+		getWorldConfigStmt:         q.getWorldConfigStmt,
 		reactivateNodeStmt:         q.reactivateNodeStmt,
 		regenerateNodeYieldStmt:    q.regenerateNodeYieldStmt,
+		setWorldConfigStmt:         q.setWorldConfigStmt,
 		updateChunkModifiedStmt:    q.updateChunkModifiedStmt,
 		updateNodeYieldStmt:        q.updateNodeYieldStmt,
 		updateSessionActivityStmt:  q.updateSessionActivityStmt,

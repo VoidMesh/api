@@ -42,6 +42,10 @@ WHERE chunk_x = ? AND chunk_z = ? AND spawn_type = 1 AND DATE(spawned_at) = DATE
 SELECT COUNT(*) FROM resource_nodes
 WHERE chunk_x = ? AND chunk_z = ? AND spawn_type = 0 AND is_active = 1;
 
+-- name: GetChunkNodeCount :one
+SELECT COUNT(*) FROM resource_nodes
+WHERE chunk_x = ? AND chunk_z = ? AND node_type = ? AND node_subtype = ? AND is_active = 1;
+
 -- name: RegenerateNodeYield :exec
 UPDATE resource_nodes
 SET current_yield = MIN(current_yield + regeneration_rate, max_yield)

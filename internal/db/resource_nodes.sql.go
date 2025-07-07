@@ -85,6 +85,30 @@ func (q *Queries) DeactivateNode(ctx context.Context, arg DeactivateNodeParams) 
 	return err
 }
 
+const getChunkNodeCount = `-- name: GetChunkNodeCount :one
+SELECT COUNT(*) FROM resource_nodes
+WHERE chunk_x = ? AND chunk_z = ? AND node_type = ? AND node_subtype = ? AND is_active = 1
+`
+
+type GetChunkNodeCountParams struct {
+	ChunkX      int64         `json:"chunk_x"`
+	ChunkZ      int64         `json:"chunk_z"`
+	NodeType    int64         `json:"node_type"`
+	NodeSubtype sql.NullInt64 `json:"node_subtype"`
+}
+
+func (q *Queries) GetChunkNodeCount(ctx context.Context, arg GetChunkNodeCountParams) (int64, error) {
+	row := q.queryRow(ctx, q.getChunkNodeCountStmt, getChunkNodeCount,
+		arg.ChunkX,
+		arg.ChunkZ,
+		arg.NodeType,
+		arg.NodeSubtype,
+	)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const getChunkNodes = `-- name: GetChunkNodes :many
 SELECT node_id, chunk_x, chunk_z, local_x, local_z, node_type, node_subtype,
        max_yield, current_yield, regeneration_rate, spawned_at, last_harvest,

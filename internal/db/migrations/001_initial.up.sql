@@ -57,6 +57,13 @@ CREATE TABLE harvest_log (
     node_yield_after INTEGER NOT NULL
 );
 
+-- World configuration - stores global settings like world seed
+CREATE TABLE world_config (
+    config_key TEXT PRIMARY KEY,
+    config_value TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Node spawn templates - defines what can spawn where
 CREATE TABLE node_spawn_templates (
     template_id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -74,7 +81,12 @@ CREATE TABLE node_spawn_templates (
     cluster_size_max INTEGER DEFAULT 1,    -- Maximum nodes per cluster
     cluster_spread_min INTEGER DEFAULT 0,  -- Minimum spread radius from cluster center
     cluster_spread_max INTEGER DEFAULT 0,  -- Maximum spread radius from cluster center
-    clusters_per_chunk INTEGER DEFAULT 1   -- Number of clusters per chunk
+    clusters_per_chunk INTEGER DEFAULT 1,  -- Number of clusters per chunk
+    -- Noise parameters
+    noise_scale REAL DEFAULT 0.1,          -- Noise frequency/scale
+    noise_threshold REAL DEFAULT 0.5,      -- Minimum noise value to spawn
+    noise_octaves INTEGER DEFAULT 1,       -- Number of noise octaves
+    noise_persistence REAL DEFAULT 0.5     -- Octave persistence
 );
 
 -- Indexes for performance
@@ -86,13 +98,15 @@ CREATE INDEX idx_harvest_sessions_player ON harvest_sessions(player_id, last_act
 CREATE INDEX idx_harvest_log_node ON harvest_log(node_id);
 CREATE INDEX idx_harvest_log_player ON harvest_log(player_id);
 
--- Insert initial spawn templates with cluster parameters
-INSERT INTO node_spawn_templates (node_type, node_subtype, spawn_type, min_yield, max_yield, regeneration_rate, respawn_delay_hours, spawn_weight, cluster_size_min, cluster_size_max, cluster_spread_min, cluster_spread_max, clusters_per_chunk) VALUES
--- Static daily iron ore nodes (medium clusters)
-(1, 1, 1, 100, 200, 5, 24, 3, 2, 4, 1, 3, 2),
-(1, 2, 1, 300, 500, 10, 24, 1, 1, 2, 1, 2, 1),
--- Random gold ore nodes (small clusters)
-(2, 1, 0, 50, 100, 2, 12, 2, 1, 3, 1, 2, 1),
-(2, 2, 0, 150, 300, 5, 12, 1, 1, 2, 1, 2, 1),
--- Permanent wood nodes (large clusters like forests)
-(3, 1, 2, 50, 100, 1, 6, 4, 3, 5, 2, 4, 1);
+-- Insert initial spawn templates with cluster and noise parameters
+INSERT INTO node_spawn_templates (node_type, node_subtype, spawn_type, min_yield, max_yield, regeneration_rate, respawn_delay_hours, spawn_weight, cluster_size_min, cluster_size_max, cluster_spread_min, cluster_spread_max, clusters_per_chunk, noise_scale, noise_threshold, noise_octaves, noise_persistence) VALUES
+-- Iron ore - long veins running through mountain ranges
+(1, 1, 1, 100, 200, 5, 24, 3, 2, 4, 1, 3, 2, 0.05, 0.2, 1, 0.5),
+(1, 2, 1, 300, 500, 10, 24, 1, 1, 2, 1, 2, 1, 0.05, 0.5, 1, 0.5),
+-- Gold ore - small scattered pockets
+(2, 1, 0, 50, 100, 2, 12, 2, 1, 3, 1, 2, 1, 0.2, 0.7, 1, 0.5),
+(2, 2, 0, 150, 300, 5, 12, 1, 1, 2, 1, 2, 1, 0.2, 0.8, 1, 0.5),
+-- Wood - forest clusters
+(3, 1, 2, 50, 100, 1, 6, 4, 3, 5, 2, 4, 1, 0.1, 0.3, 1, 0.5),
+-- Stone - widespread but patchy
+(4, 1, 2, 75, 150, 2, 8, 2, 2, 3, 1, 2, 1, 0.08, 0.4, 1, 0.5);

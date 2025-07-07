@@ -28,13 +28,12 @@ func (q *Queries) GetRespawnDelay(ctx context.Context, arg GetRespawnDelayParams
 }
 
 const getSpawnTemplates = `-- name: GetSpawnTemplates :many
-SELECT template_id, node_type, node_subtype, spawn_type, min_yield, max_yield, regeneration_rate, respawn_delay_hours, spawn_weight, biome_restriction, cluster_size_min, cluster_size_max, cluster_spread_min, cluster_spread_max, clusters_per_chunk
+SELECT template_id, node_type, node_subtype, spawn_type, min_yield, max_yield, regeneration_rate, respawn_delay_hours, spawn_weight, biome_restriction, cluster_size_min, cluster_size_max, cluster_spread_min, cluster_spread_max, clusters_per_chunk, noise_scale, noise_threshold, noise_octaves, noise_persistence
 FROM node_spawn_templates
-WHERE spawn_type = ?
 `
 
-func (q *Queries) GetSpawnTemplates(ctx context.Context, spawnType int64) ([]NodeSpawnTemplate, error) {
-	rows, err := q.query(ctx, q.getSpawnTemplatesStmt, getSpawnTemplates, spawnType)
+func (q *Queries) GetSpawnTemplates(ctx context.Context) ([]NodeSpawnTemplate, error) {
+	rows, err := q.query(ctx, q.getSpawnTemplatesStmt, getSpawnTemplates)
 	if err != nil {
 		return nil, err
 	}
@@ -58,6 +57,10 @@ func (q *Queries) GetSpawnTemplates(ctx context.Context, spawnType int64) ([]Nod
 			&i.ClusterSpreadMin,
 			&i.ClusterSpreadMax,
 			&i.ClustersPerChunk,
+			&i.NoiseScale,
+			&i.NoiseThreshold,
+			&i.NoiseOctaves,
+			&i.NoisePersistence,
 		); err != nil {
 			return nil, err
 		}
@@ -70,4 +73,29 @@ func (q *Queries) GetSpawnTemplates(ctx context.Context, spawnType int64) ([]Nod
 		return nil, err
 	}
 	return items, nil
+}
+
+const getWorldConfig = `-- name: GetWorldConfig :one
+SELECT config_value FROM world_config WHERE config_key = ?
+`
+
+func (q *Queries) GetWorldConfig(ctx context.Context, configKey string) (string, error) {
+	row := q.queryRow(ctx, q.getWorldConfigStmt, getWorldConfig, configKey)
+	var config_value string
+	err := row.Scan(&config_value)
+	return config_value, err
+}
+
+const setWorldConfig = `-- name: SetWorldConfig :exec
+INSERT OR REPLACE INTO world_config (config_key, config_value) VALUES (?, ?)
+`
+
+type SetWorldConfigParams struct {
+	ConfigKey   string `json:"config_key"`
+	ConfigValue string `json:"config_value"`
+}
+
+func (q *Queries) SetWorldConfig(ctx context.Context, arg SetWorldConfigParams) error {
+	_, err := q.exec(ctx, q.setWorldConfigStmt, setWorldConfig, arg.ConfigKey, arg.ConfigValue)
+	return err
 }

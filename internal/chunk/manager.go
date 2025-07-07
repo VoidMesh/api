@@ -4,24 +4,109 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"hash/fnv"
 	"math"
 	"math/rand"
+	"strconv"
 	"time"
 
 	"github.com/VoidMesh/api/internal/db"
+	"github.com/aquilax/go-perlin"
 	"github.com/charmbracelet/log"
 )
 
 type Manager struct {
-	db      *sql.DB
-	queries *db.Queries
+	db        *sql.DB
+	queries   *db.Queries
+	worldSeed int64
+	noiseGens map[int64]*perlin.Perlin
 }
 
 func NewManager(database *sql.DB) *Manager {
-	return &Manager{
-		db:      database,
-		queries: db.New(database),
+	m := &Manager{
+		db:        database,
+		queries:   db.New(database),
+		noiseGens: make(map[int64]*perlin.Perlin),
 	}
+
+	// Initialize world seed and noise generators
+	ctx := context.Background()
+	err := m.initializeWorldSeed(ctx)
+	if err != nil {
+		log.Error("failed to initialize world seed", "error", err)
+	}
+
+	return m
+}
+
+func (m *Manager) initializeWorldSeed(ctx context.Context) error {
+	// Try to get existing world seed
+	seedStr, err := m.queries.GetWorldConfig(ctx, "world_seed")
+
+	if err == sql.ErrNoRows {
+		// Generate new world seed
+		m.worldSeed = time.Now().UnixNano()
+		err = m.queries.SetWorldConfig(ctx, db.SetWorldConfigParams{
+			ConfigKey:   "world_seed",
+			ConfigValue: strconv.FormatInt(m.worldSeed, 10),
+		})
+		if err != nil {
+			return fmt.Errorf("failed to set world seed: %w", err)
+		}
+		log.Info("generated new world seed", "seed", m.worldSeed)
+	} else if err != nil {
+		return fmt.Errorf("failed to get world seed: %w", err)
+	} else {
+		// Use existing seed
+		m.worldSeed, err = strconv.ParseInt(seedStr, 10, 64)
+		if err != nil {
+			return fmt.Errorf("failed to parse world seed: %w", err)
+		}
+		log.Info("loaded existing world seed", "seed", m.worldSeed)
+	}
+
+	// Initialize noise generators for each resource type
+	resourceTypes := []int64{IronOre, GoldOre, Wood, Stone}
+	for _, resourceType := range resourceTypes {
+		// Use different seeds for each resource type
+		resourceSeed := m.worldSeed + resourceType*1000
+		randSource := rand.NewSource(resourceSeed)
+		m.noiseGens[resourceType] = perlin.NewPerlinRandSource(0.1, 0.1, 3, randSource)
+	}
+
+	return nil
+}
+
+func (m *Manager) evaluateChunkNoise(chunkX, chunkZ int64, template db.NodeSpawnTemplate) float64 {
+	noiseGen, exists := m.noiseGens[template.NodeType]
+	if !exists {
+		return 0.0
+	}
+
+	noiseScale := 0.1
+	if template.NoiseScale.Valid {
+		noiseScale = template.NoiseScale.Float64
+	}
+
+	x := float64(chunkX) * noiseScale
+	z := float64(chunkZ) * noiseScale
+
+	return noiseGen.Noise2D(x, z)
+}
+
+// determineBehaviorFromSeed calculates spawn behavior deterministically from position and world seed
+func (m *Manager) determineBehaviorFromSeed(chunkX, chunkZ, localX, localZ int64) int64 {
+	// Create deterministic hash from position and world seed
+	h := fnv.New64a()
+	h.Write([]byte(fmt.Sprintf("%d:%d:%d:%d:%d", m.worldSeed, chunkX, chunkZ, localX, localZ)))
+	hash := h.Sum64()
+
+	// Use hash to determine spawn behavior
+	// 30% chance for Static Daily (spawn_type = 1), 70% chance for Random Spawn (spawn_type = 0)
+	if hash%100 < 30 {
+		return 1 // Static Daily
+	}
+	return 0 // Random Spawn
 }
 
 func (m *Manager) LoadChunk(ctx context.Context, chunkX, chunkZ int64) (*ChunkResponse, error) {
@@ -86,18 +171,68 @@ func (m *Manager) LoadChunk(ctx context.Context, chunkX, chunkZ int64) (*ChunkRe
 }
 
 func (m *Manager) generateNodes(ctx context.Context, chunkX, chunkZ int64) error {
-	log.Debug("starting node generation", "chunk_x", chunkX, "chunk_z", chunkZ)
+	log.Debug("starting unified node generation", "chunk_x", chunkX, "chunk_z", chunkZ)
 
-	// Check if we need to spawn daily nodes
-	err := m.spawnDailyNodes(ctx, chunkX, chunkZ)
+	// Get ALL templates - no filtering by spawn_type
+	templates, err := m.queries.GetSpawnTemplates(ctx)
 	if err != nil {
-		return fmt.Errorf("failed to spawn daily nodes: %w", err)
+		return fmt.Errorf("failed to get spawn templates: %w", err)
 	}
 
-	// Check if we need to spawn random nodes
-	err = m.spawnRandomNodes(ctx, chunkX, chunkZ)
-	if err != nil {
-		return fmt.Errorf("failed to spawn random nodes: %w", err)
+	log.Debug("evaluating all templates", "chunk_x", chunkX, "chunk_z", chunkZ, "template_count", len(templates))
+
+	// Process each template with noise evaluation
+	for _, template := range templates {
+		// Evaluate noise for this chunk and template
+		noiseValue := m.evaluateChunkNoise(chunkX, chunkZ, template)
+
+		// Check if this resource should spawn based on noise threshold
+		noiseThreshold := 0.5
+		if template.NoiseThreshold.Valid {
+			noiseThreshold = template.NoiseThreshold.Float64
+		}
+
+		log.Debug("evaluating template", "chunk_x", chunkX, "chunk_z", chunkZ, "template_id", template.TemplateID, "node_type", template.NodeType, "noise_value", noiseValue, "threshold", noiseThreshold)
+
+		if noiseValue > noiseThreshold {
+			// Calculate max nodes based on noise intensity
+			maxNodes := int64((noiseValue - noiseThreshold) * 8) // 0-8 nodes based on noise
+			if maxNodes < 1 {
+				maxNodes = 1
+			}
+			if maxNodes > 3 {
+				maxNodes = 3
+			}
+
+			// Count existing nodes for this template in this chunk
+			existingCount, err := m.queries.GetChunkNodeCount(ctx, db.GetChunkNodeCountParams{
+				ChunkX:      chunkX,
+				ChunkZ:      chunkZ,
+				NodeType:    template.NodeType,
+				NodeSubtype: template.NodeSubtype,
+			})
+			if err != nil {
+				log.Error("failed to get existing node count", "error", err)
+				continue
+			}
+
+			log.Debug("node count check", "chunk_x", chunkX, "chunk_z", chunkZ, "template_id", template.TemplateID, "existing_count", existingCount, "max_nodes", maxNodes)
+
+			// Spawn nodes if below threshold
+			if existingCount < maxNodes {
+				nodesToSpawn := maxNodes - existingCount
+				for i := int64(0); i < nodesToSpawn; i++ {
+					err := m.spawnNode(ctx, chunkX, chunkZ, template)
+					if err != nil {
+						log.Error("failed to spawn node", "error", err, "template_id", template.TemplateID, "node_type", template.NodeType, "attempt", i)
+						continue
+					}
+					log.Debug("successfully spawned node", "chunk_x", chunkX, "chunk_z", chunkZ, "template_id", template.TemplateID, "node_type", template.NodeType, "attempt", i)
+				}
+			}
+		} else {
+			log.Debug("skipping template - below noise threshold", "chunk_x", chunkX, "chunk_z", chunkZ, "template_id", template.TemplateID, "noise_value", noiseValue, "threshold", noiseThreshold)
+		}
 	}
 
 	// Respawn depleted nodes whose timer has expired
@@ -106,111 +241,7 @@ func (m *Manager) generateNodes(ctx context.Context, chunkX, chunkZ int64) error
 		return fmt.Errorf("failed to respawn nodes: %w", err)
 	}
 
-	log.Debug("completed node generation", "chunk_x", chunkX, "chunk_z", chunkZ)
-	return nil
-}
-
-func (m *Manager) spawnDailyNodes(ctx context.Context, chunkX, chunkZ int64) error {
-	// Get today's date as a string for the SQL DATE() comparison
-	todayStr := time.Now().Format("2006-01-02")
-
-	log.Debug("checking daily node spawn", "chunk_x", chunkX, "chunk_z", chunkZ, "date", todayStr)
-
-	count, err := m.queries.GetDailyNodeCount(ctx, db.GetDailyNodeCountParams{
-		ChunkX: chunkX,
-		ChunkZ: chunkZ,
-		Date:   time.Now(), // SQL will extract date part
-	})
-	if err != nil {
-		return fmt.Errorf("failed to get daily node count: %w", err)
-	}
-
-	log.Debug("daily node count check", "chunk_x", chunkX, "chunk_z", chunkZ, "existing_count", count)
-
-	if count > 0 {
-		log.Debug("skipping daily spawn - already spawned today", "chunk_x", chunkX, "chunk_z", chunkZ)
-		return nil // Already spawned today
-	}
-
-	// Spawn daily nodes
-	templates, err := m.queries.GetSpawnTemplates(ctx, StaticDaily)
-	if err != nil {
-		return fmt.Errorf("failed to get spawn templates: %w", err)
-	}
-
-	log.Debug("spawning daily nodes", "chunk_x", chunkX, "chunk_z", chunkZ, "template_count", len(templates))
-
-	for _, template := range templates {
-		spawnWeight := int64(1)
-		if template.SpawnWeight.Valid {
-			spawnWeight = template.SpawnWeight.Int64
-		}
-
-		log.Debug("spawning daily nodes from template", "chunk_x", chunkX, "chunk_z", chunkZ, "template_id", template.TemplateID, "node_type", template.NodeType, "spawn_weight", spawnWeight)
-
-		// For daily spawning, spawn weight determines how many times we attempt to spawn this template
-		for i := int64(0); i < spawnWeight; i++ {
-			err := m.spawnNode(ctx, chunkX, chunkZ, template)
-			if err != nil {
-				log.Error("failed to spawn daily node cluster", "error", err, "template_id", template.TemplateID, "attempt", i)
-				// Continue with other nodes
-			} else {
-				log.Debug("successfully spawned daily node cluster", "chunk_x", chunkX, "chunk_z", chunkZ, "template_id", template.TemplateID, "node_type", template.NodeType, "attempt", i)
-			}
-		}
-	}
-
-	return nil
-}
-
-func (m *Manager) spawnRandomNodes(ctx context.Context, chunkX, chunkZ int64) error {
-	activeCount, err := m.queries.GetRandomNodeCount(ctx, db.GetRandomNodeCountParams{
-		ChunkX: chunkX,
-		ChunkZ: chunkZ,
-	})
-	if err != nil {
-		return fmt.Errorf("failed to get random node count: %w", err)
-	}
-
-	log.Debug("random node count check", "chunk_x", chunkX, "chunk_z", chunkZ, "active_count", activeCount)
-
-	// Maintain 2-5 random nodes per chunk - only spawn if below minimum
-	minRandomNodes := int64(2)
-
-	if activeCount < minRandomNodes {
-		templates, err := m.queries.GetSpawnTemplates(ctx, RandomSpawn)
-		if err != nil {
-			return fmt.Errorf("failed to get spawn templates: %w", err)
-		}
-
-		// Spawn enough nodes to reach minimum
-		nodesToSpawn := minRandomNodes - activeCount
-		log.Debug("spawning random nodes", "chunk_x", chunkX, "chunk_z", chunkZ, "current_count", activeCount, "min", minRandomNodes, "to_spawn", nodesToSpawn)
-
-		if len(templates) > 0 {
-			// Group templates by cluster requirements to avoid spawning too many clusters
-			for _, template := range templates {
-				// Check if we should spawn this template based on spawn weight
-				spawnWeight := int64(1)
-				if template.SpawnWeight.Valid {
-					spawnWeight = template.SpawnWeight.Int64
-				}
-
-				// Simple spawn probability based on weight
-				if rand.Int63n(100) < spawnWeight*10 {
-					err := m.spawnNode(ctx, chunkX, chunkZ, template)
-					if err != nil {
-						log.Error("failed to spawn random node cluster", "error", err, "template_id", template.TemplateID, "node_type", template.NodeType)
-					} else {
-						log.Debug("successfully spawned random node cluster", "chunk_x", chunkX, "chunk_z", chunkZ, "template_id", template.TemplateID, "node_type", template.NodeType)
-					}
-				}
-			}
-		}
-	} else {
-		log.Debug("skipping random spawn - minimum nodes exist", "chunk_x", chunkX, "chunk_z", chunkZ, "active_count", activeCount, "min", minRandomNodes)
-	}
-
+	log.Debug("completed unified node generation", "chunk_x", chunkX, "chunk_z", chunkZ)
 	return nil
 }
 
@@ -372,6 +403,9 @@ func (m *Manager) createNodeAtPosition(ctx context.Context, chunkX, chunkZ, loca
 		regenRate = template.RegenerationRate.Int64
 	}
 
+	// Calculate spawn behavior deterministically from position and seed
+	determinedSpawnType := m.determineBehaviorFromSeed(chunkX, chunkZ, localX, localZ)
+
 	_, err := m.queries.CreateNode(ctx, db.CreateNodeParams{
 		ChunkX:           chunkX,
 		ChunkZ:           chunkZ,
@@ -382,7 +416,7 @@ func (m *Manager) createNodeAtPosition(ctx context.Context, chunkX, chunkZ, loca
 		MaxYield:         yield,
 		CurrentYield:     yield,
 		RegenerationRate: sql.NullInt64{Int64: regenRate, Valid: true},
-		SpawnType:        template.SpawnType,
+		SpawnType:        determinedSpawnType,
 	})
 	if err != nil {
 		return fmt.Errorf("failed to create node: %w", err)
