@@ -153,22 +153,22 @@ var (
 
 // Resource node symbols and styles
 const (
-	IronOreSymbol = "Fe"  // Iron chemical symbol
-	GoldOreSymbol = "Au"  // Gold chemical symbol
-	WoodSymbol    = "##"  // Tree/wood representation
-	StoneSymbol   = "[]"  // Stone block
-	EmptySymbol   = "  "  // Empty space
-	CursorSymbol  = "><"  // Cursor indicator
+	IronOreSymbol = "Fe" // Iron chemical symbol
+	GoldOreSymbol = "Au" // Gold chemical symbol
+	WoodSymbol    = "##" // Tree/wood representation
+	StoneSymbol   = "[]" // Stone block
+	EmptySymbol   = "  " // Empty space
+	CursorSymbol  = "><" // Cursor indicator
 
 	// Quality indicators
-	PoorQualitySymbol   = "o"   // Poor quality
-	NormalQualitySymbol = "O"   // Normal quality
-	RichQualitySymbol   = "*"   // Rich quality (star)
+	PoorQualitySymbol   = "o" // Poor quality
+	NormalQualitySymbol = "O" // Normal quality
+	RichQualitySymbol   = "*" // Rich quality (star)
 
 	// Status indicators
-	DepletedSymbol   = "xx"  // Depleted
-	RespawningSymbol = ".."  // Respawning
-	ActiveSymbol     = "OK"  // Active
+	DepletedSymbol   = "xx" // Depleted
+	RespawningSymbol = ".." // Respawning
+	ActiveSymbol     = "OK" // Active
 )
 
 // GetNodeSymbol returns the appropriate symbol for a resource node
@@ -229,17 +229,4 @@ func GetNodeColor(nodeType, nodeSubtype int64, isActive bool, currentYield int64
 	default: // Normal
 		return baseColor
 	}
-}
-
-// Layout helpers
-func CenterText(text string, width int) string {
-	return lipgloss.NewStyle().Width(width).Align(lipgloss.Center).Render(text)
-}
-
-func LeftText(text string, width int) string {
-	return lipgloss.NewStyle().Width(width).Align(lipgloss.Left).Render(text)
-}
-
-func RightText(text string, width int) string {
-	return lipgloss.NewStyle().Width(width).Align(lipgloss.Right).Render(text)
 }
