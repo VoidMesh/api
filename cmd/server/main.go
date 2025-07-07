@@ -35,7 +35,7 @@ func main() {
 	defer db.Close()
 
 	// Run migrations
-	if err := runMigrations(db, cfg.Database.Path); err != nil {
+	if err := runMigrations(db); err != nil {
 		log.Fatal("Failed to run database migrations", "error", err)
 	}
 
@@ -134,7 +134,7 @@ func initializeDatabase(cfg config.DatabaseConfig) (*sql.DB, error) {
 	return db, nil
 }
 
-func runMigrations(db *sql.DB, dbPath string) error {
+func runMigrations(db *sql.DB) error {
 	driver, err := sqlite3.WithInstance(db, &sqlite3.Config{})
 	if err != nil {
 		return fmt.Errorf("failed to create migration driver: %w", err)
