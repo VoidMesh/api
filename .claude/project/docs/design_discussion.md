@@ -96,28 +96,58 @@
 
 ### Transaction Safety
 ```go
-// Example: Atomic harvesting operation
-tx, err := cm.db.Begin()
+// Example: Atomic harvesting operation (current implementation)
+tx, err := m.db.BeginTx(ctx, nil)
+if err != nil {
+    return nil, fmt.Errorf("failed to begin transaction: %w", err)
+}
 defer tx.Rollback()
-// ... validate session and node state
+
+txQueries := m.queries.WithTx(tx)
+// ... validate session and node state with txQueries
 // ... update node yield
 // ... log harvest event
-return tx.Commit()
+if err = tx.Commit(); err != nil {
+    return nil, fmt.Errorf("failed to commit transaction: %w", err)
+}
 ```
 
-### Flexible Spawning
-```sql
--- Template-driven node generation
-INSERT INTO resource_nodes (...)
-SELECT template_id, calculated_yield, spawn_location
-FROM node_spawn_templates 
-WHERE spawn_conditions_met
+### Noise-Based Generation
+```go
+// Current implementation uses Perlin noise for realistic distribution
+func (m *Manager) evaluateChunkNoise(chunkX, chunkZ int64, template db.NodeSpawnTemplate) float64 {
+    noiseGen := m.noiseGens[template.NodeType]
+    x := float64(chunkX) * template.NoiseScale
+    z := float64(chunkZ) * template.NoiseScale
+    return noiseGen.Noise2D(x, z)
+}
+```
+
+### Cluster Spawning
+```go
+// Resources can spawn in clusters for realistic distribution
+func (m *Manager) spawnNodeCluster(ctx context.Context, chunkX, chunkZ int64, template db.NodeSpawnTemplate, 
+    clusterSizeMin, clusterSizeMax, clusterSpreadMin, clusterSpreadMax, clustersPerChunk int64) error {
+    
+    for i := int64(0); i < clustersPerChunk; i++ {
+        centerX := int64(rand.Intn(ChunkSize))
+        centerZ := int64(rand.Intn(ChunkSize))
+        
+        clusterSize := clusterSizeMin + int64(rand.Intn(int(clusterSizeMax-clusterSizeMin+1)))
+        
+        for j := int64(0); j < clusterSize; j++ {
+            localX, localZ := m.findClusterPosition(centerX, centerZ, clusterSpreadMin, clusterSpreadMax)
+            err := m.createNodeAtPosition(ctx, chunkX, chunkZ, localX, localZ, template)
+            // ... error handling
+        }
+    }
+}
 ```
 
 ### Session Management
 ```go
-// Prevent exploitation while allowing concurrency
-if time.Since(lastActivity) > SESSION_TIMEOUT {
+// Prevent exploitation while allowing concurrency (current implementation)
+if time.Since(lastActivity) > SessionTimeout*time.Minute {
     return fmt.Errorf("session expired")
 }
 ```

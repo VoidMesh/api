@@ -3,34 +3,42 @@
 ## Getting Started
 
 ### Prerequisites
-- Go 1.19+ with SQLite driver (`github.com/mattn/go-sqlite3`)
+- Go 1.24.3+ with SQLite driver (`github.com/mattn/go-sqlite3`)
 - SQLite 3.x
+- SQLC for code generation
 - Basic understanding of chunk-based world systems
 
 ### Setup Steps
 
-1. **Initialize Database:**
+1. **Clone and Setup:**
 ```bash
-# Create database file
-sqlite3 game.db < schema.sql
+git clone https://github.com/VoidMesh/api.git
+cd api
+go mod tidy
+```
+
+2. **Initialize Database:**
+```bash
+# Apply initial schema
+sqlite3 game.db < internal/db/migrations/001_initial.up.sql
+
+# Apply performance updates
+sqlite3 game.db < internal/db/migrations/002_performance_updates.up.sql
 
 # Verify tables created
 sqlite3 game.db ".tables"
 ```
 
-2. **Install Go Dependencies:**
+3. **Generate Database Code:**
 ```bash
-go mod init chunk-resource-system
-go get github.com/mattn/go-sqlite3
+sqlc generate
 ```
 
-3. **Run Initial Setup:**
-```go
-cm, err := NewChunkManager("game.db")
-if err != nil {
-    log.Fatal(err)
-}
-defer cm.Close()
+4. **Run the Server:**
+```bash
+go run ./cmd/server
+# or
+go run main.go
 ```
 
 ## Core Components
@@ -38,35 +46,58 @@ defer cm.Close()
 ### ChunkManager
 **Primary interface for all chunk and resource operations**
 
+Located in `internal/chunk/manager.go`, this is the core business logic component.
+
 ```go
-type ChunkManager struct {
-    db *sql.DB
+type Manager struct {
+    db            *sql.DB
+    queries       *db.Queries
+    worldSeed     int64
+    noiseGens     map[int64]*perlin.Perlin
+    occupiedCache map[[2]int64]occupiedCacheEntry
+    cacheMutex    sync.RWMutex
 }
 
 // Key methods:
-func (cm *ChunkManager) LoadChunk(chunkX, chunkZ int) ([]ResourceNode, error)
-func (cm *ChunkManager) StartHarvest(nodeID, playerID int) (*HarvestSession, error)
-func (cm *ChunkManager) HarvestResource(sessionID int, harvestAmount int) error
+func (m *Manager) LoadChunk(ctx context.Context, chunkX, chunkZ int64) (*ChunkResponse, error)
+func (m *Manager) StartHarvest(ctx context.Context, nodeID, playerID int64) (*HarvestSession, error)
+func (m *Manager) HarvestResource(ctx context.Context, sessionID int64, harvestAmount int64) (*HarvestResponse, error)
+func (m *Manager) RegenerateResources(ctx context.Context) error
+func (m *Manager) CleanupExpiredSessions(ctx context.Context) error
 ```
 
+**Key Features:**
+- **Noise-based Generation**: Uses Perlin noise for realistic resource distribution
+- **Cluster Spawning**: Resources can spawn in clusters based on templates
+- **Caching Layer**: Occupied position caching with TTL for performance
+- **Transaction Safety**: All critical operations use database transactions
+
 ### Resource Node Types
+Located in `internal/chunk/types.go`:
+
 ```go
 const (
     // Node types
-    IRON_ORE = 1
-    GOLD_ORE = 2
-    WOOD = 3
-    STONE = 4
+    IronOre = 1
+    GoldOre = 2
+    Wood    = 3
+    Stone   = 4
+
+    // Node subtypes (quality)
+    PoorQuality   = 0
+    NormalQuality = 1
+    RichQuality   = 2
+
+    // Spawn types
+    RandomSpawn     = 0
+    StaticDaily     = 1
+    StaticPermanent = 2
+
+    // Harvest session timeout (minutes)
+    SessionTimeout = 5
     
-    // Quality subtypes
-    POOR_QUALITY = 0
-    NORMAL_QUALITY = 1
-    RICH_QUALITY = 2
-    
-    // Spawn behaviors
-    RANDOM_SPAWN = 0
-    STATIC_DAILY = 1
-    STATIC_PERMANENT = 2
+    // Chunk size
+    ChunkSize = 16
 )
 ```
 
@@ -75,13 +106,14 @@ const (
 ### Basic Chunk Loading
 ```go
 // Load all active nodes in a chunk
-nodes, err := chunkManager.LoadChunk(chunkX, chunkZ)
+ctx := context.Background()
+chunkData, err := manager.LoadChunk(ctx, chunkX, chunkZ)
 if err != nil {
     return err
 }
 
 // Process nodes for client response
-for _, node := range nodes {
+for _, node := range chunkData.Nodes {
     // Send node data to game client
     sendNodeToClient(node)
 }
@@ -89,94 +121,205 @@ for _, node := range nodes {
 
 ### Player Harvesting Flow
 ```go
+ctx := context.Background()
+
 // 1. Start harvest session
-session, err := cm.StartHarvest(nodeID, playerID)
+session, err := manager.StartHarvest(ctx, nodeID, playerID)
 if err != nil {
     return fmt.Errorf("cannot start harvest: %v", err)
 }
 
 // 2. Perform harvest action
 harvestAmount := calculateHarvestAmount(playerSkill, nodeType)
-err = cm.HarvestResource(session.SessionID, harvestAmount)
+result, err := manager.HarvestResource(ctx, session.SessionID, harvestAmount)
 if err != nil {
     return fmt.Errorf("harvest failed: %v", err)
 }
 
-// 3. Session automatically expires after timeout
+log.Printf("Harvested %d resources, node yield now %d", 
+    result.AmountHarvested, result.NodeYieldAfter)
+
+// 3. Session automatically expires after 5 minutes of inactivity
 ```
 
 ### Background Processes
 ```go
 // Regenerate resources (run hourly)
-func scheduleResourceRegeneration(cm *ChunkManager) {
+func scheduleResourceRegeneration(manager *chunk.Manager) {
     ticker := time.NewTicker(1 * time.Hour)
     go func() {
         for range ticker.C {
-            cm.RegenerateResources()
+            ctx := context.Background()
+            if err := manager.RegenerateResources(ctx); err != nil {
+                log.Error("regeneration failed", "error", err)
+            }
         }
     }()
 }
 
 // Cleanup expired sessions (run every 5 minutes)
-func scheduleSessionCleanup(cm *ChunkManager) {
+func scheduleSessionCleanup(manager *chunk.Manager) {
     ticker := time.NewTicker(5 * time.Minute)
     go func() {
         for range ticker.C {
-            cm.CleanupExpiredSessions()
+            ctx := context.Background()
+            if err := manager.CleanupExpiredSessions(ctx); err != nil {
+                log.Error("session cleanup failed", "error", err)
+            }
         }
     }()
 }
 ```
 
+### Noise-Based Resource Generation
+```go
+// The system uses Perlin noise for natural resource distribution
+func (m *Manager) evaluateChunkNoise(chunkX, chunkZ int64, template db.NodeSpawnTemplate) float64 {
+    noiseGen, exists := m.noiseGens[template.NodeType]
+    if !exists {
+        return 0.0
+    }
+
+    noiseScale := 0.1
+    if template.NoiseScale.Valid {
+        noiseScale = template.NoiseScale.Float64
+    }
+
+    x := float64(chunkX) * noiseScale
+    z := float64(chunkZ) * noiseScale
+
+    return noiseGen.Noise2D(x, z)
+}
+
+// Resources spawn based on noise thresholds
+if noiseValue > template.NoiseThreshold {
+    // Calculate node count based on noise intensity
+    maxNodes := int64((noiseValue - noiseThreshold) * 8)
+    // Spawn nodes up to the calculated maximum
+}
+```
+
 ## API Integration
 
-### Recommended REST Endpoints
+### Current REST API Implementation
+
+The API is implemented in `internal/api/` with the following structure:
 
 ```go
-// GET /chunks/{x}/{z}/nodes
-func getChunkNodes(w http.ResponseWriter, r *http.Request) {
-    chunkX, _ := strconv.Atoi(mux.Vars(r)["x"])
-    chunkZ, _ := strconv.Atoi(mux.Vars(r)["z"])
-    
-    nodes, err := chunkManager.LoadChunk(chunkX, chunkZ)
-    if err != nil {
-        http.Error(w, err.Error(), http.StatusInternalServerError)
-        return
-    }
-    
-    json.NewEncoder(w).Encode(nodes)
+// Handler struct (internal/api/handlers.go)
+type Handler struct {
+    chunkManager *chunk.Manager
 }
 
-// POST /nodes/{nodeId}/harvest
-func startHarvest(w http.ResponseWriter, r *http.Request) {
-    nodeID, _ := strconv.Atoi(mux.Vars(r)["nodeId"])
-    playerID := getPlayerIDFromAuth(r)
-    
-    session, err := chunkManager.StartHarvest(nodeID, playerID)
+// GET /api/v1/chunks/{x}/{z}/nodes
+func (h *Handler) GetChunk(w http.ResponseWriter, r *http.Request) {
+    chunkXStr := chi.URLParam(r, "x")
+    chunkZStr := chi.URLParam(r, "z")
+
+    chunkX, err := strconv.ParseInt(chunkXStr, 10, 64)
     if err != nil {
-        http.Error(w, err.Error(), http.StatusBadRequest)
+        h.renderError(w, r, http.StatusBadRequest, "invalid chunk x coordinate", err)
         return
     }
-    
-    json.NewEncoder(w).Encode(session)
+
+    chunkZ, err := strconv.ParseInt(chunkZStr, 10, 64)
+    if err != nil {
+        h.renderError(w, r, http.StatusBadRequest, "invalid chunk z coordinate", err)
+        return
+    }
+
+    ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+    defer cancel()
+
+    chunkData, err := h.chunkManager.LoadChunk(ctx, chunkX, chunkZ)
+    if err != nil {
+        h.renderError(w, r, http.StatusInternalServerError, "failed to load chunk", err)
+        return
+    }
+
+    render.JSON(w, r, chunkData)
 }
 
-// PUT /sessions/{sessionId}/harvest
-func performHarvest(w http.ResponseWriter, r *http.Request) {
-    sessionID, _ := strconv.Atoi(mux.Vars(r)["sessionId"])
-    
+// POST /api/v1/harvest/start
+func (h *Handler) StartHarvest(w http.ResponseWriter, r *http.Request) {
     var req struct {
-        Amount int `json:"amount"`
+        NodeID   int64 `json:"node_id"`
+        PlayerID int64 `json:"player_id"`
     }
-    json.NewDecoder(r.Body).Decode(&req)
-    
-    err := chunkManager.HarvestResource(sessionID, req.Amount)
-    if err != nil {
-        http.Error(w, err.Error(), http.StatusBadRequest)
+
+    if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+        h.renderError(w, r, http.StatusBadRequest, "invalid request body", err)
         return
     }
-    
-    w.WriteHeader(http.StatusOK)
+
+    ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+    defer cancel()
+
+    session, err := h.chunkManager.StartHarvest(ctx, req.NodeID, req.PlayerID)
+    if err != nil {
+        h.renderError(w, r, http.StatusBadRequest, "failed to start harvest", err)
+        return
+    }
+
+    render.Status(r, http.StatusCreated)
+    render.JSON(w, r, session)
+}
+
+// PUT /api/v1/harvest/sessions/{sessionId}
+func (h *Handler) HarvestResource(w http.ResponseWriter, r *http.Request) {
+    sessionIDStr := chi.URLParam(r, "sessionId")
+    sessionID, err := strconv.ParseInt(sessionIDStr, 10, 64)
+    if err != nil {
+        h.renderError(w, r, http.StatusBadRequest, "invalid session id", err)
+        return
+    }
+
+    var req struct {
+        HarvestAmount int64 `json:"harvest_amount"`
+    }
+
+    if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+        h.renderError(w, r, http.StatusBadRequest, "invalid request body", err)
+        return
+    }
+
+    ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+    defer cancel()
+
+    harvestResult, err := h.chunkManager.HarvestResource(ctx, sessionID, req.HarvestAmount)
+    if err != nil {
+        h.renderError(w, r, http.StatusBadRequest, "failed to harvest resource", err)
+        return
+    }
+
+    render.JSON(w, r, harvestResult)
+}
+```
+
+**Router Setup (internal/api/routes.go):**
+```go
+func SetupRoutes(handler *Handler) *chi.Mux {
+    r := chi.NewRouter()
+
+    // Setup middleware
+    for _, middleware := range SetupMiddleware() {
+        r.Use(middleware)
+    }
+
+    r.Use(render.SetContentType(render.ContentTypeJSON))
+
+    // Health check
+    r.Get("/health", handler.HealthCheck)
+
+    // API routes
+    r.Route("/api/v1", func(r chi.Router) {
+        r.Get("/chunks/{x}/{z}/nodes", handler.GetChunk)
+        r.Post("/harvest/start", handler.StartHarvest)
+        r.Put("/harvest/sessions/{sessionId}", handler.HarvestResource)
+        r.Get("/players/{playerId}/sessions", handler.GetPlayerSessions)
+    })
+
+    return r
 }
 ```
 

@@ -1,5 +1,7 @@
 # VoidMesh Game Design & Development Summary
 
+> **Note**: This document describes the broader vision for VoidMesh as a complex simulation game. The current implementation focuses on the **resource harvesting subsystem** as a foundational component. For details on what's currently implemented, see the [API Documentation](api_documentation.md) and [Developer Guide](developer_guide.md).
+
 ## Project Overview
 **VoidMesh** is an API-first complex simulation game being developed by a solo Go developer with no prior game development experience. The goal is to create a Dwarf Fortress-inspired game with EVE Online's player-driven economy, targeting a small but dedicated community initially (first milestone: 10 active unknown players).
 
