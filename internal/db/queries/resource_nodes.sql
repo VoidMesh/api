@@ -50,3 +50,7 @@ WHERE chunk_x = ? AND chunk_z = ? AND node_type = ? AND node_subtype = ? AND is_
 UPDATE resource_nodes
 SET current_yield = MIN(current_yield + regeneration_rate, max_yield)
 WHERE regeneration_rate > 0 AND is_active = 1 AND current_yield < max_yield;
+
+-- name: GetChunkOccupiedPositions :many
+SELECT local_x, local_z FROM resource_nodes
+WHERE chunk_x = ? AND chunk_z = ? AND is_active = 1;

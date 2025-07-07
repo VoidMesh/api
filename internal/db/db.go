@@ -54,6 +54,9 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	if q.getChunkNodesStmt, err = db.PrepareContext(ctx, getChunkNodes); err != nil {
 		return nil, fmt.Errorf("error preparing query GetChunkNodes: %w", err)
 	}
+	if q.getChunkOccupiedPositionsStmt, err = db.PrepareContext(ctx, getChunkOccupiedPositions); err != nil {
+		return nil, fmt.Errorf("error preparing query GetChunkOccupiedPositions: %w", err)
+	}
 	if q.getDailyNodeCountStmt, err = db.PrepareContext(ctx, getDailyNodeCount); err != nil {
 		return nil, fmt.Errorf("error preparing query GetDailyNodeCount: %w", err)
 	}
@@ -155,6 +158,11 @@ func (q *Queries) Close() error {
 	if q.getChunkNodesStmt != nil {
 		if cerr := q.getChunkNodesStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing getChunkNodesStmt: %w", cerr)
+		}
+	}
+	if q.getChunkOccupiedPositionsStmt != nil {
+		if cerr := q.getChunkOccupiedPositionsStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing getChunkOccupiedPositionsStmt: %w", cerr)
 		}
 	}
 	if q.getDailyNodeCountStmt != nil {
@@ -274,65 +282,67 @@ func (q *Queries) queryRow(ctx context.Context, stmt *sql.Stmt, query string, ar
 }
 
 type Queries struct {
-	db                         DBTX
-	tx                         *sql.Tx
-	checkNodePositionStmt      *sql.Stmt
-	cleanupExpiredSessionsStmt *sql.Stmt
-	createChunkStmt            *sql.Stmt
-	createHarvestLogStmt       *sql.Stmt
-	createHarvestSessionStmt   *sql.Stmt
-	createNodeStmt             *sql.Stmt
-	deactivateNodeStmt         *sql.Stmt
-	getChunkStmt               *sql.Stmt
-	getChunkNodeCountStmt      *sql.Stmt
-	getChunkNodesStmt          *sql.Stmt
-	getDailyNodeCountStmt      *sql.Stmt
-	getHarvestSessionStmt      *sql.Stmt
-	getNodeStmt                *sql.Stmt
-	getNodesToRespawnStmt      *sql.Stmt
-	getPlayerActiveSessionStmt *sql.Stmt
-	getPlayerSessionsStmt      *sql.Stmt
-	getRandomNodeCountStmt     *sql.Stmt
-	getRespawnDelayStmt        *sql.Stmt
-	getSpawnTemplatesStmt      *sql.Stmt
-	getWorldConfigStmt         *sql.Stmt
-	reactivateNodeStmt         *sql.Stmt
-	regenerateNodeYieldStmt    *sql.Stmt
-	setWorldConfigStmt         *sql.Stmt
-	updateChunkModifiedStmt    *sql.Stmt
-	updateNodeYieldStmt        *sql.Stmt
-	updateSessionActivityStmt  *sql.Stmt
+	db                            DBTX
+	tx                            *sql.Tx
+	checkNodePositionStmt         *sql.Stmt
+	cleanupExpiredSessionsStmt    *sql.Stmt
+	createChunkStmt               *sql.Stmt
+	createHarvestLogStmt          *sql.Stmt
+	createHarvestSessionStmt      *sql.Stmt
+	createNodeStmt                *sql.Stmt
+	deactivateNodeStmt            *sql.Stmt
+	getChunkStmt                  *sql.Stmt
+	getChunkNodeCountStmt         *sql.Stmt
+	getChunkNodesStmt             *sql.Stmt
+	getChunkOccupiedPositionsStmt *sql.Stmt
+	getDailyNodeCountStmt         *sql.Stmt
+	getHarvestSessionStmt         *sql.Stmt
+	getNodeStmt                   *sql.Stmt
+	getNodesToRespawnStmt         *sql.Stmt
+	getPlayerActiveSessionStmt    *sql.Stmt
+	getPlayerSessionsStmt         *sql.Stmt
+	getRandomNodeCountStmt        *sql.Stmt
+	getRespawnDelayStmt           *sql.Stmt
+	getSpawnTemplatesStmt         *sql.Stmt
+	getWorldConfigStmt            *sql.Stmt
+	reactivateNodeStmt            *sql.Stmt
+	regenerateNodeYieldStmt       *sql.Stmt
+	setWorldConfigStmt            *sql.Stmt
+	updateChunkModifiedStmt       *sql.Stmt
+	updateNodeYieldStmt           *sql.Stmt
+	updateSessionActivityStmt     *sql.Stmt
 }
 
 func (q *Queries) WithTx(tx *sql.Tx) *Queries {
 	return &Queries{
-		db:                         tx,
-		tx:                         tx,
-		checkNodePositionStmt:      q.checkNodePositionStmt,
-		cleanupExpiredSessionsStmt: q.cleanupExpiredSessionsStmt,
-		createChunkStmt:            q.createChunkStmt,
-		createHarvestLogStmt:       q.createHarvestLogStmt,
-		createHarvestSessionStmt:   q.createHarvestSessionStmt,
-		createNodeStmt:             q.createNodeStmt,
-		deactivateNodeStmt:         q.deactivateNodeStmt,
-		getChunkStmt:               q.getChunkStmt,
-		getChunkNodeCountStmt:      q.getChunkNodeCountStmt,
-		getChunkNodesStmt:          q.getChunkNodesStmt,
-		getDailyNodeCountStmt:      q.getDailyNodeCountStmt,
-		getHarvestSessionStmt:      q.getHarvestSessionStmt,
-		getNodeStmt:                q.getNodeStmt,
-		getNodesToRespawnStmt:      q.getNodesToRespawnStmt,
-		getPlayerActiveSessionStmt: q.getPlayerActiveSessionStmt,
-		getPlayerSessionsStmt:      q.getPlayerSessionsStmt,
-		getRandomNodeCountStmt:     q.getRandomNodeCountStmt,
-		getRespawnDelayStmt:        q.getRespawnDelayStmt,
-		getSpawnTemplatesStmt:      q.getSpawnTemplatesStmt,
-		getWorldConfigStmt:         q.getWorldConfigStmt,
-		reactivateNodeStmt:         q.reactivateNodeStmt,
-		regenerateNodeYieldStmt:    q.regenerateNodeYieldStmt,
-		setWorldConfigStmt:         q.setWorldConfigStmt,
-		updateChunkModifiedStmt:    q.updateChunkModifiedStmt,
-		updateNodeYieldStmt:        q.updateNodeYieldStmt,
-		updateSessionActivityStmt:  q.updateSessionActivityStmt,
+		db:                            tx,
+		tx:                            tx,
+		checkNodePositionStmt:         q.checkNodePositionStmt,
+		cleanupExpiredSessionsStmt:    q.cleanupExpiredSessionsStmt,
+		createChunkStmt:               q.createChunkStmt,
+		createHarvestLogStmt:          q.createHarvestLogStmt,
+		createHarvestSessionStmt:      q.createHarvestSessionStmt,
+		createNodeStmt:                q.createNodeStmt,
+		deactivateNodeStmt:            q.deactivateNodeStmt,
+		getChunkStmt:                  q.getChunkStmt,
+		getChunkNodeCountStmt:         q.getChunkNodeCountStmt,
+		getChunkNodesStmt:             q.getChunkNodesStmt,
+		getChunkOccupiedPositionsStmt: q.getChunkOccupiedPositionsStmt,
+		getDailyNodeCountStmt:         q.getDailyNodeCountStmt,
+		getHarvestSessionStmt:         q.getHarvestSessionStmt,
+		getNodeStmt:                   q.getNodeStmt,
+		getNodesToRespawnStmt:         q.getNodesToRespawnStmt,
+		getPlayerActiveSessionStmt:    q.getPlayerActiveSessionStmt,
+		getPlayerSessionsStmt:         q.getPlayerSessionsStmt,
+		getRandomNodeCountStmt:        q.getRandomNodeCountStmt,
+		getRespawnDelayStmt:           q.getRespawnDelayStmt,
+		getSpawnTemplatesStmt:         q.getSpawnTemplatesStmt,
+		getWorldConfigStmt:            q.getWorldConfigStmt,
+		reactivateNodeStmt:            q.reactivateNodeStmt,
+		regenerateNodeYieldStmt:       q.regenerateNodeYieldStmt,
+		setWorldConfigStmt:            q.setWorldConfigStmt,
+		updateChunkModifiedStmt:       q.updateChunkModifiedStmt,
+		updateNodeYieldStmt:           q.updateNodeYieldStmt,
+		updateSessionActivityStmt:     q.updateSessionActivityStmt,
 	}
 }

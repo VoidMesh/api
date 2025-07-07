@@ -161,6 +161,44 @@ func (q *Queries) GetChunkNodes(ctx context.Context, arg GetChunkNodesParams) ([
 	return items, nil
 }
 
+const getChunkOccupiedPositions = `-- name: GetChunkOccupiedPositions :many
+SELECT local_x, local_z FROM resource_nodes
+WHERE chunk_x = ? AND chunk_z = ? AND is_active = 1
+`
+
+type GetChunkOccupiedPositionsParams struct {
+	ChunkX int64 `json:"chunk_x"`
+	ChunkZ int64 `json:"chunk_z"`
+}
+
+type GetChunkOccupiedPositionsRow struct {
+	LocalX int64 `json:"local_x"`
+	LocalZ int64 `json:"local_z"`
+}
+
+func (q *Queries) GetChunkOccupiedPositions(ctx context.Context, arg GetChunkOccupiedPositionsParams) ([]GetChunkOccupiedPositionsRow, error) {
+	rows, err := q.query(ctx, q.getChunkOccupiedPositionsStmt, getChunkOccupiedPositions, arg.ChunkX, arg.ChunkZ)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []GetChunkOccupiedPositionsRow{}
+	for rows.Next() {
+		var i GetChunkOccupiedPositionsRow
+		if err := rows.Scan(&i.LocalX, &i.LocalZ); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getDailyNodeCount = `-- name: GetDailyNodeCount :one
 SELECT COUNT(*) FROM resource_nodes
 WHERE chunk_x = ? AND chunk_z = ? AND spawn_type = 1 AND DATE(spawned_at) = DATE(?)

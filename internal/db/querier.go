@@ -20,6 +20,7 @@ type Querier interface {
 	GetChunk(ctx context.Context, arg GetChunkParams) (Chunk, error)
 	GetChunkNodeCount(ctx context.Context, arg GetChunkNodeCountParams) (int64, error)
 	GetChunkNodes(ctx context.Context, arg GetChunkNodesParams) ([]ResourceNode, error)
+	GetChunkOccupiedPositions(ctx context.Context, arg GetChunkOccupiedPositionsParams) ([]GetChunkOccupiedPositionsRow, error)
 	GetDailyNodeCount(ctx context.Context, arg GetDailyNodeCountParams) (int64, error)
 	GetHarvestSession(ctx context.Context, sessionID int64) (HarvestSession, error)
 	GetNode(ctx context.Context, nodeID int64) (ResourceNode, error)

@@ -8,6 +8,7 @@ import (
 	"math"
 	"math/rand"
 	"strconv"
+	"sync"
 	"time"
 
 	"github.com/VoidMesh/api/internal/db"
@@ -15,18 +16,26 @@ import (
 	"github.com/charmbracelet/log"
 )
 
+type occupiedCacheEntry struct {
+	positions map[int64]struct{} // key = localX<<8 | localZ
+	expires   time.Time
+}
+
 type Manager struct {
-	db        *sql.DB
-	queries   *db.Queries
-	worldSeed int64
-	noiseGens map[int64]*perlin.Perlin
+	db            *sql.DB
+	queries       *db.LoggingQueries
+	worldSeed     int64
+	noiseGens     map[int64]*perlin.Perlin
+	occupiedCache map[[2]int64]occupiedCacheEntry // key = [2]int64{chunkX,chunkZ}
+	cacheMutex    sync.RWMutex
 }
 
 func NewManager(database *sql.DB) *Manager {
 	m := &Manager{
-		db:        database,
-		queries:   db.New(database),
-		noiseGens: make(map[int64]*perlin.Perlin),
+		db:            database,
+		queries:       db.NewLoggingQueries(database),
+		noiseGens:     make(map[int64]*perlin.Perlin),
+		occupiedCache: make(map[[2]int64]occupiedCacheEntry),
 	}
 
 	// Initialize world seed and noise generators
@@ -105,8 +114,42 @@ func (m *Manager) determineBehaviorFromSeed(chunkX, chunkZ, localX, localZ int64
 	// 30% chance for Static Daily (spawn_type = 1), 70% chance for Random Spawn (spawn_type = 0)
 	if hash%100 < 30 {
 		return 1 // Static Daily
+}
+return 0 // Random Spawn
+}
+
+func (m *Manager) getOccupiedPositions(ctx context.Context, chunkX, chunkZ int64) (map[int64]struct{}, error) {
+	key := [2]int64{chunkX, chunkZ}
+	m.cacheMutex.RLock()
+	entry, exists := m.occupiedCache[key]
+	m.cacheMutex.RUnlock()
+
+	if exists && time.Now().Before(entry.expires) {
+		return entry.positions, nil
 	}
-	return 0 // Random Spawn
+
+	rows, err := m.queries.GetChunkOccupiedPositions(ctx, db.GetChunkOccupiedPositionsParams{
+		ChunkX: chunkX,
+		ChunkZ: chunkZ,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get occupied positions: %w", err)
+	}
+
+	positions := make(map[int64]struct{}, len(rows))
+	for _, row := range rows {
+		posKey := (row.LocalX << 8) | row.LocalZ
+		positions[posKey] = struct{}{}
+	}
+
+	m.cacheMutex.Lock()
+	m.occupiedCache[key] = occupiedCacheEntry{
+		positions: positions,
+		expires:   time.Now().Add(30 * time.Second),
+	}
+	m.cacheMutex.Unlock()
+
+	return positions, nil
 }
 
 func (m *Manager) LoadChunk(ctx context.Context, chunkX, chunkZ int64) (*ChunkResponse, error) {
@@ -312,6 +355,12 @@ func (m *Manager) spawnSingleNode(ctx context.Context, chunkX, chunkZ int64, tem
 }
 
 func (m *Manager) spawnNodeCluster(ctx context.Context, chunkX, chunkZ int64, template db.NodeSpawnTemplate, clusterSizeMin, clusterSizeMax, clusterSpreadMin, clusterSpreadMax, clustersPerChunk int64) error {
+	// Get occupied positions for this chunk (cached)
+	occupiedPositions, err := m.getOccupiedPositions(ctx, chunkX, chunkZ)
+	if err != nil {
+		return fmt.Errorf("failed to get occupied positions: %w", err)
+	}
+
 	// Generate clusters for this template
 	for i := int64(0); i < clustersPerChunk; i++ {
 		// Find cluster center
@@ -331,19 +380,14 @@ func (m *Manager) spawnNodeCluster(ctx context.Context, chunkX, chunkZ int64, te
 			// Find position within cluster spread
 			localX, localZ := m.findClusterPosition(centerX, centerZ, clusterSpreadMin, clusterSpreadMax)
 
-			// Check if position is occupied
-			existing, err := m.queries.CheckNodePosition(ctx, db.CheckNodePositionParams{
-				ChunkX: chunkX,
-				ChunkZ: chunkZ,
-				LocalX: localX,
-				LocalZ: localZ,
-			})
-			if err != nil {
-				log.Error("failed to check node position in cluster", "error", err, "local_x", localX, "local_z", localZ)
-				continue
-			}
-
-			if existing > 0 {
+			// Check if position is occupied using cached data
+			// Position encoding: combine (localX, localZ) into single int64 key
+			// localX << 8 shifts X coordinate to upper bits (multiply by 256)
+			// | localZ adds Z coordinate to lower 8 bits
+			// Since ChunkSize=16, coordinates range 0-15 (4 bits each)
+			// This encoding supports up to 256x256 positions per chunk
+			posKey := (localX << 8) | localZ
+			if _, occupied := occupiedPositions[posKey]; occupied {
 				continue // Position occupied, try next node
 			}
 
@@ -353,6 +397,9 @@ func (m *Manager) spawnNodeCluster(ctx context.Context, chunkX, chunkZ int64, te
 				log.Error("failed to create node in cluster", "error", err, "local_x", localX, "local_z", localZ)
 				continue
 			}
+
+			// Update occupied positions cache to include the new node
+			occupiedPositions[posKey] = struct{}{}
 		}
 	}
 
