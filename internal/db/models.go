@@ -45,6 +45,11 @@ type NodeSpawnTemplate struct {
 	RespawnDelayHours sql.NullInt64  `json:"respawn_delay_hours"`
 	SpawnWeight       sql.NullInt64  `json:"spawn_weight"`
 	BiomeRestriction  sql.NullString `json:"biome_restriction"`
+	ClusterSizeMin    sql.NullInt64  `json:"cluster_size_min"`
+	ClusterSizeMax    sql.NullInt64  `json:"cluster_size_max"`
+	ClusterSpreadMin  sql.NullInt64  `json:"cluster_spread_min"`
+	ClusterSpreadMax  sql.NullInt64  `json:"cluster_spread_max"`
+	ClustersPerChunk  sql.NullInt64  `json:"clusters_per_chunk"`
 }
 
 type ResourceNode struct {

@@ -68,7 +68,13 @@ CREATE TABLE node_spawn_templates (
     regeneration_rate INTEGER DEFAULT 0,
     respawn_delay_hours INTEGER DEFAULT 24,
     spawn_weight INTEGER DEFAULT 1,  -- Higher = more likely to spawn
-    biome_restriction TEXT           -- JSON array of allowed biomes
+    biome_restriction TEXT,          -- JSON array of allowed biomes
+    -- Cluster parameters
+    cluster_size_min INTEGER DEFAULT 1,    -- Minimum nodes per cluster
+    cluster_size_max INTEGER DEFAULT 1,    -- Maximum nodes per cluster
+    cluster_spread_min INTEGER DEFAULT 0,  -- Minimum spread radius from cluster center
+    cluster_spread_max INTEGER DEFAULT 0,  -- Maximum spread radius from cluster center
+    clusters_per_chunk INTEGER DEFAULT 1   -- Number of clusters per chunk
 );
 
 -- Indexes for performance
@@ -80,13 +86,13 @@ CREATE INDEX idx_harvest_sessions_player ON harvest_sessions(player_id, last_act
 CREATE INDEX idx_harvest_log_node ON harvest_log(node_id);
 CREATE INDEX idx_harvest_log_player ON harvest_log(player_id);
 
--- Insert initial spawn templates
-INSERT INTO node_spawn_templates (node_type, node_subtype, spawn_type, min_yield, max_yield, regeneration_rate, respawn_delay_hours, spawn_weight) VALUES
--- Static daily iron ore nodes
-(1, 1, 1, 100, 200, 5, 24, 3),
-(1, 2, 1, 300, 500, 10, 24, 1),
--- Random gold ore nodes
-(2, 1, 0, 50, 100, 2, 12, 2),
-(2, 2, 0, 150, 300, 5, 12, 1),
--- Permanent wood nodes (like trees)
-(3, 1, 2, 50, 100, 1, 6, 4);
+-- Insert initial spawn templates with cluster parameters
+INSERT INTO node_spawn_templates (node_type, node_subtype, spawn_type, min_yield, max_yield, regeneration_rate, respawn_delay_hours, spawn_weight, cluster_size_min, cluster_size_max, cluster_spread_min, cluster_spread_max, clusters_per_chunk) VALUES
+-- Static daily iron ore nodes (medium clusters)
+(1, 1, 1, 100, 200, 5, 24, 3, 2, 4, 1, 3, 2),
+(1, 2, 1, 300, 500, 10, 24, 1, 1, 2, 1, 2, 1),
+-- Random gold ore nodes (small clusters)
+(2, 1, 0, 50, 100, 2, 12, 2, 1, 3, 1, 2, 1),
+(2, 2, 0, 150, 300, 5, 12, 1, 1, 2, 1, 2, 1),
+-- Permanent wood nodes (large clusters like forests)
+(3, 1, 2, 50, 100, 1, 6, 4, 3, 5, 2, 4, 1);

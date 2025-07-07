@@ -1,5 +1,5 @@
 -- name: GetSpawnTemplates :many
-SELECT template_id, node_type, node_subtype, spawn_type, min_yield, max_yield, regeneration_rate, respawn_delay_hours, spawn_weight, biome_restriction
+SELECT template_id, node_type, node_subtype, spawn_type, min_yield, max_yield, regeneration_rate, respawn_delay_hours, spawn_weight, biome_restriction, cluster_size_min, cluster_size_max, cluster_spread_min, cluster_spread_max, clusters_per_chunk
 FROM node_spawn_templates
 WHERE spawn_type = ?;
 

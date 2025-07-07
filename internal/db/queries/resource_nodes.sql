@@ -36,7 +36,7 @@ WHERE chunk_x = ? AND chunk_z = ? AND is_active = 0 AND respawn_timer IS NOT NUL
 
 -- name: GetDailyNodeCount :one
 SELECT COUNT(*) FROM resource_nodes
-WHERE chunk_x = ? AND chunk_z = ? AND spawn_type = 1 AND DATE(spawned_at) = ?;
+WHERE chunk_x = ? AND chunk_z = ? AND spawn_type = 1 AND DATE(spawned_at) = DATE(?);
 
 -- name: GetRandomNodeCount :one
 SELECT COUNT(*) FROM resource_nodes

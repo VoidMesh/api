@@ -139,17 +139,17 @@ func (q *Queries) GetChunkNodes(ctx context.Context, arg GetChunkNodesParams) ([
 
 const getDailyNodeCount = `-- name: GetDailyNodeCount :one
 SELECT COUNT(*) FROM resource_nodes
-WHERE chunk_x = ? AND chunk_z = ? AND spawn_type = 1 AND DATE(spawned_at) = ?
+WHERE chunk_x = ? AND chunk_z = ? AND spawn_type = 1 AND DATE(spawned_at) = DATE(?)
 `
 
 type GetDailyNodeCountParams struct {
-	ChunkX    int64        `json:"chunk_x"`
-	ChunkZ    int64        `json:"chunk_z"`
-	SpawnedAt sql.NullTime `json:"spawned_at"`
+	ChunkX int64       `json:"chunk_x"`
+	ChunkZ int64       `json:"chunk_z"`
+	Date   interface{} `json:"date"`
 }
 
 func (q *Queries) GetDailyNodeCount(ctx context.Context, arg GetDailyNodeCountParams) (int64, error) {
-	row := q.queryRow(ctx, q.getDailyNodeCountStmt, getDailyNodeCount, arg.ChunkX, arg.ChunkZ, arg.SpawnedAt)
+	row := q.queryRow(ctx, q.getDailyNodeCountStmt, getDailyNodeCount, arg.ChunkX, arg.ChunkZ, arg.Date)
 	var count int64
 	err := row.Scan(&count)
 	return count, err
