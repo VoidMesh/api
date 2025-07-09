@@ -149,6 +149,23 @@ var (
 				Bold(true).
 				Padding(0, 2).
 				MarginRight(1)
+
+	// Progress bar style
+	ProgressBarStyle = lipgloss.NewStyle().
+			Foreground(SecondaryColor).
+			Bold(true).
+			Padding(0, 1).
+			Border(lipgloss.NormalBorder()).
+			BorderForeground(Gray)
+
+	// Harvest status style
+	HarvestStatusStyle = lipgloss.NewStyle().
+			Border(lipgloss.RoundedBorder()).
+			BorderForeground(AccentColor).
+			Padding(1).
+			Margin(1, 0).
+			Background(lipgloss.Color("#1a1a1a")).
+			Foreground(lipgloss.Color("#FAFAFA"))
 )
 
 // Resource node symbols and styles

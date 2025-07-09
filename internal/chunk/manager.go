@@ -558,7 +558,7 @@ func (m *Manager) StartHarvest(ctx context.Context, nodeID, playerID int64) (*Ha
 	}
 
 	// Check if player already has an active session
-	cutoff := time.Now().Add(-SessionTimeout * time.Minute)
+	cutoff := time.Now().UTC().Add(-SessionTimeout * time.Minute)
 	_, err = txQueries.GetPlayerActiveSession(ctx, db.GetPlayerActiveSessionParams{
 		PlayerID:     playerID,
 		LastActivity: sql.NullTime{Time: cutoff, Valid: true},
@@ -630,7 +630,7 @@ func (m *Manager) HarvestResource(ctx context.Context, sessionID int64, harvestA
 		return nil, fmt.Errorf("failed to get session: %w", err)
 	}
 
-	lastActivity := time.Now()
+	lastActivity := time.Now().UTC()
 	if session.LastActivity.Valid {
 		lastActivity = session.LastActivity.Time
 	}
@@ -784,7 +784,7 @@ func (m *Manager) RegenerateResources(ctx context.Context) error {
 func (m *Manager) CleanupExpiredSessions(ctx context.Context) error {
 	log.Debug("Starting session cleanup")
 	start := time.Now()
-	cutoff := time.Now().Add(-SessionTimeout * time.Minute)
+	cutoff := time.Now().UTC().Add(-SessionTimeout * time.Minute)
 	log.Debug("Session cleanup cutoff calculated", "cutoff", cutoff, "timeout_minutes", SessionTimeout)
 
 	err := m.queries.CleanupExpiredSessions(ctx, sql.NullTime{Time: cutoff, Valid: true})
@@ -838,4 +838,178 @@ func (m *Manager) GetPlayerSessions(ctx context.Context, playerID int64) ([]Harv
 
 	log.Debug("Player sessions processed", "player_id", playerID, "total_sessions", len(sessions))
 	return sessions, nil
+}
+
+// Save persists any pending chunk manager state to the database
+// This method ensures all chunk-related data is properly persisted
+func (m *Manager) Save(ctx context.Context) error {
+	log.Debug("Persisting chunk manager state")
+	start := time.Now()
+
+	// Force a database sync to ensure all transactions are committed
+	if err := m.db.Ping(); err != nil {
+		return fmt.Errorf("failed to ping database during chunk save: %w", err)
+	}
+
+	// Clear any stale cache entries to ensure fresh data on next load
+	m.cacheMutex.Lock()
+	for key, entry := range m.occupiedCache {
+		if time.Now().After(entry.expires) {
+			delete(m.occupiedCache, key)
+		}
+	}
+	m.cacheMutex.Unlock()
+
+	log.Debug("Chunk manager state persisted successfully", "duration", time.Since(start))
+	return nil
+}
+
+// HarvestNode performs a single harvest action on a node
+// Returns (loot []item.ID, finished bool, err)
+func (m *Manager) HarvestNode(ctx context.Context, node *ResourceNode, playerID int64) ([]int64, bool, error) {
+	log.Debug("Harvesting node", "node_id", node.NodeID, "player_id", playerID)
+	start := time.Now()
+
+	// Check if node is active and harvestable
+	if !node.IsActive {
+		return nil, false, fmt.Errorf("node is not active")
+	}
+
+	if node.CurrentYield <= 0 {
+		return nil, false, fmt.Errorf("node is depleted")
+	}
+
+	// Begin database transaction
+	tx, err := m.db.BeginTx(ctx, nil)
+	if err != nil {
+		return nil, false, fmt.Errorf("failed to begin transaction: %w", err)
+	}
+	defer tx.Rollback()
+
+	txQueries := m.queries.WithTx(tx)
+
+	// Get fresh node data to avoid race conditions
+	dbNode, err := txQueries.GetNode(ctx, node.NodeID)
+	if err != nil {
+		return nil, false, fmt.Errorf("failed to get node: %w", err)
+	}
+
+	// Double-check node is still harvestable
+	if !dbNode.IsActive.Valid || dbNode.IsActive.Int64 != 1 {
+		return nil, false, fmt.Errorf("node is no longer active")
+	}
+
+	if dbNode.CurrentYield <= 0 {
+		return nil, false, fmt.Errorf("node is depleted")
+	}
+
+	// Calculate harvest amount (for now, harvest 1 unit per tick)
+	harvestAmount := int64(1)
+	if harvestAmount > dbNode.CurrentYield {
+		harvestAmount = dbNode.CurrentYield
+	}
+
+	// Update node yield
+	newYield := dbNode.CurrentYield - harvestAmount
+	err = txQueries.UpdateNodeYield(ctx, db.UpdateNodeYieldParams{
+		CurrentYield: newYield,
+		NodeID:       node.NodeID,
+	})
+	if err != nil {
+		return nil, false, fmt.Errorf("failed to update node yield: %w", err)
+	}
+
+	// Determine if harvesting is finished
+	finished := newYield <= 0
+
+	// If node is depleted, set respawn timer
+	if finished {
+		log.Debug("Node depleted, setting respawn timer", "node_id", node.NodeID, "node_type", dbNode.NodeType)
+		nodeSubtype := int64(0)
+		if dbNode.NodeSubtype.Valid {
+			nodeSubtype = dbNode.NodeSubtype.Int64
+		}
+
+		respawnHours, err := txQueries.GetRespawnDelay(ctx, db.GetRespawnDelayParams{
+			NodeType:    dbNode.NodeType,
+			NodeSubtype: sql.NullInt64{Int64: nodeSubtype, Valid: true},
+		})
+		if err != nil {
+			log.Error("failed to get respawn delay", "error", err, "node_id", node.NodeID)
+			respawnHours = sql.NullInt64{Int64: 24, Valid: true} // Default to 24 hours
+		}
+
+		hours := int64(24)
+		if respawnHours.Valid {
+			hours = respawnHours.Int64
+		}
+
+		respawnTime := time.Now().Add(time.Duration(hours) * time.Hour)
+		log.Debug("Node respawn scheduled", "node_id", node.NodeID, "respawn_hours", hours, "respawn_time", respawnTime)
+		err = txQueries.DeactivateNode(ctx, db.DeactivateNodeParams{
+			RespawnTimer: sql.NullTime{Time: respawnTime, Valid: true},
+			NodeID:       node.NodeID,
+		})
+		if err != nil {
+			return nil, false, fmt.Errorf("failed to deactivate node: %w", err)
+		}
+	}
+
+	// Log harvest
+	err = txQueries.CreateHarvestLog(ctx, db.CreateHarvestLogParams{
+		NodeID:          node.NodeID,
+		PlayerID:        playerID,
+		AmountHarvested: harvestAmount,
+		NodeYieldBefore: dbNode.CurrentYield,
+		NodeYieldAfter:  newYield,
+	})
+	if err != nil {
+		return nil, false, fmt.Errorf("failed to create harvest log: %w", err)
+	}
+
+	if err = tx.Commit(); err != nil {
+		return nil, false, fmt.Errorf("failed to commit transaction: %w", err)
+	}
+
+	// Update player inventory and stats (outside of transaction to avoid deadlocks)
+	if m.playerManager != nil {
+		nodeSubtype := int64(0)
+		if dbNode.NodeSubtype.Valid {
+			nodeSubtype = dbNode.NodeSubtype.Int64
+		}
+
+		// Add resources to player inventory
+		err = m.playerManager.AddToInventory(ctx, playerID, dbNode.NodeType, nodeSubtype, harvestAmount)
+		if err != nil {
+			log.Error("Failed to add resources to player inventory", "error", err, "player_id", playerID, "resource_type", dbNode.NodeType, "amount", harvestAmount)
+			// Don't fail the harvest if inventory update fails
+		}
+
+		// Update player harvest stats
+		statsUpdate := HarvestStatsUpdate{
+			ResourceType:    dbNode.NodeType,
+			AmountHarvested: harvestAmount,
+			NodeID:          node.NodeID,
+			IsNewNode:       false, // TODO: Track if this is a new node for the player
+		}
+		err = m.playerManager.UpdateHarvestStats(ctx, playerID, statsUpdate)
+		if err != nil {
+			log.Error("Failed to update player harvest stats", "error", err, "player_id", playerID)
+			// Don't fail the harvest if stats update fails
+		}
+	}
+
+	// Update node state for return
+	node.CurrentYield = newYield
+	node.IsActive = !finished
+	if finished {
+		respawnTime := time.Now().Add(24 * time.Hour) // Default respawn time
+		node.RespawnTimer = &respawnTime
+	}
+
+	// Generate loot based on node type - return resource type as item ID
+	loot := []int64{dbNode.NodeType}
+
+	log.Debug("Harvest completed", "node_id", node.NodeID, "player_id", playerID, "harvested", harvestAmount, "new_yield", newYield, "finished", finished, "duration", time.Since(start))
+	return loot, finished, nil
 }

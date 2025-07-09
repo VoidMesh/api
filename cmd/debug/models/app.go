@@ -8,6 +8,7 @@ import (
 
 	"github.com/VoidMesh/api/internal/chunk"
 	"github.com/VoidMesh/api/internal/db"
+	"github.com/VoidMesh/api/internal/player"
 )
 
 // ViewType represents the different views in the debug tool
@@ -25,9 +26,10 @@ const (
 // App is the main application model
 type App struct {
 	// Database connections
-	db           *sql.DB
-	queries      *db.Queries
-	chunkManager *chunk.Manager
+	db            *sql.DB
+	queries       *db.Queries
+	chunkManager  *chunk.Manager
+	playerManager *player.Manager
 
 	// Current state
 	currentView ViewType
@@ -47,17 +49,18 @@ type App struct {
 }
 
 // NewApp creates a new application instance
-func NewApp(database *sql.DB, queries *db.Queries, chunkManager *chunk.Manager, startView string) *App {
+func NewApp(database *sql.DB, queries *db.Queries, chunkManager *chunk.Manager, playerManager *player.Manager, startView string) *App {
 	app := &App{
-		db:           database,
-		queries:      queries,
-		chunkManager: chunkManager,
-		currentView:  MenuView,
+		db:            database,
+		queries:       queries,
+		chunkManager:  chunkManager,
+		playerManager: playerManager,
+		currentView:   MenuView,
 	}
 
 	// Initialize view models
 	app.menu = NewMenuModel()
-	app.chunkExplorer = NewChunkExplorerModel(database, queries, chunkManager)
+	app.chunkExplorer = NewChunkExplorerModel(database, queries, chunkManager, playerManager)
 	app.sessionMonitor = NewSessionMonitorModel(database, queries)
 	app.database = NewDatabaseModel(database, queries)
 	app.nodeGenerator = NewNodeGeneratorModel(database, queries, chunkManager)
@@ -132,6 +135,10 @@ func (m *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return m, tea.Quit
 			}
 			// If not in menu, go back to menu instead of quitting
+			// Reset chunk explorer state when leaving
+			if m.currentView == ChunkExplorerView {
+				m.chunkExplorer.Reset()
+			}
 			m.currentView = MenuView
 			return m, m.menu.Init()
 
@@ -141,6 +148,10 @@ func (m *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		case "tab":
 			// Cycle through views
+			// Reset chunk explorer state when leaving
+			if m.currentView == ChunkExplorerView {
+				m.chunkExplorer.Reset()
+			}
 			m.currentView = ViewType((int(m.currentView) + 1) % 6)
 			return m, m.getCurrentViewModel().Init()
 
@@ -172,6 +183,10 @@ func (m *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 	case SwitchViewMsg:
+		// Reset chunk explorer state when leaving
+		if m.currentView == ChunkExplorerView {
+			m.chunkExplorer.Reset()
+		}
 		m.currentView = msg.View
 		return m, m.getCurrentViewModel().Init()
 	}

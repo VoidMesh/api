@@ -13,6 +13,7 @@ import (
 	"github.com/VoidMesh/api/cmd/debug/models"
 	"github.com/VoidMesh/api/internal/chunk"
 	"github.com/VoidMesh/api/internal/db"
+	"github.com/VoidMesh/api/internal/player"
 )
 
 func main() {
@@ -57,12 +58,13 @@ func main() {
 		log.Fatal("Failed to connect to database", "error", err)
 	}
 
-	// Create queries and chunk manager (passing nil for player manager in debug tool)
+	// Create queries and managers
 	queries := db.New(database)
-	chunkManager := chunk.NewManager(database, nil)
+	playerManager := player.NewManager(database)
+	chunkManager := chunk.NewManager(database, playerManager)
 
 	// Initialize the main app model
-	app := models.NewApp(database, queries, chunkManager, *startView)
+	app := models.NewApp(database, queries, chunkManager, playerManager, *startView)
 
 	// Create and run the Bubble Tea program
 	program := tea.NewProgram(app, tea.WithAltScreen())
