@@ -13,6 +13,7 @@ import (
 	"github.com/VoidMesh/api/internal/api"
 	"github.com/VoidMesh/api/internal/chunk"
 	"github.com/VoidMesh/api/internal/config"
+	"github.com/VoidMesh/api/internal/player"
 	"github.com/charmbracelet/log"
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/sqlite3"
@@ -45,9 +46,14 @@ func main() {
 	}
 	log.Debug("Database migrations completed successfully")
 
+	// Initialize player manager
+	log.Debug("Initializing player manager")
+	playerManager := player.NewManager(db)
+	log.Debug("Player manager initialized")
+
 	// Initialize chunk manager
 	log.Debug("Initializing chunk manager")
-	chunkManager := chunk.NewManager(db)
+	chunkManager := chunk.NewManager(db, playerManager)
 	log.Debug("Chunk manager initialized")
 
 	// Start background services
@@ -55,13 +61,14 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	go startBackgroundServices(ctx, chunkManager)
+	go startBackgroundServices(ctx, chunkManager, playerManager)
 	log.Debug("Background services started")
 
 	// Initialize API handlers
 	log.Debug("Initializing API handlers")
-	handler := api.NewHandler(chunkManager)
-	router := api.SetupRoutes(handler)
+	handler := api.NewHandler(chunkManager, playerManager)
+	playerHandlers := player.NewPlayerHandlers(playerManager)
+	router := api.SetupRoutes(handler, playerHandlers)
 	log.Debug("API routes configured")
 
 	// Create HTTP server
@@ -191,7 +198,7 @@ func runMigrations(db *sql.DB) error {
 	return nil
 }
 
-func startBackgroundServices(ctx context.Context, chunkManager *chunk.Manager) {
+func startBackgroundServices(ctx context.Context, chunkManager *chunk.Manager, playerManager *player.Manager) {
 	// Resource regeneration ticker (every hour)
 	log.Debug("Starting resource regeneration ticker", "interval", "1h")
 	regenTicker := time.NewTicker(time.Hour)
@@ -221,10 +228,19 @@ func startBackgroundServices(ctx context.Context, chunkManager *chunk.Manager) {
 		case <-cleanupTicker.C:
 			log.Debug("Starting session cleanup cycle")
 			start := time.Now()
+			
+			// Cleanup harvest sessions
 			if err := chunkManager.CleanupExpiredSessions(ctx); err != nil {
-				log.Error("Failed to cleanup expired sessions", "error", err, "duration", time.Since(start))
+				log.Error("Failed to cleanup expired harvest sessions", "error", err, "duration", time.Since(start))
 			} else {
-				log.Debug("Expired sessions cleaned up successfully", "duration", time.Since(start))
+				log.Debug("Expired harvest sessions cleaned up successfully", "duration", time.Since(start))
+			}
+			
+			// Cleanup player sessions
+			if err := playerManager.CleanupExpiredSessions(ctx); err != nil {
+				log.Error("Failed to cleanup expired player sessions", "error", err, "duration", time.Since(start))
+			} else {
+				log.Debug("Expired player sessions cleaned up successfully", "duration", time.Since(start))
 			}
 		}
 	}

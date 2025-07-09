@@ -8,18 +8,21 @@ import (
 	"time"
 
 	"github.com/VoidMesh/api/internal/chunk"
+	"github.com/VoidMesh/api/internal/player"
 	"github.com/charmbracelet/log"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/render"
 )
 
 type Handler struct {
-	chunkManager *chunk.Manager
+	chunkManager  *chunk.Manager
+	playerManager *player.Manager
 }
 
-func NewHandler(chunkManager *chunk.Manager) *Handler {
+func NewHandler(chunkManager *chunk.Manager, playerManager *player.Manager) *Handler {
 	return &Handler{
-		chunkManager: chunkManager,
+		chunkManager:  chunkManager,
+		playerManager: playerManager,
 	}
 }
 
@@ -79,9 +82,15 @@ func (h *Handler) StartHarvest(w http.ResponseWriter, r *http.Request) {
 	log.Debug("StartHarvest request received", "method", r.Method, "url", r.URL.Path, "remote_addr", r.RemoteAddr)
 	start := time.Now()
 
+	// Get authenticated player
+	authenticatedPlayer, ok := player.GetPlayerFromContext(r.Context())
+	if !ok {
+		h.renderError(w, r, http.StatusUnauthorized, "authentication required", nil)
+		return
+	}
+
 	var req struct {
-		NodeID   int64 `json:"node_id"`
-		PlayerID int64 `json:"player_id"`
+		NodeID int64 `json:"node_id"`
 	}
 
 	log.Debug("Parsing request body")
@@ -91,7 +100,7 @@ func (h *Handler) StartHarvest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	log.Debug("Request parsed", "node_id", req.NodeID, "player_id", req.PlayerID)
+	log.Debug("Request parsed", "node_id", req.NodeID, "player_id", authenticatedPlayer.PlayerID, "username", authenticatedPlayer.Username)
 
 	if req.NodeID <= 0 {
 		log.Debug("Invalid node_id", "node_id", req.NodeID)
@@ -99,24 +108,18 @@ func (h *Handler) StartHarvest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if req.PlayerID <= 0 {
-		log.Debug("Invalid player_id", "player_id", req.PlayerID)
-		h.renderError(w, r, http.StatusBadRequest, "player_id must be positive", nil)
-		return
-	}
-
 	ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
 	defer cancel()
 
-	log.Debug("Starting harvest session", "node_id", req.NodeID, "player_id", req.PlayerID)
-	session, err := h.chunkManager.StartHarvest(ctx, req.NodeID, req.PlayerID)
+	log.Debug("Starting harvest session", "node_id", req.NodeID, "player_id", authenticatedPlayer.PlayerID, "username", authenticatedPlayer.Username)
+	session, err := h.chunkManager.StartHarvest(ctx, req.NodeID, authenticatedPlayer.PlayerID)
 	if err != nil {
-		log.Error("failed to start harvest", "error", err, "node_id", req.NodeID, "player_id", req.PlayerID, "duration", time.Since(start))
+		log.Error("failed to start harvest", "error", err, "node_id", req.NodeID, "player_id", authenticatedPlayer.PlayerID, "duration", time.Since(start))
 		h.renderError(w, r, http.StatusBadRequest, "failed to start harvest", err)
 		return
 	}
 
-	log.Debug("Harvest session started successfully", "node_id", req.NodeID, "player_id", req.PlayerID, "session_id", session.SessionID, "duration", time.Since(start))
+	log.Debug("Harvest session started successfully", "node_id", req.NodeID, "player_id", authenticatedPlayer.PlayerID, "session_id", session.SessionID, "duration", time.Since(start))
 	render.Status(r, http.StatusCreated)
 	render.JSON(w, r, session)
 }
@@ -174,33 +177,30 @@ func (h *Handler) GetPlayerSessions(w http.ResponseWriter, r *http.Request) {
 	log.Debug("GetPlayerSessions request received", "method", r.Method, "url", r.URL.Path, "remote_addr", r.RemoteAddr)
 	start := time.Now()
 
-	playerIDStr := chi.URLParam(r, "playerId")
-	log.Debug("Parsing player ID", "player_id_str", playerIDStr)
-
-	playerID, err := strconv.ParseInt(playerIDStr, 10, 64)
-	if err != nil {
-		log.Debug("Invalid player ID", "player_id_str", playerIDStr, "error", err)
-		h.renderError(w, r, http.StatusBadRequest, "invalid player id", err)
+	// Get authenticated player
+	authenticatedPlayer, ok := player.GetPlayerFromContext(r.Context())
+	if !ok {
+		h.renderError(w, r, http.StatusUnauthorized, "authentication required", nil)
 		return
 	}
 
-	log.Debug("Player ID parsed successfully", "player_id", playerID)
+	log.Debug("Getting sessions for authenticated player", "player_id", authenticatedPlayer.PlayerID, "username", authenticatedPlayer.Username)
 
 	ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
 	defer cancel()
 
-	log.Debug("Getting player sessions", "player_id", playerID)
-	sessions, err := h.chunkManager.GetPlayerSessions(ctx, playerID)
+	log.Debug("Getting player sessions", "player_id", authenticatedPlayer.PlayerID)
+	sessions, err := h.chunkManager.GetPlayerSessions(ctx, authenticatedPlayer.PlayerID)
 	if err != nil {
-		log.Error("failed to get player sessions", "error", err, "player_id", playerID, "duration", time.Since(start))
+		log.Error("failed to get player sessions", "error", err, "player_id", authenticatedPlayer.PlayerID, "duration", time.Since(start))
 		h.renderError(w, r, http.StatusInternalServerError, "failed to get player sessions", err)
 		return
 	}
 
-	log.Debug("Player sessions retrieved successfully", "player_id", playerID, "session_count", len(sessions), "duration", time.Since(start))
+	log.Debug("Player sessions retrieved successfully", "player_id", authenticatedPlayer.PlayerID, "session_count", len(sessions), "duration", time.Since(start))
 	render.Status(r, http.StatusOK)
 	render.JSON(w, r, map[string]interface{}{
-		"player_id": playerID,
+		"player_id": authenticatedPlayer.PlayerID,
 		"sessions":  sessions,
 	})
 }

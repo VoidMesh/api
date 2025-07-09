@@ -24,11 +24,17 @@ func New(db DBTX) *Queries {
 func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	q := Queries{db: db}
 	var err error
+	if q.addToPlayerInventoryStmt, err = db.PrepareContext(ctx, addToPlayerInventory); err != nil {
+		return nil, fmt.Errorf("error preparing query AddToPlayerInventory: %w", err)
+	}
 	if q.checkNodePositionStmt, err = db.PrepareContext(ctx, checkNodePosition); err != nil {
 		return nil, fmt.Errorf("error preparing query CheckNodePosition: %w", err)
 	}
 	if q.cleanupExpiredSessionsStmt, err = db.PrepareContext(ctx, cleanupExpiredSessions); err != nil {
 		return nil, fmt.Errorf("error preparing query CleanupExpiredSessions: %w", err)
+	}
+	if q.clearPlayerInventoryStmt, err = db.PrepareContext(ctx, clearPlayerInventory); err != nil {
+		return nil, fmt.Errorf("error preparing query ClearPlayerInventory: %w", err)
 	}
 	if q.createChunkStmt, err = db.PrepareContext(ctx, createChunk); err != nil {
 		return nil, fmt.Errorf("error preparing query CreateChunk: %w", err)
@@ -42,8 +48,29 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	if q.createNodeStmt, err = db.PrepareContext(ctx, createNode); err != nil {
 		return nil, fmt.Errorf("error preparing query CreateNode: %w", err)
 	}
+	if q.createPlayerStmt, err = db.PrepareContext(ctx, createPlayer); err != nil {
+		return nil, fmt.Errorf("error preparing query CreatePlayer: %w", err)
+	}
+	if q.createPlayerSessionStmt, err = db.PrepareContext(ctx, createPlayerSession); err != nil {
+		return nil, fmt.Errorf("error preparing query CreatePlayerSession: %w", err)
+	}
+	if q.createPlayerStatsStmt, err = db.PrepareContext(ctx, createPlayerStats); err != nil {
+		return nil, fmt.Errorf("error preparing query CreatePlayerStats: %w", err)
+	}
 	if q.deactivateNodeStmt, err = db.PrepareContext(ctx, deactivateNode); err != nil {
 		return nil, fmt.Errorf("error preparing query DeactivateNode: %w", err)
+	}
+	if q.deleteAllPlayerSessionsStmt, err = db.PrepareContext(ctx, deleteAllPlayerSessions); err != nil {
+		return nil, fmt.Errorf("error preparing query DeleteAllPlayerSessions: %w", err)
+	}
+	if q.deleteExpiredSessionsStmt, err = db.PrepareContext(ctx, deleteExpiredSessions); err != nil {
+		return nil, fmt.Errorf("error preparing query DeleteExpiredSessions: %w", err)
+	}
+	if q.deletePlayerStmt, err = db.PrepareContext(ctx, deletePlayer); err != nil {
+		return nil, fmt.Errorf("error preparing query DeletePlayer: %w", err)
+	}
+	if q.deletePlayerSessionStmt, err = db.PrepareContext(ctx, deletePlayerSession); err != nil {
+		return nil, fmt.Errorf("error preparing query DeletePlayerSession: %w", err)
 	}
 	if q.getChunkStmt, err = db.PrepareContext(ctx, getChunk); err != nil {
 		return nil, fmt.Errorf("error preparing query GetChunk: %w", err)
@@ -69,11 +96,44 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	if q.getNodesToRespawnStmt, err = db.PrepareContext(ctx, getNodesToRespawn); err != nil {
 		return nil, fmt.Errorf("error preparing query GetNodesToRespawn: %w", err)
 	}
+	if q.getOnlinePlayersStmt, err = db.PrepareContext(ctx, getOnlinePlayers); err != nil {
+		return nil, fmt.Errorf("error preparing query GetOnlinePlayers: %w", err)
+	}
 	if q.getPlayerActiveSessionStmt, err = db.PrepareContext(ctx, getPlayerActiveSession); err != nil {
 		return nil, fmt.Errorf("error preparing query GetPlayerActiveSession: %w", err)
 	}
+	if q.getPlayerActiveSessionsStmt, err = db.PrepareContext(ctx, getPlayerActiveSessions); err != nil {
+		return nil, fmt.Errorf("error preparing query GetPlayerActiveSessions: %w", err)
+	}
+	if q.getPlayerByEmailStmt, err = db.PrepareContext(ctx, getPlayerByEmail); err != nil {
+		return nil, fmt.Errorf("error preparing query GetPlayerByEmail: %w", err)
+	}
+	if q.getPlayerByIDStmt, err = db.PrepareContext(ctx, getPlayerByID); err != nil {
+		return nil, fmt.Errorf("error preparing query GetPlayerByID: %w", err)
+	}
+	if q.getPlayerByUsernameStmt, err = db.PrepareContext(ctx, getPlayerByUsername); err != nil {
+		return nil, fmt.Errorf("error preparing query GetPlayerByUsername: %w", err)
+	}
+	if q.getPlayerInventoryStmt, err = db.PrepareContext(ctx, getPlayerInventory); err != nil {
+		return nil, fmt.Errorf("error preparing query GetPlayerInventory: %w", err)
+	}
+	if q.getPlayerInventoryResourceStmt, err = db.PrepareContext(ctx, getPlayerInventoryResource); err != nil {
+		return nil, fmt.Errorf("error preparing query GetPlayerInventoryResource: %w", err)
+	}
+	if q.getPlayerSessionStmt, err = db.PrepareContext(ctx, getPlayerSession); err != nil {
+		return nil, fmt.Errorf("error preparing query GetPlayerSession: %w", err)
+	}
 	if q.getPlayerSessionsStmt, err = db.PrepareContext(ctx, getPlayerSessions); err != nil {
 		return nil, fmt.Errorf("error preparing query GetPlayerSessions: %w", err)
+	}
+	if q.getPlayerStatsStmt, err = db.PrepareContext(ctx, getPlayerStats); err != nil {
+		return nil, fmt.Errorf("error preparing query GetPlayerStats: %w", err)
+	}
+	if q.getPlayersInChunkStmt, err = db.PrepareContext(ctx, getPlayersInChunk); err != nil {
+		return nil, fmt.Errorf("error preparing query GetPlayersInChunk: %w", err)
+	}
+	if q.getPlayersWithStatsStmt, err = db.PrepareContext(ctx, getPlayersWithStats); err != nil {
+		return nil, fmt.Errorf("error preparing query GetPlayersWithStats: %w", err)
 	}
 	if q.getRandomNodeCountStmt, err = db.PrepareContext(ctx, getRandomNodeCount); err != nil {
 		return nil, fmt.Errorf("error preparing query GetRandomNodeCount: %w", err)
@@ -84,14 +144,38 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	if q.getSpawnTemplatesStmt, err = db.PrepareContext(ctx, getSpawnTemplates); err != nil {
 		return nil, fmt.Errorf("error preparing query GetSpawnTemplates: %w", err)
 	}
+	if q.getTopPlayersByPlaytimeStmt, err = db.PrepareContext(ctx, getTopPlayersByPlaytime); err != nil {
+		return nil, fmt.Errorf("error preparing query GetTopPlayersByPlaytime: %w", err)
+	}
+	if q.getTopPlayersByResourcesStmt, err = db.PrepareContext(ctx, getTopPlayersByResources); err != nil {
+		return nil, fmt.Errorf("error preparing query GetTopPlayersByResources: %w", err)
+	}
+	if q.getTotalResourcesInInventoryStmt, err = db.PrepareContext(ctx, getTotalResourcesInInventory); err != nil {
+		return nil, fmt.Errorf("error preparing query GetTotalResourcesInInventory: %w", err)
+	}
 	if q.getWorldConfigStmt, err = db.PrepareContext(ctx, getWorldConfig); err != nil {
 		return nil, fmt.Errorf("error preparing query GetWorldConfig: %w", err)
+	}
+	if q.incrementPlayerSessionsStmt, err = db.PrepareContext(ctx, incrementPlayerSessions); err != nil {
+		return nil, fmt.Errorf("error preparing query IncrementPlayerSessions: %w", err)
 	}
 	if q.reactivateNodeStmt, err = db.PrepareContext(ctx, reactivateNode); err != nil {
 		return nil, fmt.Errorf("error preparing query ReactivateNode: %w", err)
 	}
 	if q.regenerateNodeYieldStmt, err = db.PrepareContext(ctx, regenerateNodeYield); err != nil {
 		return nil, fmt.Errorf("error preparing query RegenerateNodeYield: %w", err)
+	}
+	if q.removeFromPlayerInventoryStmt, err = db.PrepareContext(ctx, removeFromPlayerInventory); err != nil {
+		return nil, fmt.Errorf("error preparing query RemoveFromPlayerInventory: %w", err)
+	}
+	if q.setPlayerInventoryQuantityStmt, err = db.PrepareContext(ctx, setPlayerInventoryQuantity); err != nil {
+		return nil, fmt.Errorf("error preparing query SetPlayerInventoryQuantity: %w", err)
+	}
+	if q.setPlayerOfflineStmt, err = db.PrepareContext(ctx, setPlayerOffline); err != nil {
+		return nil, fmt.Errorf("error preparing query SetPlayerOffline: %w", err)
+	}
+	if q.setPlayerOnlineStmt, err = db.PrepareContext(ctx, setPlayerOnline); err != nil {
+		return nil, fmt.Errorf("error preparing query SetPlayerOnline: %w", err)
 	}
 	if q.setWorldConfigStmt, err = db.PrepareContext(ctx, setWorldConfig); err != nil {
 		return nil, fmt.Errorf("error preparing query SetWorldConfig: %w", err)
@@ -102,6 +186,24 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	if q.updateNodeYieldStmt, err = db.PrepareContext(ctx, updateNodeYield); err != nil {
 		return nil, fmt.Errorf("error preparing query UpdateNodeYield: %w", err)
 	}
+	if q.updatePlayerEmailStmt, err = db.PrepareContext(ctx, updatePlayerEmail); err != nil {
+		return nil, fmt.Errorf("error preparing query UpdatePlayerEmail: %w", err)
+	}
+	if q.updatePlayerPasswordStmt, err = db.PrepareContext(ctx, updatePlayerPassword); err != nil {
+		return nil, fmt.Errorf("error preparing query UpdatePlayerPassword: %w", err)
+	}
+	if q.updatePlayerPlaytimeStmt, err = db.PrepareContext(ctx, updatePlayerPlaytime); err != nil {
+		return nil, fmt.Errorf("error preparing query UpdatePlayerPlaytime: %w", err)
+	}
+	if q.updatePlayerPositionStmt, err = db.PrepareContext(ctx, updatePlayerPosition); err != nil {
+		return nil, fmt.Errorf("error preparing query UpdatePlayerPosition: %w", err)
+	}
+	if q.updatePlayerSessionActivityStmt, err = db.PrepareContext(ctx, updatePlayerSessionActivity); err != nil {
+		return nil, fmt.Errorf("error preparing query UpdatePlayerSessionActivity: %w", err)
+	}
+	if q.updatePlayerStatsStmt, err = db.PrepareContext(ctx, updatePlayerStats); err != nil {
+		return nil, fmt.Errorf("error preparing query UpdatePlayerStats: %w", err)
+	}
 	if q.updateSessionActivityStmt, err = db.PrepareContext(ctx, updateSessionActivity); err != nil {
 		return nil, fmt.Errorf("error preparing query UpdateSessionActivity: %w", err)
 	}
@@ -110,6 +212,11 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 
 func (q *Queries) Close() error {
 	var err error
+	if q.addToPlayerInventoryStmt != nil {
+		if cerr := q.addToPlayerInventoryStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing addToPlayerInventoryStmt: %w", cerr)
+		}
+	}
 	if q.checkNodePositionStmt != nil {
 		if cerr := q.checkNodePositionStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing checkNodePositionStmt: %w", cerr)
@@ -118,6 +225,11 @@ func (q *Queries) Close() error {
 	if q.cleanupExpiredSessionsStmt != nil {
 		if cerr := q.cleanupExpiredSessionsStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing cleanupExpiredSessionsStmt: %w", cerr)
+		}
+	}
+	if q.clearPlayerInventoryStmt != nil {
+		if cerr := q.clearPlayerInventoryStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing clearPlayerInventoryStmt: %w", cerr)
 		}
 	}
 	if q.createChunkStmt != nil {
@@ -140,9 +252,44 @@ func (q *Queries) Close() error {
 			err = fmt.Errorf("error closing createNodeStmt: %w", cerr)
 		}
 	}
+	if q.createPlayerStmt != nil {
+		if cerr := q.createPlayerStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing createPlayerStmt: %w", cerr)
+		}
+	}
+	if q.createPlayerSessionStmt != nil {
+		if cerr := q.createPlayerSessionStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing createPlayerSessionStmt: %w", cerr)
+		}
+	}
+	if q.createPlayerStatsStmt != nil {
+		if cerr := q.createPlayerStatsStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing createPlayerStatsStmt: %w", cerr)
+		}
+	}
 	if q.deactivateNodeStmt != nil {
 		if cerr := q.deactivateNodeStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing deactivateNodeStmt: %w", cerr)
+		}
+	}
+	if q.deleteAllPlayerSessionsStmt != nil {
+		if cerr := q.deleteAllPlayerSessionsStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing deleteAllPlayerSessionsStmt: %w", cerr)
+		}
+	}
+	if q.deleteExpiredSessionsStmt != nil {
+		if cerr := q.deleteExpiredSessionsStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing deleteExpiredSessionsStmt: %w", cerr)
+		}
+	}
+	if q.deletePlayerStmt != nil {
+		if cerr := q.deletePlayerStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing deletePlayerStmt: %w", cerr)
+		}
+	}
+	if q.deletePlayerSessionStmt != nil {
+		if cerr := q.deletePlayerSessionStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing deletePlayerSessionStmt: %w", cerr)
 		}
 	}
 	if q.getChunkStmt != nil {
@@ -185,14 +332,69 @@ func (q *Queries) Close() error {
 			err = fmt.Errorf("error closing getNodesToRespawnStmt: %w", cerr)
 		}
 	}
+	if q.getOnlinePlayersStmt != nil {
+		if cerr := q.getOnlinePlayersStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing getOnlinePlayersStmt: %w", cerr)
+		}
+	}
 	if q.getPlayerActiveSessionStmt != nil {
 		if cerr := q.getPlayerActiveSessionStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing getPlayerActiveSessionStmt: %w", cerr)
 		}
 	}
+	if q.getPlayerActiveSessionsStmt != nil {
+		if cerr := q.getPlayerActiveSessionsStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing getPlayerActiveSessionsStmt: %w", cerr)
+		}
+	}
+	if q.getPlayerByEmailStmt != nil {
+		if cerr := q.getPlayerByEmailStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing getPlayerByEmailStmt: %w", cerr)
+		}
+	}
+	if q.getPlayerByIDStmt != nil {
+		if cerr := q.getPlayerByIDStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing getPlayerByIDStmt: %w", cerr)
+		}
+	}
+	if q.getPlayerByUsernameStmt != nil {
+		if cerr := q.getPlayerByUsernameStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing getPlayerByUsernameStmt: %w", cerr)
+		}
+	}
+	if q.getPlayerInventoryStmt != nil {
+		if cerr := q.getPlayerInventoryStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing getPlayerInventoryStmt: %w", cerr)
+		}
+	}
+	if q.getPlayerInventoryResourceStmt != nil {
+		if cerr := q.getPlayerInventoryResourceStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing getPlayerInventoryResourceStmt: %w", cerr)
+		}
+	}
+	if q.getPlayerSessionStmt != nil {
+		if cerr := q.getPlayerSessionStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing getPlayerSessionStmt: %w", cerr)
+		}
+	}
 	if q.getPlayerSessionsStmt != nil {
 		if cerr := q.getPlayerSessionsStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing getPlayerSessionsStmt: %w", cerr)
+		}
+	}
+	if q.getPlayerStatsStmt != nil {
+		if cerr := q.getPlayerStatsStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing getPlayerStatsStmt: %w", cerr)
+		}
+	}
+	if q.getPlayersInChunkStmt != nil {
+		if cerr := q.getPlayersInChunkStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing getPlayersInChunkStmt: %w", cerr)
+		}
+	}
+	if q.getPlayersWithStatsStmt != nil {
+		if cerr := q.getPlayersWithStatsStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing getPlayersWithStatsStmt: %w", cerr)
 		}
 	}
 	if q.getRandomNodeCountStmt != nil {
@@ -210,9 +412,29 @@ func (q *Queries) Close() error {
 			err = fmt.Errorf("error closing getSpawnTemplatesStmt: %w", cerr)
 		}
 	}
+	if q.getTopPlayersByPlaytimeStmt != nil {
+		if cerr := q.getTopPlayersByPlaytimeStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing getTopPlayersByPlaytimeStmt: %w", cerr)
+		}
+	}
+	if q.getTopPlayersByResourcesStmt != nil {
+		if cerr := q.getTopPlayersByResourcesStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing getTopPlayersByResourcesStmt: %w", cerr)
+		}
+	}
+	if q.getTotalResourcesInInventoryStmt != nil {
+		if cerr := q.getTotalResourcesInInventoryStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing getTotalResourcesInInventoryStmt: %w", cerr)
+		}
+	}
 	if q.getWorldConfigStmt != nil {
 		if cerr := q.getWorldConfigStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing getWorldConfigStmt: %w", cerr)
+		}
+	}
+	if q.incrementPlayerSessionsStmt != nil {
+		if cerr := q.incrementPlayerSessionsStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing incrementPlayerSessionsStmt: %w", cerr)
 		}
 	}
 	if q.reactivateNodeStmt != nil {
@@ -223,6 +445,26 @@ func (q *Queries) Close() error {
 	if q.regenerateNodeYieldStmt != nil {
 		if cerr := q.regenerateNodeYieldStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing regenerateNodeYieldStmt: %w", cerr)
+		}
+	}
+	if q.removeFromPlayerInventoryStmt != nil {
+		if cerr := q.removeFromPlayerInventoryStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing removeFromPlayerInventoryStmt: %w", cerr)
+		}
+	}
+	if q.setPlayerInventoryQuantityStmt != nil {
+		if cerr := q.setPlayerInventoryQuantityStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing setPlayerInventoryQuantityStmt: %w", cerr)
+		}
+	}
+	if q.setPlayerOfflineStmt != nil {
+		if cerr := q.setPlayerOfflineStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing setPlayerOfflineStmt: %w", cerr)
+		}
+	}
+	if q.setPlayerOnlineStmt != nil {
+		if cerr := q.setPlayerOnlineStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing setPlayerOnlineStmt: %w", cerr)
 		}
 	}
 	if q.setWorldConfigStmt != nil {
@@ -238,6 +480,36 @@ func (q *Queries) Close() error {
 	if q.updateNodeYieldStmt != nil {
 		if cerr := q.updateNodeYieldStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing updateNodeYieldStmt: %w", cerr)
+		}
+	}
+	if q.updatePlayerEmailStmt != nil {
+		if cerr := q.updatePlayerEmailStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing updatePlayerEmailStmt: %w", cerr)
+		}
+	}
+	if q.updatePlayerPasswordStmt != nil {
+		if cerr := q.updatePlayerPasswordStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing updatePlayerPasswordStmt: %w", cerr)
+		}
+	}
+	if q.updatePlayerPlaytimeStmt != nil {
+		if cerr := q.updatePlayerPlaytimeStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing updatePlayerPlaytimeStmt: %w", cerr)
+		}
+	}
+	if q.updatePlayerPositionStmt != nil {
+		if cerr := q.updatePlayerPositionStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing updatePlayerPositionStmt: %w", cerr)
+		}
+	}
+	if q.updatePlayerSessionActivityStmt != nil {
+		if cerr := q.updatePlayerSessionActivityStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing updatePlayerSessionActivityStmt: %w", cerr)
+		}
+	}
+	if q.updatePlayerStatsStmt != nil {
+		if cerr := q.updatePlayerStatsStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing updatePlayerStatsStmt: %w", cerr)
 		}
 	}
 	if q.updateSessionActivityStmt != nil {
@@ -282,67 +554,135 @@ func (q *Queries) queryRow(ctx context.Context, stmt *sql.Stmt, query string, ar
 }
 
 type Queries struct {
-	db                            DBTX
-	tx                            *sql.Tx
-	checkNodePositionStmt         *sql.Stmt
-	cleanupExpiredSessionsStmt    *sql.Stmt
-	createChunkStmt               *sql.Stmt
-	createHarvestLogStmt          *sql.Stmt
-	createHarvestSessionStmt      *sql.Stmt
-	createNodeStmt                *sql.Stmt
-	deactivateNodeStmt            *sql.Stmt
-	getChunkStmt                  *sql.Stmt
-	getChunkNodeCountStmt         *sql.Stmt
-	getChunkNodesStmt             *sql.Stmt
-	getChunkOccupiedPositionsStmt *sql.Stmt
-	getDailyNodeCountStmt         *sql.Stmt
-	getHarvestSessionStmt         *sql.Stmt
-	getNodeStmt                   *sql.Stmt
-	getNodesToRespawnStmt         *sql.Stmt
-	getPlayerActiveSessionStmt    *sql.Stmt
-	getPlayerSessionsStmt         *sql.Stmt
-	getRandomNodeCountStmt        *sql.Stmt
-	getRespawnDelayStmt           *sql.Stmt
-	getSpawnTemplatesStmt         *sql.Stmt
-	getWorldConfigStmt            *sql.Stmt
-	reactivateNodeStmt            *sql.Stmt
-	regenerateNodeYieldStmt       *sql.Stmt
-	setWorldConfigStmt            *sql.Stmt
-	updateChunkModifiedStmt       *sql.Stmt
-	updateNodeYieldStmt           *sql.Stmt
-	updateSessionActivityStmt     *sql.Stmt
+	db                               DBTX
+	tx                               *sql.Tx
+	addToPlayerInventoryStmt         *sql.Stmt
+	checkNodePositionStmt            *sql.Stmt
+	cleanupExpiredSessionsStmt       *sql.Stmt
+	clearPlayerInventoryStmt         *sql.Stmt
+	createChunkStmt                  *sql.Stmt
+	createHarvestLogStmt             *sql.Stmt
+	createHarvestSessionStmt         *sql.Stmt
+	createNodeStmt                   *sql.Stmt
+	createPlayerStmt                 *sql.Stmt
+	createPlayerSessionStmt          *sql.Stmt
+	createPlayerStatsStmt            *sql.Stmt
+	deactivateNodeStmt               *sql.Stmt
+	deleteAllPlayerSessionsStmt      *sql.Stmt
+	deleteExpiredSessionsStmt        *sql.Stmt
+	deletePlayerStmt                 *sql.Stmt
+	deletePlayerSessionStmt          *sql.Stmt
+	getChunkStmt                     *sql.Stmt
+	getChunkNodeCountStmt            *sql.Stmt
+	getChunkNodesStmt                *sql.Stmt
+	getChunkOccupiedPositionsStmt    *sql.Stmt
+	getDailyNodeCountStmt            *sql.Stmt
+	getHarvestSessionStmt            *sql.Stmt
+	getNodeStmt                      *sql.Stmt
+	getNodesToRespawnStmt            *sql.Stmt
+	getOnlinePlayersStmt             *sql.Stmt
+	getPlayerActiveSessionStmt       *sql.Stmt
+	getPlayerActiveSessionsStmt      *sql.Stmt
+	getPlayerByEmailStmt             *sql.Stmt
+	getPlayerByIDStmt                *sql.Stmt
+	getPlayerByUsernameStmt          *sql.Stmt
+	getPlayerInventoryStmt           *sql.Stmt
+	getPlayerInventoryResourceStmt   *sql.Stmt
+	getPlayerSessionStmt             *sql.Stmt
+	getPlayerSessionsStmt            *sql.Stmt
+	getPlayerStatsStmt               *sql.Stmt
+	getPlayersInChunkStmt            *sql.Stmt
+	getPlayersWithStatsStmt          *sql.Stmt
+	getRandomNodeCountStmt           *sql.Stmt
+	getRespawnDelayStmt              *sql.Stmt
+	getSpawnTemplatesStmt            *sql.Stmt
+	getTopPlayersByPlaytimeStmt      *sql.Stmt
+	getTopPlayersByResourcesStmt     *sql.Stmt
+	getTotalResourcesInInventoryStmt *sql.Stmt
+	getWorldConfigStmt               *sql.Stmt
+	incrementPlayerSessionsStmt      *sql.Stmt
+	reactivateNodeStmt               *sql.Stmt
+	regenerateNodeYieldStmt          *sql.Stmt
+	removeFromPlayerInventoryStmt    *sql.Stmt
+	setPlayerInventoryQuantityStmt   *sql.Stmt
+	setPlayerOfflineStmt             *sql.Stmt
+	setPlayerOnlineStmt              *sql.Stmt
+	setWorldConfigStmt               *sql.Stmt
+	updateChunkModifiedStmt          *sql.Stmt
+	updateNodeYieldStmt              *sql.Stmt
+	updatePlayerEmailStmt            *sql.Stmt
+	updatePlayerPasswordStmt         *sql.Stmt
+	updatePlayerPlaytimeStmt         *sql.Stmt
+	updatePlayerPositionStmt         *sql.Stmt
+	updatePlayerSessionActivityStmt  *sql.Stmt
+	updatePlayerStatsStmt            *sql.Stmt
+	updateSessionActivityStmt        *sql.Stmt
 }
 
 func (q *Queries) WithTx(tx *sql.Tx) *Queries {
 	return &Queries{
-		db:                            tx,
-		tx:                            tx,
-		checkNodePositionStmt:         q.checkNodePositionStmt,
-		cleanupExpiredSessionsStmt:    q.cleanupExpiredSessionsStmt,
-		createChunkStmt:               q.createChunkStmt,
-		createHarvestLogStmt:          q.createHarvestLogStmt,
-		createHarvestSessionStmt:      q.createHarvestSessionStmt,
-		createNodeStmt:                q.createNodeStmt,
-		deactivateNodeStmt:            q.deactivateNodeStmt,
-		getChunkStmt:                  q.getChunkStmt,
-		getChunkNodeCountStmt:         q.getChunkNodeCountStmt,
-		getChunkNodesStmt:             q.getChunkNodesStmt,
-		getChunkOccupiedPositionsStmt: q.getChunkOccupiedPositionsStmt,
-		getDailyNodeCountStmt:         q.getDailyNodeCountStmt,
-		getHarvestSessionStmt:         q.getHarvestSessionStmt,
-		getNodeStmt:                   q.getNodeStmt,
-		getNodesToRespawnStmt:         q.getNodesToRespawnStmt,
-		getPlayerActiveSessionStmt:    q.getPlayerActiveSessionStmt,
-		getPlayerSessionsStmt:         q.getPlayerSessionsStmt,
-		getRandomNodeCountStmt:        q.getRandomNodeCountStmt,
-		getRespawnDelayStmt:           q.getRespawnDelayStmt,
-		getSpawnTemplatesStmt:         q.getSpawnTemplatesStmt,
-		getWorldConfigStmt:            q.getWorldConfigStmt,
-		reactivateNodeStmt:            q.reactivateNodeStmt,
-		regenerateNodeYieldStmt:       q.regenerateNodeYieldStmt,
-		setWorldConfigStmt:            q.setWorldConfigStmt,
-		updateChunkModifiedStmt:       q.updateChunkModifiedStmt,
-		updateNodeYieldStmt:           q.updateNodeYieldStmt,
-		updateSessionActivityStmt:     q.updateSessionActivityStmt,
+		db:                               tx,
+		tx:                               tx,
+		addToPlayerInventoryStmt:         q.addToPlayerInventoryStmt,
+		checkNodePositionStmt:            q.checkNodePositionStmt,
+		cleanupExpiredSessionsStmt:       q.cleanupExpiredSessionsStmt,
+		clearPlayerInventoryStmt:         q.clearPlayerInventoryStmt,
+		createChunkStmt:                  q.createChunkStmt,
+		createHarvestLogStmt:             q.createHarvestLogStmt,
+		createHarvestSessionStmt:         q.createHarvestSessionStmt,
+		createNodeStmt:                   q.createNodeStmt,
+		createPlayerStmt:                 q.createPlayerStmt,
+		createPlayerSessionStmt:          q.createPlayerSessionStmt,
+		createPlayerStatsStmt:            q.createPlayerStatsStmt,
+		deactivateNodeStmt:               q.deactivateNodeStmt,
+		deleteAllPlayerSessionsStmt:      q.deleteAllPlayerSessionsStmt,
+		deleteExpiredSessionsStmt:        q.deleteExpiredSessionsStmt,
+		deletePlayerStmt:                 q.deletePlayerStmt,
+		deletePlayerSessionStmt:          q.deletePlayerSessionStmt,
+		getChunkStmt:                     q.getChunkStmt,
+		getChunkNodeCountStmt:            q.getChunkNodeCountStmt,
+		getChunkNodesStmt:                q.getChunkNodesStmt,
+		getChunkOccupiedPositionsStmt:    q.getChunkOccupiedPositionsStmt,
+		getDailyNodeCountStmt:            q.getDailyNodeCountStmt,
+		getHarvestSessionStmt:            q.getHarvestSessionStmt,
+		getNodeStmt:                      q.getNodeStmt,
+		getNodesToRespawnStmt:            q.getNodesToRespawnStmt,
+		getOnlinePlayersStmt:             q.getOnlinePlayersStmt,
+		getPlayerActiveSessionStmt:       q.getPlayerActiveSessionStmt,
+		getPlayerActiveSessionsStmt:      q.getPlayerActiveSessionsStmt,
+		getPlayerByEmailStmt:             q.getPlayerByEmailStmt,
+		getPlayerByIDStmt:                q.getPlayerByIDStmt,
+		getPlayerByUsernameStmt:          q.getPlayerByUsernameStmt,
+		getPlayerInventoryStmt:           q.getPlayerInventoryStmt,
+		getPlayerInventoryResourceStmt:   q.getPlayerInventoryResourceStmt,
+		getPlayerSessionStmt:             q.getPlayerSessionStmt,
+		getPlayerSessionsStmt:            q.getPlayerSessionsStmt,
+		getPlayerStatsStmt:               q.getPlayerStatsStmt,
+		getPlayersInChunkStmt:            q.getPlayersInChunkStmt,
+		getPlayersWithStatsStmt:          q.getPlayersWithStatsStmt,
+		getRandomNodeCountStmt:           q.getRandomNodeCountStmt,
+		getRespawnDelayStmt:              q.getRespawnDelayStmt,
+		getSpawnTemplatesStmt:            q.getSpawnTemplatesStmt,
+		getTopPlayersByPlaytimeStmt:      q.getTopPlayersByPlaytimeStmt,
+		getTopPlayersByResourcesStmt:     q.getTopPlayersByResourcesStmt,
+		getTotalResourcesInInventoryStmt: q.getTotalResourcesInInventoryStmt,
+		getWorldConfigStmt:               q.getWorldConfigStmt,
+		incrementPlayerSessionsStmt:      q.incrementPlayerSessionsStmt,
+		reactivateNodeStmt:               q.reactivateNodeStmt,
+		regenerateNodeYieldStmt:          q.regenerateNodeYieldStmt,
+		removeFromPlayerInventoryStmt:    q.removeFromPlayerInventoryStmt,
+		setPlayerInventoryQuantityStmt:   q.setPlayerInventoryQuantityStmt,
+		setPlayerOfflineStmt:             q.setPlayerOfflineStmt,
+		setPlayerOnlineStmt:              q.setPlayerOnlineStmt,
+		setWorldConfigStmt:               q.setWorldConfigStmt,
+		updateChunkModifiedStmt:          q.updateChunkModifiedStmt,
+		updateNodeYieldStmt:              q.updateNodeYieldStmt,
+		updatePlayerEmailStmt:            q.updatePlayerEmailStmt,
+		updatePlayerPasswordStmt:         q.updatePlayerPasswordStmt,
+		updatePlayerPlaytimeStmt:         q.updatePlayerPlaytimeStmt,
+		updatePlayerPositionStmt:         q.updatePlayerPositionStmt,
+		updatePlayerSessionActivityStmt:  q.updatePlayerSessionActivityStmt,
+		updatePlayerStatsStmt:            q.updatePlayerStatsStmt,
+		updateSessionActivityStmt:        q.updateSessionActivityStmt,
 	}
 }

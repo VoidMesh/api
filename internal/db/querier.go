@@ -10,13 +10,22 @@ import (
 )
 
 type Querier interface {
+	AddToPlayerInventory(ctx context.Context, arg AddToPlayerInventoryParams) error
 	CheckNodePosition(ctx context.Context, arg CheckNodePositionParams) (int64, error)
 	CleanupExpiredSessions(ctx context.Context, lastActivity sql.NullTime) error
+	ClearPlayerInventory(ctx context.Context, playerID int64) error
 	CreateChunk(ctx context.Context, arg CreateChunkParams) error
 	CreateHarvestLog(ctx context.Context, arg CreateHarvestLogParams) error
 	CreateHarvestSession(ctx context.Context, arg CreateHarvestSessionParams) (HarvestSession, error)
 	CreateNode(ctx context.Context, arg CreateNodeParams) (int64, error)
+	CreatePlayer(ctx context.Context, arg CreatePlayerParams) (Player, error)
+	CreatePlayerSession(ctx context.Context, arg CreatePlayerSessionParams) (PlayerSession, error)
+	CreatePlayerStats(ctx context.Context, playerID int64) (PlayerStat, error)
 	DeactivateNode(ctx context.Context, arg DeactivateNodeParams) error
+	DeleteAllPlayerSessions(ctx context.Context, playerID int64) error
+	DeleteExpiredSessions(ctx context.Context) error
+	DeletePlayer(ctx context.Context, playerID int64) error
+	DeletePlayerSession(ctx context.Context, sessionToken string) error
 	GetChunk(ctx context.Context, arg GetChunkParams) (Chunk, error)
 	GetChunkNodeCount(ctx context.Context, arg GetChunkNodeCountParams) (int64, error)
 	GetChunkNodes(ctx context.Context, arg GetChunkNodesParams) ([]ResourceNode, error)
@@ -25,17 +34,42 @@ type Querier interface {
 	GetHarvestSession(ctx context.Context, sessionID int64) (HarvestSession, error)
 	GetNode(ctx context.Context, nodeID int64) (ResourceNode, error)
 	GetNodesToRespawn(ctx context.Context, arg GetNodesToRespawnParams) ([]GetNodesToRespawnRow, error)
+	GetOnlinePlayers(ctx context.Context) ([]Player, error)
 	GetPlayerActiveSession(ctx context.Context, arg GetPlayerActiveSessionParams) (HarvestSession, error)
+	GetPlayerActiveSessions(ctx context.Context, playerID int64) ([]PlayerSession, error)
+	GetPlayerByEmail(ctx context.Context, email sql.NullString) (Player, error)
+	GetPlayerByID(ctx context.Context, playerID int64) (Player, error)
+	GetPlayerByUsername(ctx context.Context, username string) (Player, error)
+	GetPlayerInventory(ctx context.Context, playerID int64) ([]PlayerInventory, error)
+	GetPlayerInventoryResource(ctx context.Context, arg GetPlayerInventoryResourceParams) (PlayerInventory, error)
+	GetPlayerSession(ctx context.Context, sessionToken string) (PlayerSession, error)
 	GetPlayerSessions(ctx context.Context, playerID int64) ([]HarvestSession, error)
+	GetPlayerStats(ctx context.Context, playerID int64) (PlayerStat, error)
+	GetPlayersInChunk(ctx context.Context, arg GetPlayersInChunkParams) ([]Player, error)
+	GetPlayersWithStats(ctx context.Context) ([]GetPlayersWithStatsRow, error)
 	GetRandomNodeCount(ctx context.Context, arg GetRandomNodeCountParams) (int64, error)
 	GetRespawnDelay(ctx context.Context, arg GetRespawnDelayParams) (sql.NullInt64, error)
 	GetSpawnTemplates(ctx context.Context) ([]NodeSpawnTemplate, error)
+	GetTopPlayersByPlaytime(ctx context.Context, limit int64) ([]GetTopPlayersByPlaytimeRow, error)
+	GetTopPlayersByResources(ctx context.Context, limit int64) ([]GetTopPlayersByResourcesRow, error)
+	GetTotalResourcesInInventory(ctx context.Context, playerID int64) (interface{}, error)
 	GetWorldConfig(ctx context.Context, configKey string) (string, error)
+	IncrementPlayerSessions(ctx context.Context, playerID int64) error
 	ReactivateNode(ctx context.Context, arg ReactivateNodeParams) error
 	RegenerateNodeYield(ctx context.Context) error
+	RemoveFromPlayerInventory(ctx context.Context, arg RemoveFromPlayerInventoryParams) error
+	SetPlayerInventoryQuantity(ctx context.Context, arg SetPlayerInventoryQuantityParams) error
+	SetPlayerOffline(ctx context.Context, playerID int64) error
+	SetPlayerOnline(ctx context.Context, playerID int64) error
 	SetWorldConfig(ctx context.Context, arg SetWorldConfigParams) error
 	UpdateChunkModified(ctx context.Context, arg UpdateChunkModifiedParams) error
 	UpdateNodeYield(ctx context.Context, arg UpdateNodeYieldParams) error
+	UpdatePlayerEmail(ctx context.Context, arg UpdatePlayerEmailParams) error
+	UpdatePlayerPassword(ctx context.Context, arg UpdatePlayerPasswordParams) error
+	UpdatePlayerPlaytime(ctx context.Context, arg UpdatePlayerPlaytimeParams) error
+	UpdatePlayerPosition(ctx context.Context, arg UpdatePlayerPositionParams) error
+	UpdatePlayerSessionActivity(ctx context.Context, sessionToken string) error
+	UpdatePlayerStats(ctx context.Context, arg UpdatePlayerStatsParams) error
 	UpdateSessionActivity(ctx context.Context, arg UpdateSessionActivityParams) error
 }
 

@@ -6,6 +6,7 @@ package db
 
 import (
 	"database/sql"
+	"time"
 )
 
 type Chunk struct {
@@ -54,6 +55,69 @@ type NodeSpawnTemplate struct {
 	NoiseThreshold    sql.NullFloat64 `json:"noise_threshold"`
 	NoiseOctaves      sql.NullInt64   `json:"noise_octaves"`
 	NoisePersistence  sql.NullFloat64 `json:"noise_persistence"`
+}
+
+type Player struct {
+	PlayerID      int64           `json:"player_id"`
+	Username      string          `json:"username"`
+	PasswordHash  string          `json:"password_hash"`
+	Salt          string          `json:"salt"`
+	Email         sql.NullString  `json:"email"`
+	WorldX        sql.NullFloat64 `json:"world_x"`
+	WorldY        sql.NullFloat64 `json:"world_y"`
+	WorldZ        sql.NullFloat64 `json:"world_z"`
+	CurrentChunkX sql.NullInt64   `json:"current_chunk_x"`
+	CurrentChunkZ sql.NullInt64   `json:"current_chunk_z"`
+	IsOnline      sql.NullInt64   `json:"is_online"`
+	LastLogin     sql.NullTime    `json:"last_login"`
+	LastLogout    sql.NullTime    `json:"last_logout"`
+	CreatedAt     sql.NullTime    `json:"created_at"`
+	UpdatedAt     sql.NullTime    `json:"updated_at"`
+}
+
+type PlayerInventory struct {
+	InventoryID     int64         `json:"inventory_id"`
+	PlayerID        int64         `json:"player_id"`
+	ResourceType    int64         `json:"resource_type"`
+	ResourceSubtype sql.NullInt64 `json:"resource_subtype"`
+	Quantity        sql.NullInt64 `json:"quantity"`
+	FirstObtained   sql.NullTime  `json:"first_obtained"`
+	LastUpdated     sql.NullTime  `json:"last_updated"`
+}
+
+type PlayerSession struct {
+	SessionID    int64          `json:"session_id"`
+	PlayerID     int64          `json:"player_id"`
+	SessionToken string         `json:"session_token"`
+	IpAddress    sql.NullString `json:"ip_address"`
+	UserAgent    sql.NullString `json:"user_agent"`
+	CreatedAt    sql.NullTime   `json:"created_at"`
+	ExpiresAt    time.Time      `json:"expires_at"`
+	LastActivity sql.NullTime   `json:"last_activity"`
+}
+
+type PlayerStat struct {
+	StatID                  int64         `json:"stat_id"`
+	PlayerID                int64         `json:"player_id"`
+	TotalResourcesHarvested sql.NullInt64 `json:"total_resources_harvested"`
+	TotalHarvestSessions    sql.NullInt64 `json:"total_harvest_sessions"`
+	IronOreHarvested        sql.NullInt64 `json:"iron_ore_harvested"`
+	GoldOreHarvested        sql.NullInt64 `json:"gold_ore_harvested"`
+	WoodHarvested           sql.NullInt64 `json:"wood_harvested"`
+	StoneHarvested          sql.NullInt64 `json:"stone_harvested"`
+	UniqueNodesDiscovered   sql.NullInt64 `json:"unique_nodes_discovered"`
+	TotalNodesHarvested     sql.NullInt64 `json:"total_nodes_harvested"`
+	TotalPlaytimeMinutes    sql.NullInt64 `json:"total_playtime_minutes"`
+	SessionsCount           sql.NullInt64 `json:"sessions_count"`
+	FirstHarvest            sql.NullTime  `json:"first_harvest"`
+	LastHarvest             sql.NullTime  `json:"last_harvest"`
+	StatsUpdated            sql.NullTime  `json:"stats_updated"`
+}
+
+type PlayerValidation struct {
+	TableName string `json:"table_name"`
+	PlayerID  int64  `json:"player_id"`
+	Status    string `json:"status"`
 }
 
 type ResourceNode struct {

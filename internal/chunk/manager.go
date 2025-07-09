@@ -28,14 +28,30 @@ type Manager struct {
 	noiseGens     map[int64]*perlin.Perlin
 	occupiedCache map[[2]int64]occupiedCacheEntry // key = [2]int64{chunkX,chunkZ}
 	cacheMutex    sync.RWMutex
+	playerManager PlayerManager // Interface for player operations
 }
 
-func NewManager(database *sql.DB) *Manager {
+// PlayerManager interface for player operations
+type PlayerManager interface {
+	AddToInventory(ctx context.Context, playerID int64, resourceType, resourceSubtype, quantity int64) error
+	UpdateHarvestStats(ctx context.Context, playerID int64, update HarvestStatsUpdate) error
+}
+
+// HarvestStatsUpdate represents harvest data for player stats
+type HarvestStatsUpdate struct {
+	ResourceType    int64
+	AmountHarvested int64
+	NodeID          int64
+	IsNewNode       bool
+}
+
+func NewManager(database *sql.DB, playerMgr PlayerManager) *Manager {
 	m := &Manager{
 		db:            database,
 		queries:       db.NewLoggingQueries(database),
 		noiseGens:     make(map[int64]*perlin.Perlin),
 		occupiedCache: make(map[[2]int64]occupiedCacheEntry),
+		playerManager: playerMgr,
 	}
 
 	// Initialize world seed and noise generators
@@ -707,6 +723,34 @@ func (m *Manager) HarvestResource(ctx context.Context, sessionID int64, harvestA
 
 	if err = tx.Commit(); err != nil {
 		return nil, fmt.Errorf("failed to commit transaction: %w", err)
+	}
+
+	// Update player inventory and stats (outside of transaction to avoid deadlocks)
+	if m.playerManager != nil {
+		nodeSubtype := int64(0)
+		if node.NodeSubtype.Valid {
+			nodeSubtype = node.NodeSubtype.Int64
+		}
+
+		// Add resources to player inventory
+		err = m.playerManager.AddToInventory(ctx, session.PlayerID, node.NodeType, nodeSubtype, actualHarvest)
+		if err != nil {
+			log.Error("Failed to add resources to player inventory", "error", err, "player_id", session.PlayerID, "resource_type", node.NodeType, "amount", actualHarvest)
+			// Don't fail the harvest if inventory update fails
+		}
+
+		// Update player harvest stats
+		statsUpdate := HarvestStatsUpdate{
+			ResourceType:    node.NodeType,
+			AmountHarvested: actualHarvest,
+			NodeID:          session.NodeID,
+			IsNewNode:       false, // TODO: Track if this is a new node for the player
+		}
+		err = m.playerManager.UpdateHarvestStats(ctx, session.PlayerID, statsUpdate)
+		if err != nil {
+			log.Error("Failed to update player harvest stats", "error", err, "player_id", session.PlayerID)
+			// Don't fail the harvest if stats update fails
+		}
 	}
 
 	log.Debug("Harvest transaction completed", "session_id", sessionID, "harvested", actualHarvest, "new_yield", newYield, "duration", time.Since(start))

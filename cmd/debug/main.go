@@ -57,9 +57,9 @@ func main() {
 		log.Fatal("Failed to connect to database", "error", err)
 	}
 
-	// Create queries and chunk manager
+	// Create queries and chunk manager (passing nil for player manager in debug tool)
 	queries := db.New(database)
-	chunkManager := chunk.NewManager(database)
+	chunkManager := chunk.NewManager(database, nil)
 
 	// Initialize the main app model
 	app := models.NewApp(database, queries, chunkManager, *startView)

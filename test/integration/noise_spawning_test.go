@@ -45,8 +45,8 @@ func testNoiseSystem() {
 		return
 	}
 
-	// Create chunk manager
-	chunkManager := chunk.NewManager(database)
+	// Create chunk manager (passing nil for player manager in tests)
+	chunkManager := chunk.NewManager(database, nil)
 	ctx := context.Background()
 
 	// Test coordinates

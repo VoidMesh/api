@@ -41,8 +41,8 @@ func TestClusterSpawning(t *testing.T) {
 		t.Fatal("Failed to run migrations:", err)
 	}
 
-	// Create manager
-	manager := chunk.NewManager(db)
+	// Create manager (passing nil for player manager in tests)
+	manager := chunk.NewManager(db, nil)
 
 	// Test chunk coordinates - use coordinates that are more likely to have resources
 	chunkX, chunkZ := int64(10), int64(10)
