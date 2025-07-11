@@ -46,7 +46,7 @@ func main() {
 	defer f.Close()
 
 	// Redirect standard log output to file to prevent UI disruption
-	logFile, err := os.OpenFile("debug.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+	logFile, err := os.OpenFile("debug.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o666)
 	if err != nil {
 		fmt.Println("fatal:", err)
 		os.Exit(1)

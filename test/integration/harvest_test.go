@@ -18,8 +18,8 @@ func TestHarvestUnreachableNodeFails(t *testing.T) {
 
 	// Create a dummy node with non-existent ID for legacy test
 	node := &chunk.ResourceNode{
-		NodeID:   999999,
-		IsActive: true,
+		NodeID:       999999,
+		IsActive:     true,
 		CurrentYield: 5,
 	}
 
@@ -64,7 +64,7 @@ func TestHarvestNodeLegacyMethod(t *testing.T) {
 
 	// Note: Can't harvest the same node multiple times due to daily limit in new system
 	// This test now validates the daily limit is working correctly
-	
+
 	// Try to harvest the same node again (should fail due to daily limit)
 	_, _, err = world.ChunkManager.HarvestNodeLegacy(ctx, node, playerID)
 	if err == nil {

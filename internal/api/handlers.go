@@ -78,9 +78,6 @@ func (h *Handler) GetChunk(w http.ResponseWriter, r *http.Request) {
 	render.JSON(w, r, chunkData)
 }
 
-
-
-
 func (h *Handler) HarvestNode(w http.ResponseWriter, r *http.Request) {
 	log.Debug("HarvestNode request received", "method", r.Method, "url", r.URL.Path, "remote_addr", r.RemoteAddr)
 	start := time.Now()

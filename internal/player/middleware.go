@@ -136,13 +136,13 @@ type ErrorResponse struct {
 func writeErrorResponse(w http.ResponseWriter, message string, statusCode int) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(statusCode)
-	
+
 	response := ErrorResponse{
 		Error:   message,
 		Code:    statusCode,
 		Message: message,
 	}
-	
+
 	json.NewEncoder(w).Encode(response)
 }
 
@@ -174,18 +174,18 @@ func LoggingMiddleware() func(http.Handler) http.Handler {
 			if player, ok := GetPlayerFromContext(r.Context()); ok {
 				playerInfo = player.Username
 			}
-			
-			log.Info("HTTP Request", 
+
+			log.Info("HTTP Request",
 				"method", r.Method,
 				"path", r.URL.Path,
 				"remote_addr", r.RemoteAddr,
 				"user_agent", r.UserAgent(),
 				"player", playerInfo,
 			)
-			
+
 			next.ServeHTTP(w, r)
-			
-			log.Debug("HTTP Request completed", 
+
+			log.Debug("HTTP Request completed",
 				"method", r.Method,
 				"path", r.URL.Path,
 				"player", playerInfo,

@@ -398,12 +398,12 @@ func TestDirectHarvestWithFutureFeatures(t *testing.T) {
 		CharacterStats: &chunk.CharacterStats{
 			PlayerID:    playerID,
 			MiningLevel: 5,
-			MiningBonus: 0.1, // 10% bonus (currently unused)
+			MiningBonus: 0.1,  // 10% bonus (currently unused)
 			LuckBonus:   0.05, // 5% luck (currently unused)
 		},
-		ToolID: nil, // No tool equipped
-		ToolStats: nil, // No tool stats
-		Bonuses: []chunk.HarvestBonus{}, // No bonuses
+		ToolID:    nil,                    // No tool equipped
+		ToolStats: nil,                    // No tool stats
+		Bonuses:   []chunk.HarvestBonus{}, // No bonuses
 	}
 
 	result, err := world.ChunkManager.HarvestNode(ctx, harvestCtx)

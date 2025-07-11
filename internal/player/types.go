@@ -6,38 +6,38 @@ import (
 
 // Player represents a player in the game
 type Player struct {
-	PlayerID       int64     `json:"player_id"`
-	Username       string    `json:"username"`
-	Email          *string   `json:"email,omitempty"`
-	WorldX         float64   `json:"world_x"`
-	WorldY         float64   `json:"world_y"`
-	WorldZ         float64   `json:"world_z"`
-	CurrentChunkX  int64     `json:"current_chunk_x"`
-	CurrentChunkZ  int64     `json:"current_chunk_z"`
-	IsOnline       bool      `json:"is_online"`
-	LastLogin      *time.Time `json:"last_login,omitempty"`
-	LastLogout     *time.Time `json:"last_logout,omitempty"`
-	CreatedAt      time.Time `json:"created_at"`
-	UpdatedAt      time.Time `json:"updated_at"`
+	PlayerID      int64      `json:"player_id"`
+	Username      string     `json:"username"`
+	Email         *string    `json:"email,omitempty"`
+	WorldX        float64    `json:"world_x"`
+	WorldY        float64    `json:"world_y"`
+	WorldZ        float64    `json:"world_z"`
+	CurrentChunkX int64      `json:"current_chunk_x"`
+	CurrentChunkZ int64      `json:"current_chunk_z"`
+	IsOnline      bool       `json:"is_online"`
+	LastLogin     *time.Time `json:"last_login,omitempty"`
+	LastLogout    *time.Time `json:"last_logout,omitempty"`
+	CreatedAt     time.Time  `json:"created_at"`
+	UpdatedAt     time.Time  `json:"updated_at"`
 }
 
 // PlayerStats represents player statistics
 type PlayerStats struct {
-	StatID                   int64      `json:"stat_id"`
-	PlayerID                 int64      `json:"player_id"`
-	TotalResourcesHarvested  int64      `json:"total_resources_harvested"`
-	TotalHarvestSessions     int64      `json:"total_harvest_sessions"`
-	IronOreHarvested         int64      `json:"iron_ore_harvested"`
-	GoldOreHarvested         int64      `json:"gold_ore_harvested"`
-	WoodHarvested            int64      `json:"wood_harvested"`
-	StoneHarvested           int64      `json:"stone_harvested"`
-	UniqueNodesDiscovered    int64      `json:"unique_nodes_discovered"`
-	TotalNodesHarvested      int64      `json:"total_nodes_harvested"`
-	TotalPlaytimeMinutes     int64      `json:"total_playtime_minutes"`
-	SessionsCount            int64      `json:"sessions_count"`
-	FirstHarvest             *time.Time `json:"first_harvest,omitempty"`
-	LastHarvest              *time.Time `json:"last_harvest,omitempty"`
-	StatsUpdated             time.Time  `json:"stats_updated"`
+	StatID                  int64      `json:"stat_id"`
+	PlayerID                int64      `json:"player_id"`
+	TotalResourcesHarvested int64      `json:"total_resources_harvested"`
+	TotalHarvestSessions    int64      `json:"total_harvest_sessions"`
+	IronOreHarvested        int64      `json:"iron_ore_harvested"`
+	GoldOreHarvested        int64      `json:"gold_ore_harvested"`
+	WoodHarvested           int64      `json:"wood_harvested"`
+	StoneHarvested          int64      `json:"stone_harvested"`
+	UniqueNodesDiscovered   int64      `json:"unique_nodes_discovered"`
+	TotalNodesHarvested     int64      `json:"total_nodes_harvested"`
+	TotalPlaytimeMinutes    int64      `json:"total_playtime_minutes"`
+	SessionsCount           int64      `json:"sessions_count"`
+	FirstHarvest            *time.Time `json:"first_harvest,omitempty"`
+	LastHarvest             *time.Time `json:"last_harvest,omitempty"`
+	StatsUpdated            time.Time  `json:"stats_updated"`
 }
 
 // PlayerInventory represents a single inventory item
@@ -78,10 +78,10 @@ type LoginRequest struct {
 
 // LoginResponse represents the response after successful login
 type LoginResponse struct {
-	Success      bool           `json:"success"`
-	SessionToken string         `json:"session_token"`
-	Player       Player         `json:"player"`
-	ExpiresAt    time.Time      `json:"expires_at"`
+	Success      bool      `json:"success"`
+	SessionToken string    `json:"session_token"`
+	Player       Player    `json:"player"`
+	ExpiresAt    time.Time `json:"expires_at"`
 }
 
 // UpdatePositionRequest represents the request to update player position
@@ -93,15 +93,15 @@ type UpdatePositionRequest struct {
 
 // PlayerProfile represents a player's public profile
 type PlayerProfile struct {
-	Username              string     `json:"username"`
-	IsOnline              bool       `json:"is_online"`
-	TotalResourcesHarvested int64    `json:"total_resources_harvested"`
-	TotalHarvestSessions    int64    `json:"total_harvest_sessions"`
-	SessionsCount           int64    `json:"sessions_count"`
-	TotalPlaytimeMinutes    int64    `json:"total_playtime_minutes"`
-	FirstHarvest           *time.Time `json:"first_harvest,omitempty"`
-	LastHarvest            *time.Time `json:"last_harvest,omitempty"`
-	CreatedAt              time.Time  `json:"created_at"`
+	Username                string     `json:"username"`
+	IsOnline                bool       `json:"is_online"`
+	TotalResourcesHarvested int64      `json:"total_resources_harvested"`
+	TotalHarvestSessions    int64      `json:"total_harvest_sessions"`
+	SessionsCount           int64      `json:"sessions_count"`
+	TotalPlaytimeMinutes    int64      `json:"total_playtime_minutes"`
+	FirstHarvest            *time.Time `json:"first_harvest,omitempty"`
+	LastHarvest             *time.Time `json:"last_harvest,omitempty"`
+	CreatedAt               time.Time  `json:"created_at"`
 }
 
 // Resource type constants
@@ -112,7 +112,7 @@ const (
 	ResourceStone   = 4
 )
 
-// Resource subtype constants  
+// Resource subtype constants
 const (
 	QualityPoor   = 0
 	QualityNormal = 1
@@ -148,7 +148,6 @@ func GetQualityName(quality int64) string {
 		return "Unknown"
 	}
 }
-
 
 // SessionTimeout defines how long a session remains valid (in hours)
 const SessionTimeout = 24

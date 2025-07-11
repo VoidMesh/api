@@ -228,7 +228,7 @@ func startBackgroundServices(ctx context.Context, chunkManager *chunk.Manager, p
 		case <-cleanupTicker.C:
 			log.Debug("Starting player session cleanup cycle")
 			start := time.Now()
-			
+
 			// Cleanup player sessions only (harvest sessions removed)
 			if err := playerManager.CleanupExpiredSessions(ctx); err != nil {
 				log.Error("Failed to cleanup expired player sessions", "error", err, "duration", time.Since(start))

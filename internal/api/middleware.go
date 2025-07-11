@@ -53,8 +53,8 @@ func DebugLoggingMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
 		reqID := middleware.GetReqID(r.Context())
-		
-		log.Debug("Request started", 
+
+		log.Debug("Request started",
 			"method", r.Method,
 			"url", r.URL.String(),
 			"remote_addr", r.RemoteAddr,
@@ -62,21 +62,21 @@ func DebugLoggingMiddleware(next http.Handler) http.Handler {
 			"request_id", reqID,
 			"content_length", r.ContentLength,
 		)
-		
+
 		// Log headers in debug mode
 		for name, values := range r.Header {
 			for _, value := range values {
 				log.Debug("Request header", "name", name, "value", value, "request_id", reqID)
 			}
 		}
-		
+
 		// Wrap the response writer to capture status code
 		ww := middleware.NewWrapResponseWriter(w, r.ProtoMajor)
-		
+
 		next.ServeHTTP(ww, r)
-		
+
 		duration := time.Since(start)
-		log.Debug("Request completed", 
+		log.Debug("Request completed",
 			"method", r.Method,
 			"url", r.URL.String(),
 			"status", ww.Status(),

@@ -37,7 +37,6 @@ type PlayerManager interface {
 	UpdateHarvestStats(ctx context.Context, playerID int64, update HarvestStatsUpdate) error
 }
 
-
 func NewManager(database *sql.DB, playerMgr PlayerManager) *Manager {
 	m := &Manager{
 		db:            database,
@@ -123,8 +122,8 @@ func (m *Manager) determineBehaviorFromSeed(chunkX, chunkZ, localX, localZ int64
 	// 30% chance for Static Daily (spawn_type = 1), 70% chance for Random Spawn (spawn_type = 0)
 	if hash%100 < 30 {
 		return 1 // Static Daily
-}
-return 0 // Random Spawn
+	}
+	return 0 // Random Spawn
 }
 
 func (m *Manager) getOccupiedPositions(ctx context.Context, chunkX, chunkZ int64) (map[int64]struct{}, error) {
@@ -521,8 +520,6 @@ func (m *Manager) respawnNodes(ctx context.Context, chunkX, chunkZ int64) error 
 	return nil
 }
 
-
-
 func (m *Manager) RegenerateResources(ctx context.Context) error {
 	log.Debug("Starting resource regeneration")
 	start := time.Now()
@@ -536,8 +533,6 @@ func (m *Manager) RegenerateResources(ctx context.Context) error {
 	log.Debug("Resource regeneration completed", "duration", time.Since(start))
 	return nil
 }
-
-
 
 // Save persists any pending chunk manager state to the database
 // This method ensures all chunk-related data is properly persisted
@@ -758,8 +753,8 @@ func (m *Manager) HarvestNode(ctx context.Context, harvestCtx HarvestContext) (*
 		StatBonus:  statBonus,
 		ToolBonus:  toolBonus,
 		TotalYield: totalYield,
-		BonusRolls: 0,    // Future: bonus material rolls
-		LuckFactor: 1.0,  // Future: luck calculations
+		BonusRolls: 0,   // Future: bonus material rolls
+		LuckFactor: 1.0, // Future: luck calculations
 	}
 
 	result := &HarvestResult{

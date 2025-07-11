@@ -29,7 +29,7 @@ func (h *PlayerHandlers) RegisterRoutes(r chi.Router) {
 		r.Post("/register", h.Register)
 		r.Post("/login", h.Login)
 		r.With(AuthMiddleware(h.playerManager)).Post("/logout", h.Logout)
-		
+
 		// Protected routes
 		r.With(AuthMiddleware(h.playerManager)).Group(func(r chi.Router) {
 			r.Get("/me", h.GetProfile)
@@ -37,7 +37,7 @@ func (h *PlayerHandlers) RegisterRoutes(r chi.Router) {
 			r.Get("/me/inventory", h.GetInventory)
 			r.Get("/me/stats", h.GetStats)
 		})
-		
+
 		// Public routes
 		r.Get("/online", h.GetOnlinePlayers)
 		r.Get("/{playerID}/profile", h.GetPlayerProfile)
@@ -143,21 +143,21 @@ func (h *PlayerHandlers) GetProfile(w http.ResponseWriter, r *http.Request) {
 
 	// Build profile response
 	profile := map[string]interface{}{
-		"player_id":       player.PlayerID,
-		"username":        player.Username,
-		"email":           player.Email,
+		"player_id": player.PlayerID,
+		"username":  player.Username,
+		"email":     player.Email,
 		"position": map[string]interface{}{
-			"world_x":        player.WorldX,
-			"world_y":        player.WorldY,
-			"world_z":        player.WorldZ,
+			"world_x":         player.WorldX,
+			"world_y":         player.WorldY,
+			"world_z":         player.WorldZ,
 			"current_chunk_x": player.CurrentChunkX,
 			"current_chunk_z": player.CurrentChunkZ,
 		},
-		"is_online":    player.IsOnline,
-		"last_login":   player.LastLogin,
-		"last_logout":  player.LastLogout,
-		"created_at":   player.CreatedAt,
-		"updated_at":   player.UpdatedAt,
+		"is_online":   player.IsOnline,
+		"last_login":  player.LastLogin,
+		"last_logout": player.LastLogout,
+		"created_at":  player.CreatedAt,
+		"updated_at":  player.UpdatedAt,
 	}
 
 	if stats != nil {
@@ -228,7 +228,7 @@ func (h *PlayerHandlers) GetInventory(w http.ResponseWriter, r *http.Request) {
 	}
 
 	response := map[string]interface{}{
-		"inventory": formattedInventory,
+		"inventory":   formattedInventory,
 		"total_items": len(formattedInventory),
 	}
 
@@ -299,4 +299,3 @@ func (h *PlayerHandlers) GetPlayerProfile(w http.ResponseWriter, r *http.Request
 
 	render.JSON(w, r, response)
 }
-

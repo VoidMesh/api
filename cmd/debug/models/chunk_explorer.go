@@ -18,9 +18,9 @@ import (
 
 // Key binding constants
 const (
-	KeyHarvest     = "H"     // Harvest node directly
-	KeyHarvestTick = "enter" // Harvest node directly
-	KeyHarvestTickAlt = " "  // Alternative harvest (space)
+	KeyHarvest        = "H"     // Harvest node directly
+	KeyHarvestTick    = "enter" // Harvest node directly
+	KeyHarvestTickAlt = " "     // Alternative harvest (space)
 )
 
 // ChunkExplorerModel handles the chunk visualization view
@@ -46,9 +46,9 @@ type ChunkExplorerModel struct {
 	errorMsg    string
 
 	// UI state
-	autoRefresh    bool
-	refreshTicker  *time.Ticker
-	showNodeInfo   bool
+	autoRefresh   bool
+	refreshTicker *time.Ticker
+	showNodeInfo  bool
 
 	// Harvest state
 	harvestMsg    string
@@ -85,7 +85,7 @@ func (m *ChunkExplorerModel) Reset() {
 	// Clear harvest state
 	m.harvestMsg = ""
 	m.lastHarvested = make(map[int64]bool)
-	
+
 	// Stop auto-refresh ticker if running
 	if m.refreshTicker != nil {
 		m.refreshTicker.Stop()
@@ -152,20 +152,18 @@ func (m *ChunkExplorerModel) canHarvest(node *chunk.ResourceNode) bool {
 	return true
 }
 
-
-
 // performHarvest executes the direct harvest using the new API
 func (m *ChunkExplorerModel) performHarvest(node *chunk.ResourceNode) tea.Cmd {
 	return func() tea.Msg {
 		// For debug tool, we'll use a dummy player ID
 		playerID := int64(1) // Debug player ID
-		
+
 		// Create harvest context
 		harvestCtx := chunk.HarvestContext{
 			PlayerID: playerID,
 			NodeID:   node.NodeID,
 		}
-		
+
 		// Perform direct harvest
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
@@ -177,33 +175,33 @@ func (m *ChunkExplorerModel) performHarvest(node *chunk.ResourceNode) tea.Cmd {
 				message: fmt.Sprintf("Harvest failed: %s", err.Error()),
 			}
 		}
-		
+
 		// Mark node as harvested for the day
 		m.lastHarvested[node.NodeID] = true
-		
+
 		// Create success message
 		var lootMessages []string
 		for _, loot := range result.PrimaryLoot {
 			itemName := m.getItemName(loot.ItemType)
 			lootMessages = append(lootMessages, fmt.Sprintf("+%d %s", loot.Quantity, itemName))
 		}
-		
+
 		for _, loot := range result.BonusLoot {
 			itemName := m.getItemName(loot.ItemType)
 			lootMessages = append(lootMessages, fmt.Sprintf("+%d %s (bonus)", loot.Quantity, itemName))
 		}
-		
+
 		message := "Harvest successful"
 		if len(lootMessages) > 0 {
 			message = strings.Join(lootMessages, ", ")
 		}
-		
+
 		if !result.NodeState.IsActive {
 			message += " (Node depleted)"
 		}
-		
+
 		// Harvest success logged in chunk manager
-		
+
 		return harvestResultMsg{
 			success: true,
 			message: message,
@@ -403,7 +401,7 @@ func (m ChunkExplorerModel) renderGrid() string {
 				cellContent = components.GetNodeSymbol(node.NodeType, node.NodeSubtype, node.IsActive, node.CurrentYield)
 				cellColor := components.GetNodeColor(node.NodeType, node.NodeSubtype, node.IsActive, node.CurrentYield)
 				cellStyle = components.GridCellStyle.Foreground(cellColor)
-				
+
 				// Highlight if this node was harvested today
 				if m.lastHarvested[node.NodeID] {
 					cellStyle = cellStyle.Background(lipgloss.Color("#444444")).Bold(true) // Gray background for harvested nodes

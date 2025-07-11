@@ -46,12 +46,12 @@ func (pm *PasswordManager) HashPassword(password, salt string) (string, error) {
 
 	// Use SHA-256 for password hashing (in production, consider using bcrypt or argon2)
 	hash := sha256.Sum256(append([]byte(password), saltBytes...))
-	
+
 	// Apply iterations to make it more secure
 	for i := 0; i < pm.iterations; i++ {
 		hash = sha256.Sum256(hash[:])
 	}
-	
+
 	return hex.EncodeToString(hash[:]), nil
 }
 
@@ -61,7 +61,7 @@ func (pm *PasswordManager) VerifyPassword(password, storedHash, salt string) boo
 	if err != nil {
 		return false
 	}
-	
+
 	// Use constant-time comparison to prevent timing attacks
 	return subtle.ConstantTimeCompare([]byte(computedHash), []byte(storedHash)) == 1
 }
@@ -93,13 +93,13 @@ func (tm *TokenManager) ValidateToken(token string) error {
 	if len(token) == 0 {
 		return errors.New("token cannot be empty")
 	}
-	
+
 	// Decode to verify it's valid base64
 	_, err := base64.URLEncoding.DecodeString(token)
 	if err != nil {
 		return fmt.Errorf("invalid token format: %w", err)
 	}
-	
+
 	return nil
 }
 
@@ -121,17 +121,17 @@ func ValidateUsername(username string) error {
 	if len(username) > 32 {
 		return errors.New("username must not exceed 32 characters")
 	}
-	
+
 	// Check for valid characters (alphanumeric and underscores)
 	for _, char := range username {
-		if !((char >= 'a' && char <= 'z') || 
-			 (char >= 'A' && char <= 'Z') || 
-			 (char >= '0' && char <= '9') || 
-			 char == '_') {
+		if !((char >= 'a' && char <= 'z') ||
+			(char >= 'A' && char <= 'Z') ||
+			(char >= '0' && char <= '9') ||
+			char == '_') {
 			return errors.New("username can only contain letters, numbers, and underscores")
 		}
 	}
-	
+
 	return nil
 }
 
@@ -143,11 +143,11 @@ func ValidatePassword(password string) error {
 	if len(password) > 256 {
 		return errors.New("password must not exceed 256 characters")
 	}
-	
+
 	// Check for at least one letter and one number
 	hasLetter := false
 	hasNumber := false
-	
+
 	for _, char := range password {
 		if (char >= 'a' && char <= 'z') || (char >= 'A' && char <= 'Z') {
 			hasLetter = true
@@ -156,14 +156,14 @@ func ValidatePassword(password string) error {
 			hasNumber = true
 		}
 	}
-	
+
 	if !hasLetter {
 		return errors.New("password must contain at least one letter")
 	}
 	if !hasNumber {
 		return errors.New("password must contain at least one number")
 	}
-	
+
 	return nil
 }
 
@@ -172,11 +172,11 @@ func ValidateEmail(email string) error {
 	if email == "" {
 		return nil // Email is optional
 	}
-	
+
 	if len(email) > 255 {
 		return errors.New("email must not exceed 255 characters")
 	}
-	
+
 	// Basic email format check
 	atCount := 0
 	for _, char := range email {
@@ -184,10 +184,10 @@ func ValidateEmail(email string) error {
 			atCount++
 		}
 	}
-	
+
 	if atCount != 1 {
 		return errors.New("email must contain exactly one @ symbol")
 	}
-	
+
 	return nil
 }

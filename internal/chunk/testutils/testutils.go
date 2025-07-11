@@ -54,9 +54,9 @@ func insertDefaultSpawnTemplates(db *sql.DB) error {
 
 	// Insert default spawn templates for each resource type
 	templates := []struct {
-		nodeType        int64
-		nodeSubtype     int64
-		respawnHours    int64
+		nodeType     int64
+		nodeSubtype  int64
+		respawnHours int64
 	}{
 		{chunk.IronOre, 0, 24},
 		{chunk.GoldOre, 0, 48},
@@ -91,7 +91,7 @@ type TestWorld struct {
 func CreateTestWorld(t *testing.T) *TestWorld {
 	// Create temporary database for testing
 	tempDB := "test_" + t.Name() + ".db"
-	
+
 	// Open database
 	db, err := sql.Open("sqlite3", tempDB)
 	if err != nil {
@@ -143,7 +143,7 @@ func (tw *TestWorld) Cleanup() {
 // CreateTestNode creates a test node in the database
 func (tw *TestWorld) CreateTestNode(t *testing.T, chunkX, chunkZ, localX, localZ, nodeType, yield int64) *chunk.ResourceNode {
 	ctx := context.Background()
-	
+
 	// First ensure chunk exists
 	_, err := tw.ChunkManager.LoadChunk(ctx, chunkX, chunkZ)
 	if err != nil {
@@ -205,7 +205,7 @@ func (tw *TestWorld) CreateTestNode(t *testing.T, chunkX, chunkZ, localX, localZ
 // CreateInactiveTestNode creates a test node that is inactive/depleted
 func (tw *TestWorld) CreateInactiveTestNode(t *testing.T, chunkX, chunkZ, localX, localZ, nodeType int64) *chunk.ResourceNode {
 	ctx := context.Background()
-	
+
 	// First ensure chunk exists
 	_, err := tw.ChunkManager.LoadChunk(ctx, chunkX, chunkZ)
 	if err != nil {

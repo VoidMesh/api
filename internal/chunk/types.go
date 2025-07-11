@@ -42,13 +42,11 @@ type ResourceNode struct {
 	IsActive         bool       `json:"is_active"`
 }
 
-
-
 // Future-ready harvest models
 
 type HarvestContext struct {
-	PlayerID       int64           `json:"player_id"`
-	NodeID         int64           `json:"node_id"`
+	PlayerID int64 `json:"player_id"`
+	NodeID   int64 `json:"node_id"`
 	// Future: Character stats, tools, bonuses
 	CharacterStats *CharacterStats `json:"character_stats,omitempty"`
 	ToolID         *int64          `json:"tool_id,omitempty"`
@@ -57,14 +55,14 @@ type HarvestContext struct {
 }
 
 type HarvestResult struct {
-	Success          bool            `json:"success"`
-	PrimaryLoot      []LootItem      `json:"primary_loot"`
-	BonusLoot        []LootItem      `json:"bonus_loot"`
-	NodeState        NodeState       `json:"node_state"`
-	HarvestDetails   HarvestDetails  `json:"harvest_details"`
+	Success        bool           `json:"success"`
+	PrimaryLoot    []LootItem     `json:"primary_loot"`
+	BonusLoot      []LootItem     `json:"bonus_loot"`
+	NodeState      NodeState      `json:"node_state"`
+	HarvestDetails HarvestDetails `json:"harvest_details"`
 	// Future: Experience, tool wear, etc.
-	ExperienceGained *int64          `json:"experience_gained,omitempty"`
-	ToolWear         *float64        `json:"tool_wear,omitempty"`
+	ExperienceGained *int64   `json:"experience_gained,omitempty"`
+	ToolWear         *float64 `json:"tool_wear,omitempty"`
 }
 
 type LootItem struct {
@@ -76,28 +74,28 @@ type LootItem struct {
 }
 
 type NodeState struct {
-	CurrentYield  int64      `json:"current_yield"`
-	IsActive      bool       `json:"is_active"`
-	RespawnTimer  *time.Time `json:"respawn_timer"`
-	LastHarvest   *time.Time `json:"last_harvest"`
+	CurrentYield int64      `json:"current_yield"`
+	IsActive     bool       `json:"is_active"`
+	RespawnTimer *time.Time `json:"respawn_timer"`
+	LastHarvest  *time.Time `json:"last_harvest"`
 }
 
 type HarvestDetails struct {
-	BaseYield    int64   `json:"base_yield"`
-	StatBonus    int64   `json:"stat_bonus"`
-	ToolBonus    int64   `json:"tool_bonus"`
-	TotalYield   int64   `json:"total_yield"`
-	BonusRolls   int64   `json:"bonus_rolls"`
-	LuckFactor   float64 `json:"luck_factor"`
+	BaseYield  int64   `json:"base_yield"`
+	StatBonus  int64   `json:"stat_bonus"`
+	ToolBonus  int64   `json:"tool_bonus"`
+	TotalYield int64   `json:"total_yield"`
+	BonusRolls int64   `json:"bonus_rolls"`
+	LuckFactor float64 `json:"luck_factor"`
 }
 
 // Future placeholder models
 
 type CharacterStats struct {
-	PlayerID        int64   `json:"player_id"`
-	MiningLevel     int64   `json:"mining_level"`
-	MiningBonus     float64 `json:"mining_bonus"`
-	LuckBonus       float64 `json:"luck_bonus"`
+	PlayerID    int64   `json:"player_id"`
+	MiningLevel int64   `json:"mining_level"`
+	MiningBonus float64 `json:"mining_bonus"`
+	LuckBonus   float64 `json:"luck_bonus"`
 	// More stats as needed
 }
 
@@ -111,10 +109,10 @@ type ToolStats struct {
 }
 
 type HarvestBonus struct {
-	BonusType   string  `json:"bonus_type"`
-	BonusValue  float64 `json:"bonus_value"`
-	Source      string  `json:"source"` // "consumable", "buff", "equipment"
-	Duration    *int64  `json:"duration,omitempty"`
+	BonusType  string  `json:"bonus_type"`
+	BonusValue float64 `json:"bonus_value"`
+	Source     string  `json:"source"` // "consumable", "buff", "equipment"
+	Duration   *int64  `json:"duration,omitempty"`
 }
 
 type BonusMaterial struct {
@@ -130,7 +128,6 @@ type HarvestStatsUpdate struct {
 	NodeID          int64 `json:"node_id"`
 	IsNewNode       bool  `json:"is_new_node"`
 }
-
 
 type ChunkResponse struct {
 	ChunkX int64          `json:"chunk_x"`
