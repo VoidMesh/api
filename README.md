@@ -38,11 +38,12 @@ Server runs on `http://localhost:8080`
 - **Quality Tiers**: Poor, Normal, and Rich resource variants
 - **Multiple Spawn Types**: Random, Static Daily, and Static Permanent nodes
 
-### 🎮 Multiplayer Session Management
-- Session-based harvesting prevents exploitation
-- 5-minute activity timeouts
-- Concurrent harvesting support
-- Complete audit trail
+### 🎮 Player Management & Authentication
+- Token-based authentication system
+- Player registration and login
+- Real-time player tracking and online status
+- Player inventory and statistics
+- Position tracking and updates
 
 ### 🗄️ Robust Data Layer
 - SQLite database with transaction safety
@@ -85,13 +86,25 @@ Server runs on `http://localhost:8080`
 
 ## API Endpoints
 
+### Public Endpoints
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | `GET` | `/health` | Health check |
 | `GET` | `/api/v1/chunks/{x}/{z}/nodes` | Load chunk nodes |
-| `POST` | `/api/v1/harvest/start` | Start harvest session |
-| `PUT` | `/api/v1/harvest/sessions/{id}` | Harvest resources |
-| `GET` | `/api/v1/players/{id}/sessions` | Get player sessions |
+| `POST` | `/api/v1/players/register` | Register new player |
+| `POST` | `/api/v1/players/login` | Login and get token |
+| `GET` | `/api/v1/players/online` | List online players |
+| `GET` | `/api/v1/players/{id}/profile` | Get player profile |
+
+### Protected Endpoints (Require Authentication)
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `POST` | `/api/v1/nodes/{nodeId}/harvest` | Harvest resources from node |
+| `POST` | `/api/v1/players/logout` | Logout and invalidate token |
+| `GET` | `/api/v1/players/me` | Get current player info |
+| `PUT` | `/api/v1/players/me/position` | Update player position |
+| `GET` | `/api/v1/players/me/inventory` | Get player inventory |
+| `GET` | `/api/v1/players/me/stats` | Get player statistics |
 
 ## Resource Types
 
@@ -106,16 +119,10 @@ Server runs on `http://localhost:8080`
 
 ### 📖 Complete Documentation Set
 
-- **[API Documentation](.claude/project/docs/api_documentation.md)** - Complete REST API reference with examples
-- **[Developer Guide](.claude/project/docs/developer_guide.md)** - Architecture, setup, and contribution guidelines  
-- **[User Guide](.claude/project/docs/user_guide.md)** - Integration examples for various platforms
-- **[Database Schema](.claude/project/docs/database_schema_docs.md)** - Database design and relationships
-
-### 🏗️ Design Documents
-
-- **[Project Overview](.claude/project/docs/project_overview.md)** - High-level system design
-- **[Game Design Summary](.claude/project/docs/voidmesh_game_design_summary.md)** - Game mechanics inspiration
-- **[Implementation Guide](.claude/project/docs/implementation_guide.md)** - Step-by-step implementation
+- **[API Reference](API_REFERENCE.md)** - Complete REST API reference with examples
+- **[Claude Code Integration](CLAUDE.md)** - Instructions for Claude Code development
+- **[Debug Tool Guide](cmd/debug/README.md)** - TUI debugging tool documentation
+- **[Change Log](CHANGELOG.md)** - Version history and feature updates
 
 ## Development
 
@@ -154,31 +161,39 @@ voidmesh-api/
 │   └── server/              # Main API server
 ├── internal/                # Private application code
 │   ├── api/                 # HTTP handlers and routes
-│   ├── chunk/               # Core business logic
+│   ├── chunk/               # Chunk and resource management
+│   ├── player/              # Player management and authentication
 │   ├── config/              # Configuration management  
 │   └── db/                  # Database layer (SQLC generated)
 ├── test/                    # Integration tests
-├── .claude/project/docs/    # Complete documentation
 ├── game.db                  # SQLite database
+├── API_REFERENCE.md         # Complete API documentation
+├── CLAUDE.md               # Claude Code integration guide
 └── main.go                  # Application entry point
 ```
 
 ## Example Usage
 
-### Load Chunk and Start Harvesting
+### Authentication and Harvesting
 
 ```bash
+# Register a new player
+curl -X POST http://localhost:8080/api/v1/players/register \
+  -H "Content-Type: application/json" \
+  -d '{"username": "player1", "password": "securepassword"}'
+
+# Login to get session token
+curl -X POST http://localhost:8080/api/v1/players/login \
+  -H "Content-Type: application/json" \
+  -d '{"username": "player1", "password": "securepassword"}'
+
 # Load chunk nodes
 curl http://localhost:8080/api/v1/chunks/0/0/nodes
 
-# Start harvest session
-curl -X POST http://localhost:8080/api/v1/harvest/start \
+# Harvest resources (requires authentication)
+curl -X POST http://localhost:8080/api/v1/nodes/1/harvest \
   -H "Content-Type: application/json" \
-  -d '{"node_id": 1, "player_id": 123}'
-
-# Harvest resources
-curl -X PUT http://localhost:8080/api/v1/harvest/sessions/1 \
-  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_TOKEN_HERE" \
   -d '{"harvest_amount": 10}'
 ```
 
@@ -187,14 +202,21 @@ curl -X PUT http://localhost:8080/api/v1/harvest/sessions/1 \
 ```javascript
 const client = new VoidMeshClient('http://localhost:8080/api/v1');
 
+// Register and login
+await client.register('player1', 'securepassword');
+const { session_token } = await client.login('player1', 'securepassword');
+
+// Set authentication token
+client.setToken(session_token);
+
 // Load chunk
 const chunk = await client.loadChunk(0, 0);
 
-// Start harvesting
-const session = await client.startHarvest(nodeId, playerId);
+// Harvest resources directly
+const result = await client.harvestNode(nodeId, 10);
 
-// Harvest resources  
-const result = await client.harvestResource(session.session_id, 10);
+// Get player inventory
+const inventory = await client.getInventory();
 ```
 
 ## Background Services
@@ -202,8 +224,9 @@ const result = await client.harvestResource(session.session_id, 10);
 The API includes automatic background processes:
 
 - **Resource Regeneration** (hourly): Restores node yield based on regeneration rates
-- **Session Cleanup** (5 minutes): Removes expired harvest sessions
 - **Node Respawning** (hourly): Reactivates depleted nodes after respawn timers
+- **Player Session Management**: Tracks player login/logout status
+- **Statistics Updates**: Maintains player gameplay statistics
 
 ## Docker Deployment
 
@@ -231,15 +254,20 @@ CMD ["./voidmesh-api"]
 ## Security Considerations
 
 **Current Implementation:**
+- Bearer token authentication system
+- Password hashing with salt and SHA-256
 - Input validation on all endpoints
 - SQL injection prevention via parameterized queries
 - Transaction-based data integrity
+- Protected routes with authentication middleware
 
 **Production Recommendations:**
-- Implement JWT authentication
-- Add rate limiting per player
+- Upgrade to bcrypt or Argon2 for password hashing
+- Implement JWT with proper expiration
+- Add rate limiting per player and IP
 - Enable request logging and monitoring
 - Use HTTPS in production
+- Restrict CORS origins from wildcard (*)
 
 ## Contributing
 
