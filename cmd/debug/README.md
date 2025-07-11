@@ -10,11 +10,14 @@ A comprehensive TUI debugging tool for the VoidMesh API built with Bubble Tea v2
 - Navigate between chunks with arrow keys
 - Detailed node information panel
 - Auto-refresh functionality
+- **Direct harvesting system** - harvest nodes instantly
+- Visual feedback for harvested nodes
+- Daily harvest limit tracking
 
-### 👥 Session Monitor *(Coming Soon)*
-- Live monitoring of harvest sessions
-- Player activity tracking
-- Session timeout alerts
+### 👥 Player Activity Monitor *(Coming Soon)*
+- Live monitoring of player activities
+- Harvest action tracking
+- Player statistics display
 - Real-time updates
 
 ### 🗄️ Database Inspector *(Coming Soon)*
@@ -76,7 +79,8 @@ DEBUG=1 ./voidmesh-debug --log=debug
 - `r`: Refresh chunk data
 - `a`: Toggle auto-refresh
 - `i`: Toggle info panel
-- `Enter`/`Space`: Select node at cursor
+- `H`/`Enter`/`Space`: Harvest node at cursor
+- **Direct harvesting**: Single action per node per day
 
 ### Symbols Legend
 
@@ -95,6 +99,7 @@ DEBUG=1 ./voidmesh-debug --log=debug
 - `xx` Depleted
 - `..` Respawning
 - `><` Cursor Position
+- Gray background: Harvested today
 
 ## Architecture
 
@@ -139,19 +144,36 @@ cmd/debug/
 
 ## Debugging
 
-Enable debug logging and file output:
+The debug tool automatically logs all activities to `debug.log` to prevent UI disruption. Enable different log levels:
+
 ```bash
-DEBUG=1 ./voidmesh-debug --log=debug
+# Info level (default)
+./voidmesh-debug --log=info
+
+# Debug level for detailed logging
+./voidmesh-debug --log=debug
+
+# Error level for minimal logging
+./voidmesh-debug --log=error
 ```
 
-This creates a `debug.log` file that you can monitor with:
+Monitor the log file in real-time:
 ```bash
 tail -f debug.log
 ```
 
+## Recent Updates
+
+### v2.0 - Direct Harvesting System
+- **Breaking Change**: Removed harvest session system
+- **New Feature**: Direct node harvesting with single API calls
+- **Improvement**: Daily harvest limits per player per node
+- **Enhancement**: Better UI feedback for harvest actions
+- **Fix**: Improved log management to prevent UI disruption
+
 ## Future Enhancements
 
-- [ ] Complete session monitor with real-time updates
+- [ ] Complete player activity monitor with real-time updates
 - [ ] Full database inspector with query builder
 - [ ] Node generator with form validation
 - [ ] System overview with charts and metrics
@@ -160,3 +182,5 @@ tail -f debug.log
 - [ ] Plugin system for custom views
 - [ ] Remote database support
 - [ ] Performance profiling integration
+- [ ] Tool and consumable support in harvest UI
+- [ ] Character stats integration

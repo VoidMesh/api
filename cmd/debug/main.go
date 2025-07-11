@@ -37,14 +37,22 @@ func main() {
 	}
 
 	// Setup file logging for debug
-	if len(os.Getenv("DEBUG")) > 0 {
-		f, err := tea.LogToFile("debug.log", "debug")
-		if err != nil {
-			fmt.Println("fatal:", err)
-			os.Exit(1)
-		}
-		defer f.Close()
+	// Always log to file when running the TUI to avoid disrupting the interface
+	f, err := tea.LogToFile("debug.log", "debug")
+	if err != nil {
+		fmt.Println("fatal:", err)
+		os.Exit(1)
 	}
+	defer f.Close()
+
+	// Redirect standard log output to file to prevent UI disruption
+	logFile, err := os.OpenFile("debug.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+	if err != nil {
+		fmt.Println("fatal:", err)
+		os.Exit(1)
+	}
+	defer logFile.Close()
+	log.SetOutput(logFile)
 
 	// Initialize database connection
 	database, err := sql.Open("sqlite3", *dbPath)
