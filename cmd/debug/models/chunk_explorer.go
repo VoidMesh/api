@@ -49,7 +49,6 @@ type ChunkExplorerModel struct {
 	autoRefresh    bool
 	refreshTicker  *time.Ticker
 	showNodeInfo   bool
-	selectedNodeID int64
 
 	// Harvest state
 	harvestMsg    string
@@ -153,12 +152,7 @@ func (m *ChunkExplorerModel) canHarvest(node *chunk.ResourceNode) bool {
 	return true
 }
 
-// getNodeDisplayName returns a human-readable name for a node
-func (m *ChunkExplorerModel) getNodeDisplayName(node *chunk.ResourceNode) string {
-	typeName := getNodeTypeName(node.NodeType)
-	qualityName := getQualityName(node.NodeSubtype)
-	return fmt.Sprintf("%s %s", qualityName, typeName)
-}
+
 
 // performHarvest executes the direct harvest using the new API
 func (m *ChunkExplorerModel) performHarvest(node *chunk.ResourceNode) tea.Cmd {
@@ -173,7 +167,8 @@ func (m *ChunkExplorerModel) performHarvest(node *chunk.ResourceNode) tea.Cmd {
 		}
 		
 		// Perform direct harvest
-		ctx := context.WithValue(context.Background(), "timeout", 5*time.Second)
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
 		result, err := m.chunkManager.HarvestNode(ctx, harvestCtx)
 		if err != nil {
 			// Error already logged in chunk manager
