@@ -32,3 +32,20 @@ func (q *Queries) CreateHarvestLog(ctx context.Context, arg CreateHarvestLogPara
 	)
 	return err
 }
+
+const getPlayerDailyHarvest = `-- name: GetPlayerDailyHarvest :one
+SELECT COUNT(*) FROM harvest_log
+WHERE player_id = ? AND node_id = ? AND DATE(harvested_at) = DATE('now')
+`
+
+type GetPlayerDailyHarvestParams struct {
+	PlayerID int64 `json:"player_id"`
+	NodeID   int64 `json:"node_id"`
+}
+
+func (q *Queries) GetPlayerDailyHarvest(ctx context.Context, arg GetPlayerDailyHarvestParams) (int64, error) {
+	row := q.queryRow(ctx, q.getPlayerDailyHarvestStmt, getPlayerDailyHarvest, arg.PlayerID, arg.NodeID)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}

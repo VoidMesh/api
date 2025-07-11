@@ -207,7 +207,7 @@ func (m *ChunkExplorerModel) ProcessHarvestTick(msg tea.Msg) tea.Cmd {
 	playerID := int64(1) // Debug player ID
 	
 	ctx := context.WithValue(context.Background(), "timeout", 5*time.Second)
-	loot, finished, err := m.chunkManager.HarvestNode(ctx, m.targetNode, playerID)
+	loot, finished, err := m.chunkManager.HarvestNodeLegacy(ctx, m.targetNode, playerID)
 	if err != nil {
 		m.harvestMsg = fmt.Sprintf("Harvest failed: %s", err.Error())
 		log.Error("Harvest failed", "error", err, "node_id", m.targetNode.NodeID)

@@ -30,9 +30,6 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	if q.checkNodePositionStmt, err = db.PrepareContext(ctx, checkNodePosition); err != nil {
 		return nil, fmt.Errorf("error preparing query CheckNodePosition: %w", err)
 	}
-	if q.cleanupExpiredSessionsStmt, err = db.PrepareContext(ctx, cleanupExpiredSessions); err != nil {
-		return nil, fmt.Errorf("error preparing query CleanupExpiredSessions: %w", err)
-	}
 	if q.clearPlayerInventoryStmt, err = db.PrepareContext(ctx, clearPlayerInventory); err != nil {
 		return nil, fmt.Errorf("error preparing query ClearPlayerInventory: %w", err)
 	}
@@ -41,9 +38,6 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	}
 	if q.createHarvestLogStmt, err = db.PrepareContext(ctx, createHarvestLog); err != nil {
 		return nil, fmt.Errorf("error preparing query CreateHarvestLog: %w", err)
-	}
-	if q.createHarvestSessionStmt, err = db.PrepareContext(ctx, createHarvestSession); err != nil {
-		return nil, fmt.Errorf("error preparing query CreateHarvestSession: %w", err)
 	}
 	if q.createNodeStmt, err = db.PrepareContext(ctx, createNode); err != nil {
 		return nil, fmt.Errorf("error preparing query CreateNode: %w", err)
@@ -87,9 +81,6 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	if q.getDailyNodeCountStmt, err = db.PrepareContext(ctx, getDailyNodeCount); err != nil {
 		return nil, fmt.Errorf("error preparing query GetDailyNodeCount: %w", err)
 	}
-	if q.getHarvestSessionStmt, err = db.PrepareContext(ctx, getHarvestSession); err != nil {
-		return nil, fmt.Errorf("error preparing query GetHarvestSession: %w", err)
-	}
 	if q.getNodeStmt, err = db.PrepareContext(ctx, getNode); err != nil {
 		return nil, fmt.Errorf("error preparing query GetNode: %w", err)
 	}
@@ -98,9 +89,6 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	}
 	if q.getOnlinePlayersStmt, err = db.PrepareContext(ctx, getOnlinePlayers); err != nil {
 		return nil, fmt.Errorf("error preparing query GetOnlinePlayers: %w", err)
-	}
-	if q.getPlayerActiveSessionStmt, err = db.PrepareContext(ctx, getPlayerActiveSession); err != nil {
-		return nil, fmt.Errorf("error preparing query GetPlayerActiveSession: %w", err)
 	}
 	if q.getPlayerActiveSessionsStmt, err = db.PrepareContext(ctx, getPlayerActiveSessions); err != nil {
 		return nil, fmt.Errorf("error preparing query GetPlayerActiveSessions: %w", err)
@@ -114,6 +102,9 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	if q.getPlayerByUsernameStmt, err = db.PrepareContext(ctx, getPlayerByUsername); err != nil {
 		return nil, fmt.Errorf("error preparing query GetPlayerByUsername: %w", err)
 	}
+	if q.getPlayerDailyHarvestStmt, err = db.PrepareContext(ctx, getPlayerDailyHarvest); err != nil {
+		return nil, fmt.Errorf("error preparing query GetPlayerDailyHarvest: %w", err)
+	}
 	if q.getPlayerInventoryStmt, err = db.PrepareContext(ctx, getPlayerInventory); err != nil {
 		return nil, fmt.Errorf("error preparing query GetPlayerInventory: %w", err)
 	}
@@ -122,9 +113,6 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	}
 	if q.getPlayerSessionStmt, err = db.PrepareContext(ctx, getPlayerSession); err != nil {
 		return nil, fmt.Errorf("error preparing query GetPlayerSession: %w", err)
-	}
-	if q.getPlayerSessionsStmt, err = db.PrepareContext(ctx, getPlayerSessions); err != nil {
-		return nil, fmt.Errorf("error preparing query GetPlayerSessions: %w", err)
 	}
 	if q.getPlayerStatsStmt, err = db.PrepareContext(ctx, getPlayerStats); err != nil {
 		return nil, fmt.Errorf("error preparing query GetPlayerStats: %w", err)
@@ -204,9 +192,6 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	if q.updatePlayerStatsStmt, err = db.PrepareContext(ctx, updatePlayerStats); err != nil {
 		return nil, fmt.Errorf("error preparing query UpdatePlayerStats: %w", err)
 	}
-	if q.updateSessionActivityStmt, err = db.PrepareContext(ctx, updateSessionActivity); err != nil {
-		return nil, fmt.Errorf("error preparing query UpdateSessionActivity: %w", err)
-	}
 	return &q, nil
 }
 
@@ -222,11 +207,6 @@ func (q *Queries) Close() error {
 			err = fmt.Errorf("error closing checkNodePositionStmt: %w", cerr)
 		}
 	}
-	if q.cleanupExpiredSessionsStmt != nil {
-		if cerr := q.cleanupExpiredSessionsStmt.Close(); cerr != nil {
-			err = fmt.Errorf("error closing cleanupExpiredSessionsStmt: %w", cerr)
-		}
-	}
 	if q.clearPlayerInventoryStmt != nil {
 		if cerr := q.clearPlayerInventoryStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing clearPlayerInventoryStmt: %w", cerr)
@@ -240,11 +220,6 @@ func (q *Queries) Close() error {
 	if q.createHarvestLogStmt != nil {
 		if cerr := q.createHarvestLogStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing createHarvestLogStmt: %w", cerr)
-		}
-	}
-	if q.createHarvestSessionStmt != nil {
-		if cerr := q.createHarvestSessionStmt.Close(); cerr != nil {
-			err = fmt.Errorf("error closing createHarvestSessionStmt: %w", cerr)
 		}
 	}
 	if q.createNodeStmt != nil {
@@ -317,11 +292,6 @@ func (q *Queries) Close() error {
 			err = fmt.Errorf("error closing getDailyNodeCountStmt: %w", cerr)
 		}
 	}
-	if q.getHarvestSessionStmt != nil {
-		if cerr := q.getHarvestSessionStmt.Close(); cerr != nil {
-			err = fmt.Errorf("error closing getHarvestSessionStmt: %w", cerr)
-		}
-	}
 	if q.getNodeStmt != nil {
 		if cerr := q.getNodeStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing getNodeStmt: %w", cerr)
@@ -335,11 +305,6 @@ func (q *Queries) Close() error {
 	if q.getOnlinePlayersStmt != nil {
 		if cerr := q.getOnlinePlayersStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing getOnlinePlayersStmt: %w", cerr)
-		}
-	}
-	if q.getPlayerActiveSessionStmt != nil {
-		if cerr := q.getPlayerActiveSessionStmt.Close(); cerr != nil {
-			err = fmt.Errorf("error closing getPlayerActiveSessionStmt: %w", cerr)
 		}
 	}
 	if q.getPlayerActiveSessionsStmt != nil {
@@ -362,6 +327,11 @@ func (q *Queries) Close() error {
 			err = fmt.Errorf("error closing getPlayerByUsernameStmt: %w", cerr)
 		}
 	}
+	if q.getPlayerDailyHarvestStmt != nil {
+		if cerr := q.getPlayerDailyHarvestStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing getPlayerDailyHarvestStmt: %w", cerr)
+		}
+	}
 	if q.getPlayerInventoryStmt != nil {
 		if cerr := q.getPlayerInventoryStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing getPlayerInventoryStmt: %w", cerr)
@@ -375,11 +345,6 @@ func (q *Queries) Close() error {
 	if q.getPlayerSessionStmt != nil {
 		if cerr := q.getPlayerSessionStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing getPlayerSessionStmt: %w", cerr)
-		}
-	}
-	if q.getPlayerSessionsStmt != nil {
-		if cerr := q.getPlayerSessionsStmt.Close(); cerr != nil {
-			err = fmt.Errorf("error closing getPlayerSessionsStmt: %w", cerr)
 		}
 	}
 	if q.getPlayerStatsStmt != nil {
@@ -512,11 +477,6 @@ func (q *Queries) Close() error {
 			err = fmt.Errorf("error closing updatePlayerStatsStmt: %w", cerr)
 		}
 	}
-	if q.updateSessionActivityStmt != nil {
-		if cerr := q.updateSessionActivityStmt.Close(); cerr != nil {
-			err = fmt.Errorf("error closing updateSessionActivityStmt: %w", cerr)
-		}
-	}
 	return err
 }
 
@@ -558,11 +518,9 @@ type Queries struct {
 	tx                               *sql.Tx
 	addToPlayerInventoryStmt         *sql.Stmt
 	checkNodePositionStmt            *sql.Stmt
-	cleanupExpiredSessionsStmt       *sql.Stmt
 	clearPlayerInventoryStmt         *sql.Stmt
 	createChunkStmt                  *sql.Stmt
 	createHarvestLogStmt             *sql.Stmt
-	createHarvestSessionStmt         *sql.Stmt
 	createNodeStmt                   *sql.Stmt
 	createPlayerStmt                 *sql.Stmt
 	createPlayerSessionStmt          *sql.Stmt
@@ -577,19 +535,17 @@ type Queries struct {
 	getChunkNodesStmt                *sql.Stmt
 	getChunkOccupiedPositionsStmt    *sql.Stmt
 	getDailyNodeCountStmt            *sql.Stmt
-	getHarvestSessionStmt            *sql.Stmt
 	getNodeStmt                      *sql.Stmt
 	getNodesToRespawnStmt            *sql.Stmt
 	getOnlinePlayersStmt             *sql.Stmt
-	getPlayerActiveSessionStmt       *sql.Stmt
 	getPlayerActiveSessionsStmt      *sql.Stmt
 	getPlayerByEmailStmt             *sql.Stmt
 	getPlayerByIDStmt                *sql.Stmt
 	getPlayerByUsernameStmt          *sql.Stmt
+	getPlayerDailyHarvestStmt        *sql.Stmt
 	getPlayerInventoryStmt           *sql.Stmt
 	getPlayerInventoryResourceStmt   *sql.Stmt
 	getPlayerSessionStmt             *sql.Stmt
-	getPlayerSessionsStmt            *sql.Stmt
 	getPlayerStatsStmt               *sql.Stmt
 	getPlayersInChunkStmt            *sql.Stmt
 	getPlayersWithStatsStmt          *sql.Stmt
@@ -616,7 +572,6 @@ type Queries struct {
 	updatePlayerPositionStmt         *sql.Stmt
 	updatePlayerSessionActivityStmt  *sql.Stmt
 	updatePlayerStatsStmt            *sql.Stmt
-	updateSessionActivityStmt        *sql.Stmt
 }
 
 func (q *Queries) WithTx(tx *sql.Tx) *Queries {
@@ -625,11 +580,9 @@ func (q *Queries) WithTx(tx *sql.Tx) *Queries {
 		tx:                               tx,
 		addToPlayerInventoryStmt:         q.addToPlayerInventoryStmt,
 		checkNodePositionStmt:            q.checkNodePositionStmt,
-		cleanupExpiredSessionsStmt:       q.cleanupExpiredSessionsStmt,
 		clearPlayerInventoryStmt:         q.clearPlayerInventoryStmt,
 		createChunkStmt:                  q.createChunkStmt,
 		createHarvestLogStmt:             q.createHarvestLogStmt,
-		createHarvestSessionStmt:         q.createHarvestSessionStmt,
 		createNodeStmt:                   q.createNodeStmt,
 		createPlayerStmt:                 q.createPlayerStmt,
 		createPlayerSessionStmt:          q.createPlayerSessionStmt,
@@ -644,19 +597,17 @@ func (q *Queries) WithTx(tx *sql.Tx) *Queries {
 		getChunkNodesStmt:                q.getChunkNodesStmt,
 		getChunkOccupiedPositionsStmt:    q.getChunkOccupiedPositionsStmt,
 		getDailyNodeCountStmt:            q.getDailyNodeCountStmt,
-		getHarvestSessionStmt:            q.getHarvestSessionStmt,
 		getNodeStmt:                      q.getNodeStmt,
 		getNodesToRespawnStmt:            q.getNodesToRespawnStmt,
 		getOnlinePlayersStmt:             q.getOnlinePlayersStmt,
-		getPlayerActiveSessionStmt:       q.getPlayerActiveSessionStmt,
 		getPlayerActiveSessionsStmt:      q.getPlayerActiveSessionsStmt,
 		getPlayerByEmailStmt:             q.getPlayerByEmailStmt,
 		getPlayerByIDStmt:                q.getPlayerByIDStmt,
 		getPlayerByUsernameStmt:          q.getPlayerByUsernameStmt,
+		getPlayerDailyHarvestStmt:        q.getPlayerDailyHarvestStmt,
 		getPlayerInventoryStmt:           q.getPlayerInventoryStmt,
 		getPlayerInventoryResourceStmt:   q.getPlayerInventoryResourceStmt,
 		getPlayerSessionStmt:             q.getPlayerSessionStmt,
-		getPlayerSessionsStmt:            q.getPlayerSessionsStmt,
 		getPlayerStatsStmt:               q.getPlayerStatsStmt,
 		getPlayersInChunkStmt:            q.getPlayersInChunkStmt,
 		getPlayersWithStatsStmt:          q.getPlayersWithStatsStmt,
@@ -683,6 +634,5 @@ func (q *Queries) WithTx(tx *sql.Tx) *Queries {
 		updatePlayerPositionStmt:         q.updatePlayerPositionStmt,
 		updatePlayerSessionActivityStmt:  q.updatePlayerSessionActivityStmt,
 		updatePlayerStatsStmt:            q.updatePlayerStatsStmt,
-		updateSessionActivityStmt:        q.updateSessionActivityStmt,
 	}
 }

@@ -26,15 +26,6 @@ type HarvestLog struct {
 	NodeYieldAfter  int64        `json:"node_yield_after"`
 }
 
-type HarvestSession struct {
-	SessionID         int64         `json:"session_id"`
-	NodeID            int64         `json:"node_id"`
-	PlayerID          int64         `json:"player_id"`
-	StartedAt         sql.NullTime  `json:"started_at"`
-	LastActivity      sql.NullTime  `json:"last_activity"`
-	ResourcesGathered sql.NullInt64 `json:"resources_gathered"`
-}
-
 type NodeSpawnTemplate struct {
 	TemplateID        int64           `json:"template_id"`
 	NodeType          int64           `json:"node_type"`

@@ -30,9 +30,8 @@ func SetupRoutes(handler *Handler, playerHandlers *player.PlayerHandlers) *chi.M
 
 		// Protected harvest routes (authentication required)
 		r.With(player.AuthMiddleware(handler.playerManager)).Group(func(r chi.Router) {
-			r.Post("/harvest/start", handler.StartHarvest)
-			r.Put("/harvest/sessions/{sessionId}", handler.HarvestResource)
-			r.Get("/my/sessions", handler.GetPlayerSessions) // Changed from player-specific to authenticated user
+			// Direct harvest endpoint
+			r.Post("/nodes/{nodeId}/harvest", handler.HarvestNode)
 		})
 	})
 

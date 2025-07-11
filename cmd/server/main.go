@@ -204,8 +204,8 @@ func startBackgroundServices(ctx context.Context, chunkManager *chunk.Manager, p
 	regenTicker := time.NewTicker(time.Hour)
 	defer regenTicker.Stop()
 
-	// Session cleanup ticker (every 5 minutes)
-	log.Debug("Starting session cleanup ticker", "interval", "5m")
+	// Player session cleanup ticker (every 5 minutes)
+	log.Debug("Starting player session cleanup ticker", "interval", "5m")
 	cleanupTicker := time.NewTicker(5 * time.Minute)
 	defer cleanupTicker.Stop()
 
@@ -226,17 +226,10 @@ func startBackgroundServices(ctx context.Context, chunkManager *chunk.Manager, p
 			}
 
 		case <-cleanupTicker.C:
-			log.Debug("Starting session cleanup cycle")
+			log.Debug("Starting player session cleanup cycle")
 			start := time.Now()
 			
-			// Cleanup harvest sessions
-			if err := chunkManager.CleanupExpiredSessions(ctx); err != nil {
-				log.Error("Failed to cleanup expired harvest sessions", "error", err, "duration", time.Since(start))
-			} else {
-				log.Debug("Expired harvest sessions cleaned up successfully", "duration", time.Since(start))
-			}
-			
-			// Cleanup player sessions
+			// Cleanup player sessions only (harvest sessions removed)
 			if err := playerManager.CleanupExpiredSessions(ctx); err != nil {
 				log.Error("Failed to cleanup expired player sessions", "error", err, "duration", time.Since(start))
 			} else {

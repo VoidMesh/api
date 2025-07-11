@@ -169,39 +169,6 @@ func (lq *LoggingQueries) GetNode(ctx context.Context, nodeID int64) (ResourceNo
 	return result, err
 }
 
-// CreateHarvestSession with logging
-func (lq *LoggingQueries) CreateHarvestSession(ctx context.Context, arg CreateHarvestSessionParams) (HarvestSession, error) {
-	start := time.Now()
-	log.Debug("Executing CreateHarvestSession", "node_id", arg.NodeID, "player_id", arg.PlayerID)
-	
-	result, err := lq.Queries.CreateHarvestSession(ctx, arg)
-	lq.logQuery(ctx, "CreateHarvestSession", start, err, arg)
-	
-	if err == nil {
-		log.Debug("CreateHarvestSession result", "session_id", result.SessionID)
-	}
-	
-	return result, err
-}
-
-// GetHarvestSession with logging
-func (lq *LoggingQueries) GetHarvestSession(ctx context.Context, sessionID int64) (HarvestSession, error) {
-	start := time.Now()
-	log.Debug("Executing GetHarvestSession", "session_id", sessionID)
-	
-	result, err := lq.Queries.GetHarvestSession(ctx, sessionID)
-	lq.logQuery(ctx, "GetHarvestSession", start, err, sessionID)
-	
-	if err == nil {
-		log.Debug("GetHarvestSession result", 
-			"session_id", result.SessionID, 
-			"node_id", result.NodeID, 
-			"player_id", result.PlayerID,
-		)
-	}
-	
-	return result, err
-}
 
 // UpdateNodeYield with logging
 func (lq *LoggingQueries) UpdateNodeYield(ctx context.Context, arg UpdateNodeYieldParams) error {
@@ -225,31 +192,6 @@ func (lq *LoggingQueries) RegenerateNodeYield(ctx context.Context) error {
 	return err
 }
 
-// CleanupExpiredSessions with logging
-func (lq *LoggingQueries) CleanupExpiredSessions(ctx context.Context, cutoff sql.NullTime) error {
-	start := time.Now()
-	log.Debug("Executing CleanupExpiredSessions", "cutoff", cutoff.Time)
-	
-	err := lq.Queries.CleanupExpiredSessions(ctx, cutoff)
-	lq.logQuery(ctx, "CleanupExpiredSessions", start, err, cutoff)
-	
-	return err
-}
-
-// GetPlayerSessions with logging
-func (lq *LoggingQueries) GetPlayerSessions(ctx context.Context, playerID int64) ([]HarvestSession, error) {
-	start := time.Now()
-	log.Debug("Executing GetPlayerSessions", "player_id", playerID)
-	
-	result, err := lq.Queries.GetPlayerSessions(ctx, playerID)
-	lq.logQuery(ctx, "GetPlayerSessions", start, err, playerID)
-	
-	if err == nil {
-		log.Debug("GetPlayerSessions result", "session_count", len(result), "player_id", playerID)
-	}
-	
-	return result, err
-}
 
 // Add other missing methods that are used in the chunk manager
 
@@ -316,16 +258,6 @@ func (lq *LoggingQueries) ReactivateNode(ctx context.Context, arg ReactivateNode
 	return err
 }
 
-// GetPlayerActiveSession with logging
-func (lq *LoggingQueries) GetPlayerActiveSession(ctx context.Context, arg GetPlayerActiveSessionParams) (HarvestSession, error) {
-	start := time.Now()
-	log.Debug("Executing GetPlayerActiveSession", "player_id", arg.PlayerID)
-	
-	result, err := lq.Queries.GetPlayerActiveSession(ctx, arg)
-	lq.logQuery(ctx, "GetPlayerActiveSession", start, err, arg)
-	
-	return result, err
-}
 
 // GetRespawnDelay with logging
 func (lq *LoggingQueries) GetRespawnDelay(ctx context.Context, arg GetRespawnDelayParams) (sql.NullInt64, error) {
@@ -353,16 +285,6 @@ func (lq *LoggingQueries) DeactivateNode(ctx context.Context, arg DeactivateNode
 	return err
 }
 
-// UpdateSessionActivity with logging
-func (lq *LoggingQueries) UpdateSessionActivity(ctx context.Context, arg UpdateSessionActivityParams) error {
-	start := time.Now()
-	log.Debug("Executing UpdateSessionActivity", "session_id", arg.SessionID, "resources_gathered", arg.ResourcesGathered)
-	
-	err := lq.Queries.UpdateSessionActivity(ctx, arg)
-	lq.logQuery(ctx, "UpdateSessionActivity", start, err, arg)
-	
-	return err
-}
 
 // CreateHarvestLog with logging
 func (lq *LoggingQueries) CreateHarvestLog(ctx context.Context, arg CreateHarvestLogParams) error {
@@ -379,4 +301,22 @@ func (lq *LoggingQueries) CreateHarvestLog(ctx context.Context, arg CreateHarves
 	lq.logQuery(ctx, "CreateHarvestLog", start, err, arg)
 	
 	return err
+}
+
+// GetPlayerDailyHarvest with logging
+func (lq *LoggingQueries) GetPlayerDailyHarvest(ctx context.Context, arg GetPlayerDailyHarvestParams) (int64, error) {
+	start := time.Now()
+	log.Debug("Executing GetPlayerDailyHarvest", 
+		"player_id", arg.PlayerID, 
+		"node_id", arg.NodeID,
+	)
+	
+	result, err := lq.Queries.GetPlayerDailyHarvest(ctx, arg)
+	lq.logQuery(ctx, "GetPlayerDailyHarvest", start, err, arg)
+	
+	if err == nil {
+		log.Debug("GetPlayerDailyHarvest result", "harvest_count", result)
+	}
+	
+	return result, err
 }

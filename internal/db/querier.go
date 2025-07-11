@@ -12,11 +12,9 @@ import (
 type Querier interface {
 	AddToPlayerInventory(ctx context.Context, arg AddToPlayerInventoryParams) error
 	CheckNodePosition(ctx context.Context, arg CheckNodePositionParams) (int64, error)
-	CleanupExpiredSessions(ctx context.Context, lastActivity sql.NullTime) error
 	ClearPlayerInventory(ctx context.Context, playerID int64) error
 	CreateChunk(ctx context.Context, arg CreateChunkParams) error
 	CreateHarvestLog(ctx context.Context, arg CreateHarvestLogParams) error
-	CreateHarvestSession(ctx context.Context, arg CreateHarvestSessionParams) (HarvestSession, error)
 	CreateNode(ctx context.Context, arg CreateNodeParams) (int64, error)
 	CreatePlayer(ctx context.Context, arg CreatePlayerParams) (Player, error)
 	CreatePlayerSession(ctx context.Context, arg CreatePlayerSessionParams) (PlayerSession, error)
@@ -31,19 +29,17 @@ type Querier interface {
 	GetChunkNodes(ctx context.Context, arg GetChunkNodesParams) ([]ResourceNode, error)
 	GetChunkOccupiedPositions(ctx context.Context, arg GetChunkOccupiedPositionsParams) ([]GetChunkOccupiedPositionsRow, error)
 	GetDailyNodeCount(ctx context.Context, arg GetDailyNodeCountParams) (int64, error)
-	GetHarvestSession(ctx context.Context, sessionID int64) (HarvestSession, error)
 	GetNode(ctx context.Context, nodeID int64) (ResourceNode, error)
 	GetNodesToRespawn(ctx context.Context, arg GetNodesToRespawnParams) ([]GetNodesToRespawnRow, error)
 	GetOnlinePlayers(ctx context.Context) ([]Player, error)
-	GetPlayerActiveSession(ctx context.Context, arg GetPlayerActiveSessionParams) (HarvestSession, error)
 	GetPlayerActiveSessions(ctx context.Context, playerID int64) ([]PlayerSession, error)
 	GetPlayerByEmail(ctx context.Context, email sql.NullString) (Player, error)
 	GetPlayerByID(ctx context.Context, playerID int64) (Player, error)
 	GetPlayerByUsername(ctx context.Context, username string) (Player, error)
+	GetPlayerDailyHarvest(ctx context.Context, arg GetPlayerDailyHarvestParams) (int64, error)
 	GetPlayerInventory(ctx context.Context, playerID int64) ([]PlayerInventory, error)
 	GetPlayerInventoryResource(ctx context.Context, arg GetPlayerInventoryResourceParams) (PlayerInventory, error)
 	GetPlayerSession(ctx context.Context, sessionToken string) (PlayerSession, error)
-	GetPlayerSessions(ctx context.Context, playerID int64) ([]HarvestSession, error)
 	GetPlayerStats(ctx context.Context, playerID int64) (PlayerStat, error)
 	GetPlayersInChunk(ctx context.Context, arg GetPlayersInChunkParams) ([]Player, error)
 	GetPlayersWithStats(ctx context.Context) ([]GetPlayersWithStatsRow, error)
@@ -70,7 +66,6 @@ type Querier interface {
 	UpdatePlayerPosition(ctx context.Context, arg UpdatePlayerPositionParams) error
 	UpdatePlayerSessionActivity(ctx context.Context, sessionToken string) error
 	UpdatePlayerStats(ctx context.Context, arg UpdatePlayerStatsParams) error
-	UpdateSessionActivity(ctx context.Context, arg UpdateSessionActivityParams) error
 }
 
 var _ Querier = (*Queries)(nil)
