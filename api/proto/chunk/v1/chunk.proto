@@ -1,0 +1,73 @@
+syntax = "proto3";
+
+package chunk.v1;
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/VoidMesh/platform/api/proto/chunk/v1";
+
+service ChunkService {
+  // Chunk operations
+  rpc GetChunk(GetChunkRequest) returns (GetChunkResponse) {}
+  rpc GetChunks(GetChunksRequest) returns (GetChunksResponse) {}
+  rpc GetChunksInRadius(GetChunksInRadiusRequest) returns (GetChunksInRadiusResponse) {}
+}
+
+enum TerrainType {
+  TERRAIN_TYPE_UNSPECIFIED = 0;
+  TERRAIN_TYPE_GRASS = 1;
+  TERRAIN_TYPE_WATER = 2;
+  TERRAIN_TYPE_STONE = 3;
+  TERRAIN_TYPE_SAND = 4;
+  TERRAIN_TYPE_DIRT = 5;
+}
+
+message TerrainCell {
+  TerrainType terrain_type = 1;
+}
+
+message ChunkData {
+  int32 chunk_x = 1;
+  int32 chunk_y = 2;
+  repeated TerrainCell cells = 3; // 32x32 = 1024 cells, row-major order
+  int64 seed = 4;
+  google.protobuf.Timestamp generated_at = 5;
+}
+
+message ChunkCoordinate {
+  int32 chunk_x = 1;
+  int32 chunk_y = 2;
+}
+
+// Get single chunk
+message GetChunkRequest {
+  int32 chunk_x = 1;
+  int32 chunk_y = 2;
+}
+
+message GetChunkResponse {
+  ChunkData chunk = 1;
+}
+
+// Get multiple chunks in a rectangle
+message GetChunksRequest {
+  int32 min_chunk_x = 1;
+  int32 max_chunk_x = 2;
+  int32 min_chunk_y = 3;
+  int32 max_chunk_y = 4;
+}
+
+message GetChunksResponse {
+  repeated ChunkData chunks = 1;
+}
+
+// Get chunks in radius around a point
+message GetChunksInRadiusRequest {
+  int32 center_chunk_x = 1;
+  int32 center_chunk_y = 2;
+  int32 radius = 3; // Radius in chunks
+}
+
+message GetChunksInRadiusResponse {
+  repeated ChunkData chunks = 1;
+}
