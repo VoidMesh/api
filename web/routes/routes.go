@@ -60,11 +60,6 @@ var (
 	Signup     = route{Name: "auth.signup", Path: "/signup"}
 	Logout     = route{Name: "auth.logout", Path: "/logout"}
 
-	// Meower
-	MeowIndex  = route{Name: "meow.index", Path: "/meows"}
-	MeowNew    = route{Name: "meow.new", Path: "/meows/new"}
-	MeowCreate = route{Name: "meow.create", Path: "/meows"}
-
 	// Game
 	GameCharacters      = route{Name: "game.characters", Path: "/game/characters"}
 	GameCharacterCreate = route{Name: "game.characters.create", Path: "/game/characters/create"}

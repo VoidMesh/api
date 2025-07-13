@@ -5,7 +5,6 @@ import (
 	"os"
 
 	chunkV1 "github.com/VoidMesh/platform/api/proto/chunk/v1"
-	meowV1 "github.com/VoidMesh/platform/api/proto/meow/v1"
 	userV1 "github.com/VoidMesh/platform/api/proto/user/v1"
 	worldV1 "github.com/VoidMesh/platform/api/proto/world/v1"
 	"github.com/charmbracelet/log"
@@ -19,7 +18,6 @@ const (
 )
 
 type Client struct {
-	MeowService  meowV1.MeowServiceClient
 	UserService  userV1.UserServiceClient
 	WorldService worldV1.WorldServiceClient
 	ChunkService chunkV1.ChunkServiceClient
@@ -34,7 +32,6 @@ func NewClient() *Client {
 	}
 
 	client := &Client{
-		MeowService:  meowV1.NewMeowServiceClient(conn),
 		UserService:  userV1.NewUserServiceClient(conn),
 		WorldService: worldV1.NewWorldServiceClient(conn),
 		ChunkService: chunkV1.NewChunkServiceClient(conn),

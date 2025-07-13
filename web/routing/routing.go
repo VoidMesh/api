@@ -26,12 +26,6 @@ func RegisterRoutes(app *handlers.App) {
 	// Logout route (authenticated users only)
 	app.Web.Post(routes.Logout.Path, handlers.AuthMiddleware(app.SessionStore), auth.Logout).Name(routes.Logout.Name)
 
-	// Meower routes (authenticated users only)
-	meower := handlers.Meower{App: app}
-	app.Web.Get(routes.MeowIndex.Path, handlers.AuthMiddleware(app.SessionStore), meower.Index).Name(routes.MeowIndex.Name)
-	app.Web.Get(routes.MeowNew.Path, handlers.AuthMiddleware(app.SessionStore), meower.New).Name(routes.MeowNew.Name)
-	app.Web.Post(routes.MeowCreate.Path, handlers.AuthMiddleware(app.SessionStore), meower.Create).Name(routes.MeowCreate.Name)
-
 	// Game routes (authenticated users only)
 	game := handlers.Game{App: app}
 	app.Web.Get(routes.GameCharacters.Path, handlers.AuthMiddleware(app.SessionStore), game.CharacterSelect).Name(routes.GameCharacters.Name)

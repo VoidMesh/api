@@ -14,14 +14,6 @@ CREATE TABLE
     failed_login_attempts integer DEFAULT 0
   );
 
-CREATE TABLE
-  meows (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid (),
-    user_id UUID REFERENCES users (id),
-    content text NOT NULL,
-    created_at timestamp NOT NULL DEFAULT NOW ()
-  );
-
 -- Game world tables
 CREATE TABLE
   characters (

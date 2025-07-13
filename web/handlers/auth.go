@@ -28,7 +28,7 @@ func (a *Auth) ShowLogin(c *fiber.Ctx) error {
 	}
 
 	if sess.Get("user_id") != nil {
-		return c.Redirect(routes.MeowIndex.Path)
+		return c.Redirect(routes.GameCharacters.Name)
 	}
 
 	return renderTempl(c, auth.Login(c, ""))
@@ -88,7 +88,7 @@ func (a *Auth) Login(c *fiber.Ctx) error {
 	// Debug: Log successful login
 	fmt.Printf("DEBUG: User %s logged in successfully, redirecting to /\n", resp.User.Username)
 
-	return c.Redirect(routes.MeowIndex.Path)
+	return c.Redirect(routes.GameCharacters.Name)
 }
 
 // ShowSignup displays the signup form
@@ -100,7 +100,7 @@ func (a *Auth) ShowSignup(c *fiber.Ctx) error {
 	}
 
 	if sess.Get("user_id") != nil {
-		return c.Redirect(routes.MeowIndex.Path)
+		return c.Redirect(routes.GameCharacters.Name)
 	}
 
 	return renderTempl(c, auth.Signup(c, ""))
@@ -178,7 +178,7 @@ func (a *Auth) Signup(c *fiber.Ctx) error {
 		return err
 	}
 
-	return c.Redirect(routes.MeowIndex.Path)
+	return c.Redirect(routes.GameCharacters.Name)
 }
 
 // Logout handles user logout

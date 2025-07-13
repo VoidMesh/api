@@ -8,7 +8,6 @@ import (
 	"os"
 
 	pbChunkV1 "github.com/VoidMesh/platform/api/proto/chunk/v1"
-	pbMeowV1 "github.com/VoidMesh/platform/api/proto/meow/v1"
 	pbUserV1 "github.com/VoidMesh/platform/api/proto/user/v1"
 	pbWorldV1 "github.com/VoidMesh/platform/api/proto/world/v1"
 	"github.com/VoidMesh/platform/api/server/handlers"
@@ -56,7 +55,6 @@ func Serve() {
 	}
 
 	// Register V1 services
-	pbMeowV1.RegisterMeowServiceServer(g, handlers.NewMeowerServer(db))
 	pbUserV1.RegisterUserServiceServer(g, handlers.NewUserServer(db))
 	pbWorldV1.RegisterWorldServiceServer(g, handlers.NewWorldServer(db))
 	pbChunkV1.RegisterChunkServiceServer(g, handlers.NewChunkServer(db))

@@ -6,24 +6,25 @@ import (
 )
 
 templ Navigation(c *fiber.Ctx) {
-	<nav class="bg-blue-600 text-white p-4">
+	<nav class="bg-purple-800 text-white p-4 shadow-lg">
 		<div class="max-w-7xl mx-auto flex justify-between items-center">
 			<div class="flex items-center space-x-4">
-				<a href={ templ.SafeURL(c.App().GetRoute(routes.Homepage.Name).Path) } class="text-2xl font-bold hover:text-blue-200">
-					<h1 class="text-3xl font-black uppercase tracking-tight lg:leading-none lg:text-6xl">VoidMesh</h1>
+				<a href={ templ.SafeURL(c.App().GetRoute(routes.Homepage.Name).Path) } class="text-2xl font-bold hover:text-purple-200 flex items-center space-x-2">
+					<span class="text-2xl">🌌</span>
+					<h1 class="text-2xl font-black uppercase tracking-tight">VoidMesh</h1>
 				</a>
 			</div>
 			<div class="hidden md:flex items-center space-x-6">
 				if c.Locals("user_id") != nil {
 					// User is logged in
-					<span class="text-blue-200">
-						Welcome, { getString(c.Locals("display_name")) }!
+					<span class="text-purple-200">
+						🎮 { getString(c.Locals("display_name")) }
 					</span>
-					<a class="hover:text-blue-200 underline" href={ templ.SafeURL(c.App().GetRoute(routes.MeowIndex.Name).Path) }>
-						See Meows
+					<a class="hover:text-purple-200 px-3 py-1 rounded transition duration-200 border border-purple-600 hover:bg-purple-700" href={ templ.SafeURL(c.App().GetRoute(routes.GameCharacters.Name).Path) }>
+						My Characters
 					</a>
-					<a class="hover:text-blue-200 underline" href={ templ.SafeURL(c.App().GetRoute(routes.MeowNew.Name).Path) }>
-						Create a Meow
+					<a class="hover:text-purple-200 px-3 py-1 rounded transition duration-200 border border-purple-600 hover:bg-purple-700" href={ templ.SafeURL(c.App().GetRoute(routes.GameWorldInfo.Name).Path) }>
+						World Info
 					</a>
 					<form action={ templ.SafeURL(c.App().GetRoute(routes.Logout.Name).Path) } method="POST" class="inline">
 						<button type="submit" class="bg-red-500 hover:bg-red-600 px-3 py-1 rounded transition duration-200">
@@ -32,17 +33,17 @@ templ Navigation(c *fiber.Ctx) {
 					</form>
 				} else {
 					// User is not logged in
-					<a class="hover:text-blue-200 underline" href={ templ.SafeURL(c.App().GetRoute(routes.LoginShow.Name).Path) }>
+					<a class="hover:text-purple-200 px-3 py-1 rounded transition duration-200 border border-purple-600 hover:bg-purple-700" href={ templ.SafeURL(c.App().GetRoute(routes.LoginShow.Name).Path) }>
 						Login
 					</a>
-					<a class="bg-green-600 hover:bg-green-700 px-3 py-1 rounded transition duration-200" href={ templ.SafeURL(c.App().GetRoute(routes.SignupShow.Name).Path) }>
-						Sign Up
+					<a class="bg-purple-600 hover:bg-purple-700 px-3 py-1 rounded transition duration-200" href={ templ.SafeURL(c.App().GetRoute(routes.SignupShow.Name).Path) }>
+						Start Exploring
 					</a>
 				}
 			</div>
 			<!-- Mobile menu button -->
 			<div class="md:hidden">
-				<button class="text-white hover:text-blue-200 focus:outline-none focus:text-blue-200">
+				<button class="text-white hover:text-purple-200 focus:outline-none focus:text-purple-200">
 					<svg class="h-6 w-6 fill-current" viewBox="0 0 24 24">
 						<path d="M4 5h16a1 1 0 0 1 0 2H4a1 1 0 1 1 0-2zm0 6h16a1 1 0 0 1 0 2H4a1 1 0 0 1 0-2zm0 6h16a1 1 0 0 1 0 2H4a1 1 0 0 1 0-2z"></path>
 					</svg>
