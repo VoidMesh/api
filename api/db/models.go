@@ -27,19 +27,6 @@ type Chunk struct {
 	GeneratedAt pgtype.Timestamp
 }
 
-type Meow struct {
-	ID        pgtype.UUID
-	UserID    pgtype.UUID
-	Content   string
-	CreatedAt pgtype.Timestamp
-}
-
-type Session struct {
-	K string
-	V []byte
-	E int64
-}
-
 type User struct {
 	ID                   pgtype.UUID
 	Username             string

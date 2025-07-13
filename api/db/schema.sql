@@ -49,17 +49,6 @@ CREATE INDEX idx_characters_user_id ON characters (user_id);
 CREATE INDEX idx_characters_position ON characters (chunk_x, chunk_y);
 CREATE INDEX idx_chunks_position ON chunks (chunk_x, chunk_y);
 
--- Sessions table for web application (fiber storage format)
-CREATE TABLE
-  sessions (
-    k VARCHAR(64) NOT NULL DEFAULT '',
-    v BYTEA NOT NULL,
-    e BIGINT NOT NULL DEFAULT '0',
-    PRIMARY KEY (k)
-  );
-
--- Create index for session cleanup
-CREATE INDEX e ON sessions (e);
 
 -- Insert default world settings
 INSERT INTO

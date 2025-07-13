@@ -16,22 +16,22 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/requestid"
 	"github.com/gofiber/fiber/v2/middleware/session"
 	"github.com/gofiber/fiber/v2/utils"
-	"github.com/gofiber/storage/postgres/v3"
+	"github.com/gofiber/storage/sqlite3/v2"
 )
 
 func main() {
 	// Connect to the internal gRPC API
 	GrpcClient := grpc.NewClient()
 
-	// Create PostgreSQL storage for sessions
-	storage := postgres.New(postgres.Config{
-		ConnectionURI: os.Getenv("DATABASE_URL"),
-		Table:         "sessions",
-		Reset:         false,
-		GCInterval:    10 * time.Second,
+	// Create SQLite storage for sessions
+	storage := sqlite3.New(sqlite3.Config{
+		Database:   "./data/sessions.db",
+		Table:      "sessions",
+		Reset:      false,
+		GCInterval: 10 * time.Second,
 	})
 
-	// Create session store with PostgreSQL storage
+	// Create session store with SQLite storage
 	sessionStore := session.New(session.Config{
 		Storage:        storage,
 		KeyLookup:      "cookie:session_id",

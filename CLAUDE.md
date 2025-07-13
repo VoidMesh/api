@@ -48,7 +48,7 @@ This is a **Meower Framework** application with microservice architecture:
 - **Templates**: Templ for type-safe HTML templating  
 - **Styling**: TailwindCSS with hot reload
 - **Communication**: gRPC client calls to API server
-- **Sessions**: PostgreSQL-backed sessions with encrypted cookies
+- **Sessions**: SQLite-backed sessions with encrypted cookies
 - **Entry Point**: `web/main.go`
 
 ### Database Layer
@@ -81,7 +81,7 @@ This is a **Meower Framework** application with microservice architecture:
 - Both are automatically watched in development via docker-compose
 
 ### Environment Variables
-- `DATABASE_URL`: PostgreSQL connection string
+- `DATABASE_URL`: PostgreSQL connection string (API server only)
 - `JWT_SECRET`: Required for API authentication
 - `API_ENDPOINT`: gRPC server address (api:50051 in docker)
 - `COOKIE_SECRET_KEY`: Web session encryption key

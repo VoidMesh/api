@@ -3,7 +3,8 @@
 ARG GO_VERSION=1.24
 
 FROM golang:${GO_VERSION}-alpine AS build-web
-ENV CGO_ENABLED=0
+ENV CGO_ENABLED=1
+RUN apk add --no-cache gcc musl-dev sqlite-dev
 WORKDIR /src/web
 
 RUN --mount=type=cache,target=/go/pkg/mod/ \
