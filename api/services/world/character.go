@@ -62,7 +62,7 @@ func parseUUID(uuidStr string) (pgtype.UUID, error) {
 func (s *Service) worldToChunkCoords(x, y int32) (chunkX, chunkY int32) {
 	chunkX = x / s.chunkSize
 	chunkY = y / s.chunkSize
-	
+
 	// Handle negative coordinates properly
 	if x < 0 && x%s.chunkSize != 0 {
 		chunkX--
@@ -70,24 +70,24 @@ func (s *Service) worldToChunkCoords(x, y int32) (chunkX, chunkY int32) {
 	if y < 0 && y%s.chunkSize != 0 {
 		chunkY--
 	}
-	
+
 	return chunkX, chunkY
 }
 
 // isValidSpawnPosition checks if the given position is a valid spawn location
 func (s *Service) isValidSpawnPosition(ctx context.Context, x, y int32) (bool, error) {
 	chunkX, chunkY := s.worldToChunkCoords(x, y)
-	
+
 	// Get the chunk
 	chunkData, err := s.chunkService.GetOrCreateChunk(ctx, chunkX, chunkY)
 	if err != nil {
 		return false, err
 	}
-	
+
 	// Calculate local coordinates within the chunk
 	localX := x - chunkX*s.chunkSize
 	localY := y - chunkY*s.chunkSize
-	
+
 	// Handle negative coordinates
 	if localX < 0 {
 		localX += s.chunkSize
@@ -95,15 +95,15 @@ func (s *Service) isValidSpawnPosition(ctx context.Context, x, y int32) (bool, e
 	if localY < 0 {
 		localY += s.chunkSize
 	}
-	
+
 	// Get the terrain cell (row-major order)
 	index := localY*s.chunkSize + localX
 	if index < 0 || index >= int32(len(chunkData.Cells)) {
 		return false, nil
 	}
-	
+
 	cell := chunkData.Cells[index]
-	
+
 	// Check if terrain is walkable (not water or stone)
 	switch cell.TerrainType {
 	case chunkV1.TerrainType_TERRAIN_TYPE_WATER, chunkV1.TerrainType_TERRAIN_TYPE_STONE:
@@ -123,7 +123,7 @@ func (s *Service) CreateCharacter(ctx context.Context, req *worldV1.CreateCharac
 	// Set spawn position (default to 0,0 if not specified)
 	spawnX := req.SpawnX
 	spawnY := req.SpawnY
-	
+
 	// Validate spawn position
 	valid, err := s.isValidSpawnPosition(ctx, spawnX, spawnY)
 	if err != nil {

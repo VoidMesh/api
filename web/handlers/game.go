@@ -1,9 +1,9 @@
 package handlers
 
 import (
-	"github.com/VoidMesh/platform/web/grpc"
 	chunkV1 "github.com/VoidMesh/platform/api/proto/chunk/v1"
 	worldV1 "github.com/VoidMesh/platform/api/proto/world/v1"
+	"github.com/VoidMesh/platform/web/grpc"
 	viewGameV1 "github.com/VoidMesh/platform/web/views/game"
 	"github.com/gofiber/fiber/v2"
 )
@@ -83,7 +83,7 @@ func (h *Game) GameWorld(c *fiber.Ctx) error {
 	// Calculate which chunks to load (3x3 grid around character)
 	chunkX := character.ChunkX
 	chunkY := character.ChunkY
-	
+
 	// Get chunks in a 3x3 grid around the character
 	chunksReq := &chunkV1.GetChunksRequest{
 		MinChunkX: chunkX - 1,

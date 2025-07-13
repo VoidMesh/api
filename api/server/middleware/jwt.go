@@ -15,8 +15,10 @@ import (
 
 type contextKey string
 
-const userIDKey contextKey = "user_id"
-const usernameKey contextKey = "username"
+const (
+	userIDKey   contextKey = "user_id"
+	usernameKey contextKey = "username"
+)
 
 // JWTAuthInterceptor creates a gRPC interceptor for JWT authentication
 func JWTAuthInterceptor(jwtSecret []byte) grpc.UnaryServerInterceptor {
@@ -85,7 +87,6 @@ func validateJWTToken(tokenString string, jwtSecret []byte) (jwt.MapClaims, erro
 		}
 		return jwtSecret, nil
 	})
-
 	if err != nil {
 		return nil, err
 	}

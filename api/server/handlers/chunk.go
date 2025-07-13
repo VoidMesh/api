@@ -37,12 +37,12 @@ func getWorldSeedForChunk(pool *pgxpool.Pool) (int64, error) {
 	if err != nil {
 		return 0, err
 	}
-	
+
 	seed, err := strconv.ParseInt(setting.Value, 10, 64)
 	if err != nil {
 		return 0, err
 	}
-	
+
 	return seed, nil
 }
 

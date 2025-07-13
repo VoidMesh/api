@@ -25,7 +25,7 @@ func NewWorldServer(db *pgxpool.Pool) worldV1.WorldServiceServer {
 
 	// Create chunk service
 	chunkService := chunk.NewService(db, worldSeed)
-	
+
 	// Create world service
 	worldService := world.NewService(db, chunkService, worldSeed)
 
@@ -41,12 +41,12 @@ func getWorldSeed(pool *pgxpool.Pool) (int64, error) {
 	if err != nil {
 		return 0, err
 	}
-	
+
 	seed, err := strconv.ParseInt(setting.Value, 10, 64)
 	if err != nil {
 		return 0, err
 	}
-	
+
 	return seed, nil
 }
 
