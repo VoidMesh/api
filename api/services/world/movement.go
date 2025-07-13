@@ -16,8 +16,8 @@ import (
 var movementCache = make(map[string]time.Time)
 
 const (
-	MovementCooldown = 200 * time.Millisecond // 200ms between moves for smoother gameplay
-	MaxMoveDistance  = 1                      // Max 1 cell per move
+	MovementCooldown = 50 * time.Millisecond // 50ms between moves for smoother gameplay
+	MaxMoveDistance  = 1                     // Max 1 cell per move
 )
 
 // MoveCharacter handles character movement with anti-cheat validation
@@ -110,17 +110,17 @@ func (s *Service) validateMovement(character db.Character, newX, newY int32) boo
 // isValidMovePosition checks if a position is valid for movement
 func (s *Service) isValidMovePosition(ctx context.Context, x, y int32) (bool, error) {
 	chunkX, chunkY := s.worldToChunkCoords(x, y)
-	
+
 	// Get the chunk
 	chunkData, err := s.chunkService.GetOrCreateChunk(ctx, chunkX, chunkY)
 	if err != nil {
 		return false, err
 	}
-	
+
 	// Calculate local coordinates within the chunk
 	localX := x - chunkX*s.chunkSize
 	localY := y - chunkY*s.chunkSize
-	
+
 	// Handle negative coordinates
 	if localX < 0 {
 		localX += s.chunkSize
@@ -128,27 +128,27 @@ func (s *Service) isValidMovePosition(ctx context.Context, x, y int32) (bool, er
 	if localY < 0 {
 		localY += s.chunkSize
 	}
-	
+
 	// Validate coordinates are within chunk bounds
 	if localX < 0 || localX >= s.chunkSize || localY < 0 || localY >= s.chunkSize {
 		return false, fmt.Errorf("coordinates out of chunk bounds")
 	}
-	
+
 	// Get the terrain cell (row-major order)
 	index := localY*s.chunkSize + localX
 	if index < 0 || index >= int32(len(chunkData.Cells)) {
 		return false, fmt.Errorf("invalid cell index")
 	}
-	
+
 	cell := chunkData.Cells[index]
-	
+
 	// Check if terrain is walkable
 	switch cell.TerrainType {
 	case chunkV1.TerrainType_TERRAIN_TYPE_WATER, chunkV1.TerrainType_TERRAIN_TYPE_STONE:
 		return false, nil // Not walkable
-	case chunkV1.TerrainType_TERRAIN_TYPE_GRASS, 
-		 chunkV1.TerrainType_TERRAIN_TYPE_SAND, 
-		 chunkV1.TerrainType_TERRAIN_TYPE_DIRT:
+	case chunkV1.TerrainType_TERRAIN_TYPE_GRASS,
+		chunkV1.TerrainType_TERRAIN_TYPE_SAND,
+		chunkV1.TerrainType_TERRAIN_TYPE_DIRT:
 		return true, nil // Walkable
 	default:
 		return false, nil // Unknown terrain type, assume not walkable

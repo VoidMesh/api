@@ -106,7 +106,7 @@ script gameScript(character *worldV1.Character, chunks []*chunkV1.ChunkData) {
 
 	// Client-side rate limiting
 	let lastMoveTime = 0;
-	const CLIENT_MOVE_COOLDOWN = 180; // Slightly less than server cooldown (200ms)
+	const CLIENT_MOVE_COOLDOWN = 40; // Slightly less than server cooldown (50ms)
 
 	function showMovementError(message) {
 		// Remove any existing error messages
