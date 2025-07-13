@@ -25,14 +25,10 @@ func main() {
 
 	// Create PostgreSQL storage for sessions
 	storage := postgres.New(postgres.Config{
-		Host:       "db",
-		Port:       5432,
-		Database:   "meower",
-		Username:   "meower",
-		Password:   "meower",
-		Table:      "sessions",
-		Reset:      false,
-		GCInterval: 10 * time.Second,
+		ConnectionURI: os.Getenv("DATABASE_URL"),
+		Table:         "sessions",
+		Reset:         false,
+		GCInterval:    10 * time.Second,
 	})
 
 	// Create session store with PostgreSQL storage

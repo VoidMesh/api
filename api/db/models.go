@@ -34,6 +34,12 @@ type Meow struct {
 	CreatedAt pgtype.Timestamp
 }
 
+type Session struct {
+	K string
+	V []byte
+	E int64
+}
+
 type User struct {
 	ID                   pgtype.UUID
 	Username             string
