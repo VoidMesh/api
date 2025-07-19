@@ -1,0 +1,88 @@
+syntax = "proto3";
+
+package character.v1;
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/VoidMesh/platform/api/proto/character/v1";
+
+service CharacterService {
+  // Character management
+  rpc CreateCharacter(CreateCharacterRequest) returns (CreateCharacterResponse) {}
+  rpc GetCharacter(GetCharacterRequest) returns (GetCharacterResponse) {}
+  rpc GetCharactersByUser(GetCharactersByUserRequest) returns (GetCharactersByUserResponse) {}
+  rpc DeleteCharacter(DeleteCharacterRequest) returns (DeleteCharacterResponse) {}
+
+  // Character movement
+  rpc MoveCharacter(MoveCharacterRequest) returns (MoveCharacterResponse) {}
+}
+
+message Character {
+  string id = 1;
+  string user_id = 2;
+  string name = 3;
+  int32 x = 4;
+  int32 y = 5;
+  int32 chunk_x = 6;
+  int32 chunk_y = 7;
+  google.protobuf.Timestamp created_at = 8;
+}
+
+message Position {
+  int32 x = 1;
+  int32 y = 2;
+  int32 chunk_x = 3;
+  int32 chunk_y = 4;
+}
+
+// Create character
+message CreateCharacterRequest {
+  string user_id = 1;
+  string name = 2;
+  int32 spawn_x = 3; // Optional spawn position
+  int32 spawn_y = 4; // Optional spawn position
+}
+
+message CreateCharacterResponse {
+  Character character = 1;
+}
+
+// Get character
+message GetCharacterRequest {
+  string character_id = 1;
+}
+
+message GetCharacterResponse {
+  Character character = 1;
+}
+
+// Get characters by user
+message GetCharactersByUserRequest {
+  string user_id = 1;
+}
+
+message GetCharactersByUserResponse {
+  repeated Character characters = 1;
+}
+
+// Delete character
+message DeleteCharacterRequest {
+  string character_id = 1;
+}
+
+message DeleteCharacterResponse {
+  bool success = 1;
+}
+
+// Move character
+message MoveCharacterRequest {
+  string character_id = 1;
+  int32 new_x = 2;
+  int32 new_y = 3;
+}
+
+message MoveCharacterResponse {
+  Character character = 1;
+  bool success = 2;
+  string error_message = 3; // If movement failed
+}

@@ -9,30 +9,6 @@ type route struct {
 	Path string
 }
 
-type routes struct {
-	// Homepage
-	Homepage route
-
-	// Authentication
-	LoginShow  route
-	Login      route
-	SignupShow route
-	Signup     route
-	Logout     route
-
-	// Meower
-	MeowIndex  route
-	MeowNew    route
-	MeowCreate route
-
-	// Game
-	GameCharacters      route
-	GameCharacterCreate route
-	GameWorld           route
-	GameMove            route
-	GameWorldInfo       route
-}
-
 /*
 Routes for a common resource using RESTful conventions.
 
@@ -64,8 +40,6 @@ var (
 	GameCharacters      = route{Name: "game.characters", Path: "/game/characters"}
 	GameCharacterCreate = route{Name: "game.characters.create", Path: "/game/characters/create"}
 	GameWorldInfo       = route{Name: "game.world.info", Path: "/game/world/info"}
-	GameWorld           = route{Name: "game.world", Path: "/game/world/:characterId"}
-	GameMove            = route{Name: "game.move", Path: "/game/world/:characterId/move"}
 )
 
 func (r *route) URL(c *fiber.Ctx, params fiber.Map) string {

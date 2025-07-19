@@ -1,13 +1,12 @@
-package world
+package character
 
 import (
 	"context"
 	"encoding/hex"
-	"strconv"
 
 	"github.com/VoidMesh/platform/api/db"
+	characterV1 "github.com/VoidMesh/platform/api/proto/character/v1"
 	chunkV1 "github.com/VoidMesh/platform/api/proto/chunk/v1"
-	worldV1 "github.com/VoidMesh/platform/api/proto/world/v1"
 	"github.com/VoidMesh/platform/api/services/chunk"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -19,22 +18,20 @@ import (
 type Service struct {
 	db           *pgxpool.Pool
 	chunkService *chunk.Service
-	worldSeed    int64
 	chunkSize    int32
 }
 
-func NewService(db *pgxpool.Pool, chunkService *chunk.Service, worldSeed int64) *Service {
+func NewService(db *pgxpool.Pool, chunkService *chunk.Service) *Service {
 	return &Service{
 		db:           db,
 		chunkService: chunkService,
-		worldSeed:    worldSeed,
 		chunkSize:    chunk.ChunkSize,
 	}
 }
 
 // Helper function to convert DB character to proto character
-func (s *Service) dbCharacterToProto(char db.Character) *worldV1.Character {
-	protoChar := &worldV1.Character{
+func (s *Service) dbCharacterToProto(char db.Character) *characterV1.Character {
+	protoChar := &characterV1.Character{
 		Id:     hex.EncodeToString(char.ID.Bytes[:]),
 		UserId: hex.EncodeToString(char.UserID.Bytes[:]),
 		Name:   char.Name,
@@ -114,7 +111,7 @@ func (s *Service) isValidSpawnPosition(ctx context.Context, x, y int32) (bool, e
 }
 
 // CreateCharacter creates a new character for a user
-func (s *Service) CreateCharacter(ctx context.Context, req *worldV1.CreateCharacterRequest) (*worldV1.CreateCharacterResponse, error) {
+func (s *Service) CreateCharacter(ctx context.Context, req *characterV1.CreateCharacterRequest) (*characterV1.CreateCharacterResponse, error) {
 	userUUID, err := parseUUID(req.UserId)
 	if err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, "invalid user ID: %v", err)
@@ -151,7 +148,7 @@ func (s *Service) CreateCharacter(ctx context.Context, req *worldV1.CreateCharac
 		return nil, status.Errorf(codes.Internal, "failed to create character: %v", err)
 	}
 
-	return &worldV1.CreateCharacterResponse{
+	return &characterV1.CreateCharacterResponse{
 		Character: s.dbCharacterToProto(character),
 	}, nil
 }
@@ -185,7 +182,7 @@ func abs32(x int32) int32 {
 }
 
 // GetCharacter retrieves a character by ID
-func (s *Service) GetCharacter(ctx context.Context, req *worldV1.GetCharacterRequest) (*worldV1.GetCharacterResponse, error) {
+func (s *Service) GetCharacter(ctx context.Context, req *characterV1.GetCharacterRequest) (*characterV1.GetCharacterResponse, error) {
 	charUUID, err := parseUUID(req.CharacterId)
 	if err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, "invalid character ID: %v", err)
@@ -196,13 +193,13 @@ func (s *Service) GetCharacter(ctx context.Context, req *worldV1.GetCharacterReq
 		return nil, status.Errorf(codes.NotFound, "character not found: %v", err)
 	}
 
-	return &worldV1.GetCharacterResponse{
+	return &characterV1.GetCharacterResponse{
 		Character: s.dbCharacterToProto(character),
 	}, nil
 }
 
 // GetCharactersByUser retrieves all characters for a user
-func (s *Service) GetCharactersByUser(ctx context.Context, req *worldV1.GetCharactersByUserRequest) (*worldV1.GetCharactersByUserResponse, error) {
+func (s *Service) GetCharactersByUser(ctx context.Context, req *characterV1.GetCharactersByUserRequest) (*characterV1.GetCharactersByUserResponse, error) {
 	userUUID, err := parseUUID(req.UserId)
 	if err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, "invalid user ID: %v", err)
@@ -213,18 +210,18 @@ func (s *Service) GetCharactersByUser(ctx context.Context, req *worldV1.GetChara
 		return nil, status.Errorf(codes.Internal, "failed to get characters: %v", err)
 	}
 
-	var protoCharacters []*worldV1.Character
+	var protoCharacters []*characterV1.Character
 	for _, char := range characters {
 		protoCharacters = append(protoCharacters, s.dbCharacterToProto(char))
 	}
 
-	return &worldV1.GetCharactersByUserResponse{
+	return &characterV1.GetCharactersByUserResponse{
 		Characters: protoCharacters,
 	}, nil
 }
 
 // DeleteCharacter deletes a character
-func (s *Service) DeleteCharacter(ctx context.Context, req *worldV1.DeleteCharacterRequest) (*worldV1.DeleteCharacterResponse, error) {
+func (s *Service) DeleteCharacter(ctx context.Context, req *characterV1.DeleteCharacterRequest) (*characterV1.DeleteCharacterResponse, error) {
 	charUUID, err := parseUUID(req.CharacterId)
 	if err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, "invalid character ID: %v", err)
@@ -235,37 +232,7 @@ func (s *Service) DeleteCharacter(ctx context.Context, req *worldV1.DeleteCharac
 		return nil, status.Errorf(codes.Internal, "failed to delete character: %v", err)
 	}
 
-	return &worldV1.DeleteCharacterResponse{
+	return &characterV1.DeleteCharacterResponse{
 		Success: true,
-	}, nil
-}
-
-// GetWorldInfo returns information about the world
-func (s *Service) GetWorldInfo(ctx context.Context, req *worldV1.GetWorldInfoRequest) (*worldV1.GetWorldInfoResponse, error) {
-	// Get world settings from database
-	nameSetting, err := db.New(s.db).GetWorldSetting(ctx, "world_name")
-	if err != nil {
-		nameSetting.Value = "VoidMesh World" // Default name
-	}
-
-	seedSetting, err := db.New(s.db).GetWorldSetting(ctx, "seed")
-	if err != nil {
-		seedSetting.Value = strconv.FormatInt(s.worldSeed, 10)
-	}
-
-	chunkSizeSetting, err := db.New(s.db).GetWorldSetting(ctx, "chunk_size")
-	if err != nil {
-		chunkSizeSetting.Value = "32"
-	}
-
-	seed, _ := strconv.ParseInt(seedSetting.Value, 10, 64)
-	chunkSizeInt, _ := strconv.ParseInt(chunkSizeSetting.Value, 10, 32)
-
-	return &worldV1.GetWorldInfoResponse{
-		WorldInfo: &worldV1.WorldInfo{
-			Name:      nameSetting.Value,
-			Seed:      seed,
-			ChunkSize: int32(chunkSizeInt),
-		},
 	}, nil
 }

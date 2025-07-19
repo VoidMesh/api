@@ -1,4 +1,4 @@
-package world
+package character
 
 import (
 	"context"
@@ -6,8 +6,8 @@ import (
 	"time"
 
 	"github.com/VoidMesh/platform/api/db"
+	characterV1 "github.com/VoidMesh/platform/api/proto/character/v1"
 	chunkV1 "github.com/VoidMesh/platform/api/proto/chunk/v1"
-	worldV1 "github.com/VoidMesh/platform/api/proto/world/v1"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -21,7 +21,7 @@ const (
 )
 
 // MoveCharacter handles character movement with anti-cheat validation
-func (s *Service) MoveCharacter(ctx context.Context, req *worldV1.MoveCharacterRequest) (*worldV1.MoveCharacterResponse, error) {
+func (s *Service) MoveCharacter(ctx context.Context, req *characterV1.MoveCharacterRequest) (*characterV1.MoveCharacterResponse, error) {
 	// Get character first
 	charUUID, err := parseUUID(req.CharacterId)
 	if err != nil {
@@ -35,7 +35,7 @@ func (s *Service) MoveCharacter(ctx context.Context, req *worldV1.MoveCharacterR
 
 	// Anti-cheat validation
 	if !s.validateMovement(character, req.NewX, req.NewY) {
-		return &worldV1.MoveCharacterResponse{
+		return &characterV1.MoveCharacterResponse{
 			Success:      false,
 			ErrorMessage: "Invalid movement: too far or too fast",
 		}, nil
@@ -45,7 +45,7 @@ func (s *Service) MoveCharacter(ctx context.Context, req *worldV1.MoveCharacterR
 	characterID := req.CharacterId
 	lastMove, exists := movementCache[characterID]
 	if exists && time.Since(lastMove) < MovementCooldown {
-		return &worldV1.MoveCharacterResponse{
+		return &characterV1.MoveCharacterResponse{
 			Success:      false,
 			ErrorMessage: "Movement too fast, please wait",
 		}, nil
@@ -57,7 +57,7 @@ func (s *Service) MoveCharacter(ctx context.Context, req *worldV1.MoveCharacterR
 		return nil, status.Errorf(codes.Internal, "failed to validate position: %v", err)
 	}
 	if !valid {
-		return &worldV1.MoveCharacterResponse{
+		return &characterV1.MoveCharacterResponse{
 			Success:      false,
 			ErrorMessage: "Cannot move to that position (water or stone)",
 		}, nil
@@ -81,7 +81,7 @@ func (s *Service) MoveCharacter(ctx context.Context, req *worldV1.MoveCharacterR
 	// Update movement cache
 	movementCache[characterID] = time.Now()
 
-	return &worldV1.MoveCharacterResponse{
+	return &characterV1.MoveCharacterResponse{
 		Character: s.dbCharacterToProto(updatedCharacter),
 		Success:   true,
 	}, nil

@@ -19,25 +19,13 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	WorldService_CreateCharacter_FullMethodName     = "/world.v1.WorldService/CreateCharacter"
-	WorldService_GetCharacter_FullMethodName        = "/world.v1.WorldService/GetCharacter"
-	WorldService_GetCharactersByUser_FullMethodName = "/world.v1.WorldService/GetCharactersByUser"
-	WorldService_DeleteCharacter_FullMethodName     = "/world.v1.WorldService/DeleteCharacter"
-	WorldService_MoveCharacter_FullMethodName       = "/world.v1.WorldService/MoveCharacter"
-	WorldService_GetWorldInfo_FullMethodName        = "/world.v1.WorldService/GetWorldInfo"
+	WorldService_GetWorldInfo_FullMethodName = "/world.v1.WorldService/GetWorldInfo"
 )
 
 // WorldServiceClient is the client API for WorldService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type WorldServiceClient interface {
-	// Character management
-	CreateCharacter(ctx context.Context, in *CreateCharacterRequest, opts ...grpc.CallOption) (*CreateCharacterResponse, error)
-	GetCharacter(ctx context.Context, in *GetCharacterRequest, opts ...grpc.CallOption) (*GetCharacterResponse, error)
-	GetCharactersByUser(ctx context.Context, in *GetCharactersByUserRequest, opts ...grpc.CallOption) (*GetCharactersByUserResponse, error)
-	DeleteCharacter(ctx context.Context, in *DeleteCharacterRequest, opts ...grpc.CallOption) (*DeleteCharacterResponse, error)
-	// Character movement
-	MoveCharacter(ctx context.Context, in *MoveCharacterRequest, opts ...grpc.CallOption) (*MoveCharacterResponse, error)
 	// World information
 	GetWorldInfo(ctx context.Context, in *GetWorldInfoRequest, opts ...grpc.CallOption) (*GetWorldInfoResponse, error)
 }
@@ -48,56 +36,6 @@ type worldServiceClient struct {
 
 func NewWorldServiceClient(cc grpc.ClientConnInterface) WorldServiceClient {
 	return &worldServiceClient{cc}
-}
-
-func (c *worldServiceClient) CreateCharacter(ctx context.Context, in *CreateCharacterRequest, opts ...grpc.CallOption) (*CreateCharacterResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(CreateCharacterResponse)
-	err := c.cc.Invoke(ctx, WorldService_CreateCharacter_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *worldServiceClient) GetCharacter(ctx context.Context, in *GetCharacterRequest, opts ...grpc.CallOption) (*GetCharacterResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(GetCharacterResponse)
-	err := c.cc.Invoke(ctx, WorldService_GetCharacter_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *worldServiceClient) GetCharactersByUser(ctx context.Context, in *GetCharactersByUserRequest, opts ...grpc.CallOption) (*GetCharactersByUserResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(GetCharactersByUserResponse)
-	err := c.cc.Invoke(ctx, WorldService_GetCharactersByUser_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *worldServiceClient) DeleteCharacter(ctx context.Context, in *DeleteCharacterRequest, opts ...grpc.CallOption) (*DeleteCharacterResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(DeleteCharacterResponse)
-	err := c.cc.Invoke(ctx, WorldService_DeleteCharacter_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *worldServiceClient) MoveCharacter(ctx context.Context, in *MoveCharacterRequest, opts ...grpc.CallOption) (*MoveCharacterResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(MoveCharacterResponse)
-	err := c.cc.Invoke(ctx, WorldService_MoveCharacter_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
 }
 
 func (c *worldServiceClient) GetWorldInfo(ctx context.Context, in *GetWorldInfoRequest, opts ...grpc.CallOption) (*GetWorldInfoResponse, error) {
@@ -114,13 +52,6 @@ func (c *worldServiceClient) GetWorldInfo(ctx context.Context, in *GetWorldInfoR
 // All implementations must embed UnimplementedWorldServiceServer
 // for forward compatibility.
 type WorldServiceServer interface {
-	// Character management
-	CreateCharacter(context.Context, *CreateCharacterRequest) (*CreateCharacterResponse, error)
-	GetCharacter(context.Context, *GetCharacterRequest) (*GetCharacterResponse, error)
-	GetCharactersByUser(context.Context, *GetCharactersByUserRequest) (*GetCharactersByUserResponse, error)
-	DeleteCharacter(context.Context, *DeleteCharacterRequest) (*DeleteCharacterResponse, error)
-	// Character movement
-	MoveCharacter(context.Context, *MoveCharacterRequest) (*MoveCharacterResponse, error)
 	// World information
 	GetWorldInfo(context.Context, *GetWorldInfoRequest) (*GetWorldInfoResponse, error)
 	mustEmbedUnimplementedWorldServiceServer()
@@ -133,21 +64,6 @@ type WorldServiceServer interface {
 // pointer dereference when methods are called.
 type UnimplementedWorldServiceServer struct{}
 
-func (UnimplementedWorldServiceServer) CreateCharacter(context.Context, *CreateCharacterRequest) (*CreateCharacterResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method CreateCharacter not implemented")
-}
-func (UnimplementedWorldServiceServer) GetCharacter(context.Context, *GetCharacterRequest) (*GetCharacterResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetCharacter not implemented")
-}
-func (UnimplementedWorldServiceServer) GetCharactersByUser(context.Context, *GetCharactersByUserRequest) (*GetCharactersByUserResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetCharactersByUser not implemented")
-}
-func (UnimplementedWorldServiceServer) DeleteCharacter(context.Context, *DeleteCharacterRequest) (*DeleteCharacterResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method DeleteCharacter not implemented")
-}
-func (UnimplementedWorldServiceServer) MoveCharacter(context.Context, *MoveCharacterRequest) (*MoveCharacterResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method MoveCharacter not implemented")
-}
 func (UnimplementedWorldServiceServer) GetWorldInfo(context.Context, *GetWorldInfoRequest) (*GetWorldInfoResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetWorldInfo not implemented")
 }
@@ -170,96 +86,6 @@ func RegisterWorldServiceServer(s grpc.ServiceRegistrar, srv WorldServiceServer)
 		t.testEmbeddedByValue()
 	}
 	s.RegisterService(&WorldService_ServiceDesc, srv)
-}
-
-func _WorldService_CreateCharacter_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(CreateCharacterRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(WorldServiceServer).CreateCharacter(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: WorldService_CreateCharacter_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(WorldServiceServer).CreateCharacter(ctx, req.(*CreateCharacterRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _WorldService_GetCharacter_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetCharacterRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(WorldServiceServer).GetCharacter(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: WorldService_GetCharacter_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(WorldServiceServer).GetCharacter(ctx, req.(*GetCharacterRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _WorldService_GetCharactersByUser_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetCharactersByUserRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(WorldServiceServer).GetCharactersByUser(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: WorldService_GetCharactersByUser_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(WorldServiceServer).GetCharactersByUser(ctx, req.(*GetCharactersByUserRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _WorldService_DeleteCharacter_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(DeleteCharacterRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(WorldServiceServer).DeleteCharacter(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: WorldService_DeleteCharacter_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(WorldServiceServer).DeleteCharacter(ctx, req.(*DeleteCharacterRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _WorldService_MoveCharacter_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(MoveCharacterRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(WorldServiceServer).MoveCharacter(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: WorldService_MoveCharacter_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(WorldServiceServer).MoveCharacter(ctx, req.(*MoveCharacterRequest))
-	}
-	return interceptor(ctx, in, info, handler)
 }
 
 func _WorldService_GetWorldInfo_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -287,26 +113,6 @@ var WorldService_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "world.v1.WorldService",
 	HandlerType: (*WorldServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
-		{
-			MethodName: "CreateCharacter",
-			Handler:    _WorldService_CreateCharacter_Handler,
-		},
-		{
-			MethodName: "GetCharacter",
-			Handler:    _WorldService_GetCharacter_Handler,
-		},
-		{
-			MethodName: "GetCharactersByUser",
-			Handler:    _WorldService_GetCharactersByUser_Handler,
-		},
-		{
-			MethodName: "DeleteCharacter",
-			Handler:    _WorldService_DeleteCharacter_Handler,
-		},
-		{
-			MethodName: "MoveCharacter",
-			Handler:    _WorldService_MoveCharacter_Handler,
-		},
 		{
 			MethodName: "GetWorldInfo",
 			Handler:    _WorldService_GetWorldInfo_Handler,

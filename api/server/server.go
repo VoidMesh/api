@@ -7,6 +7,7 @@ import (
 	"net"
 	"os"
 
+	pbCharacterV1 "github.com/VoidMesh/platform/api/proto/character/v1"
 	pbChunkV1 "github.com/VoidMesh/platform/api/proto/chunk/v1"
 	pbUserV1 "github.com/VoidMesh/platform/api/proto/user/v1"
 	pbWorldV1 "github.com/VoidMesh/platform/api/proto/world/v1"
@@ -57,6 +58,7 @@ func Serve() {
 	// Register V1 services
 	pbUserV1.RegisterUserServiceServer(g, handlers.NewUserServer(db))
 	pbWorldV1.RegisterWorldServiceServer(g, handlers.NewWorldServer(db))
+	pbCharacterV1.RegisterCharacterServiceServer(g, handlers.NewCharacterServer(db))
 	pbChunkV1.RegisterChunkServiceServer(g, handlers.NewChunkServer(db))
 
 	// Serve the gRPC server

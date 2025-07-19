@@ -9,7 +9,6 @@ package v1
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
-	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	reflect "reflect"
 	sync "sync"
 	unsafe "unsafe"
@@ -22,675 +21,6 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-type Character struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	UserId        string                 `protobuf:"bytes,2,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
-	Name          string                 `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty"`
-	X             int32                  `protobuf:"varint,4,opt,name=x,proto3" json:"x,omitempty"`
-	Y             int32                  `protobuf:"varint,5,opt,name=y,proto3" json:"y,omitempty"`
-	ChunkX        int32                  `protobuf:"varint,6,opt,name=chunk_x,json=chunkX,proto3" json:"chunk_x,omitempty"`
-	ChunkY        int32                  `protobuf:"varint,7,opt,name=chunk_y,json=chunkY,proto3" json:"chunk_y,omitempty"`
-	CreatedAt     *timestamppb.Timestamp `protobuf:"bytes,8,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *Character) Reset() {
-	*x = Character{}
-	mi := &file_world_v1_world_proto_msgTypes[0]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *Character) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*Character) ProtoMessage() {}
-
-func (x *Character) ProtoReflect() protoreflect.Message {
-	mi := &file_world_v1_world_proto_msgTypes[0]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use Character.ProtoReflect.Descriptor instead.
-func (*Character) Descriptor() ([]byte, []int) {
-	return file_world_v1_world_proto_rawDescGZIP(), []int{0}
-}
-
-func (x *Character) GetId() string {
-	if x != nil {
-		return x.Id
-	}
-	return ""
-}
-
-func (x *Character) GetUserId() string {
-	if x != nil {
-		return x.UserId
-	}
-	return ""
-}
-
-func (x *Character) GetName() string {
-	if x != nil {
-		return x.Name
-	}
-	return ""
-}
-
-func (x *Character) GetX() int32 {
-	if x != nil {
-		return x.X
-	}
-	return 0
-}
-
-func (x *Character) GetY() int32 {
-	if x != nil {
-		return x.Y
-	}
-	return 0
-}
-
-func (x *Character) GetChunkX() int32 {
-	if x != nil {
-		return x.ChunkX
-	}
-	return 0
-}
-
-func (x *Character) GetChunkY() int32 {
-	if x != nil {
-		return x.ChunkY
-	}
-	return 0
-}
-
-func (x *Character) GetCreatedAt() *timestamppb.Timestamp {
-	if x != nil {
-		return x.CreatedAt
-	}
-	return nil
-}
-
-type Position struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	X             int32                  `protobuf:"varint,1,opt,name=x,proto3" json:"x,omitempty"`
-	Y             int32                  `protobuf:"varint,2,opt,name=y,proto3" json:"y,omitempty"`
-	ChunkX        int32                  `protobuf:"varint,3,opt,name=chunk_x,json=chunkX,proto3" json:"chunk_x,omitempty"`
-	ChunkY        int32                  `protobuf:"varint,4,opt,name=chunk_y,json=chunkY,proto3" json:"chunk_y,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *Position) Reset() {
-	*x = Position{}
-	mi := &file_world_v1_world_proto_msgTypes[1]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *Position) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*Position) ProtoMessage() {}
-
-func (x *Position) ProtoReflect() protoreflect.Message {
-	mi := &file_world_v1_world_proto_msgTypes[1]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use Position.ProtoReflect.Descriptor instead.
-func (*Position) Descriptor() ([]byte, []int) {
-	return file_world_v1_world_proto_rawDescGZIP(), []int{1}
-}
-
-func (x *Position) GetX() int32 {
-	if x != nil {
-		return x.X
-	}
-	return 0
-}
-
-func (x *Position) GetY() int32 {
-	if x != nil {
-		return x.Y
-	}
-	return 0
-}
-
-func (x *Position) GetChunkX() int32 {
-	if x != nil {
-		return x.ChunkX
-	}
-	return 0
-}
-
-func (x *Position) GetChunkY() int32 {
-	if x != nil {
-		return x.ChunkY
-	}
-	return 0
-}
-
-// Create character
-type CreateCharacterRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	UserId        string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
-	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
-	SpawnX        int32                  `protobuf:"varint,3,opt,name=spawn_x,json=spawnX,proto3" json:"spawn_x,omitempty"` // Optional spawn position
-	SpawnY        int32                  `protobuf:"varint,4,opt,name=spawn_y,json=spawnY,proto3" json:"spawn_y,omitempty"` // Optional spawn position
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *CreateCharacterRequest) Reset() {
-	*x = CreateCharacterRequest{}
-	mi := &file_world_v1_world_proto_msgTypes[2]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *CreateCharacterRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*CreateCharacterRequest) ProtoMessage() {}
-
-func (x *CreateCharacterRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_world_v1_world_proto_msgTypes[2]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use CreateCharacterRequest.ProtoReflect.Descriptor instead.
-func (*CreateCharacterRequest) Descriptor() ([]byte, []int) {
-	return file_world_v1_world_proto_rawDescGZIP(), []int{2}
-}
-
-func (x *CreateCharacterRequest) GetUserId() string {
-	if x != nil {
-		return x.UserId
-	}
-	return ""
-}
-
-func (x *CreateCharacterRequest) GetName() string {
-	if x != nil {
-		return x.Name
-	}
-	return ""
-}
-
-func (x *CreateCharacterRequest) GetSpawnX() int32 {
-	if x != nil {
-		return x.SpawnX
-	}
-	return 0
-}
-
-func (x *CreateCharacterRequest) GetSpawnY() int32 {
-	if x != nil {
-		return x.SpawnY
-	}
-	return 0
-}
-
-type CreateCharacterResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Character     *Character             `protobuf:"bytes,1,opt,name=character,proto3" json:"character,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *CreateCharacterResponse) Reset() {
-	*x = CreateCharacterResponse{}
-	mi := &file_world_v1_world_proto_msgTypes[3]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *CreateCharacterResponse) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*CreateCharacterResponse) ProtoMessage() {}
-
-func (x *CreateCharacterResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_world_v1_world_proto_msgTypes[3]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use CreateCharacterResponse.ProtoReflect.Descriptor instead.
-func (*CreateCharacterResponse) Descriptor() ([]byte, []int) {
-	return file_world_v1_world_proto_rawDescGZIP(), []int{3}
-}
-
-func (x *CreateCharacterResponse) GetCharacter() *Character {
-	if x != nil {
-		return x.Character
-	}
-	return nil
-}
-
-// Get character
-type GetCharacterRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	CharacterId   string                 `protobuf:"bytes,1,opt,name=character_id,json=characterId,proto3" json:"character_id,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *GetCharacterRequest) Reset() {
-	*x = GetCharacterRequest{}
-	mi := &file_world_v1_world_proto_msgTypes[4]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *GetCharacterRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*GetCharacterRequest) ProtoMessage() {}
-
-func (x *GetCharacterRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_world_v1_world_proto_msgTypes[4]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use GetCharacterRequest.ProtoReflect.Descriptor instead.
-func (*GetCharacterRequest) Descriptor() ([]byte, []int) {
-	return file_world_v1_world_proto_rawDescGZIP(), []int{4}
-}
-
-func (x *GetCharacterRequest) GetCharacterId() string {
-	if x != nil {
-		return x.CharacterId
-	}
-	return ""
-}
-
-type GetCharacterResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Character     *Character             `protobuf:"bytes,1,opt,name=character,proto3" json:"character,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *GetCharacterResponse) Reset() {
-	*x = GetCharacterResponse{}
-	mi := &file_world_v1_world_proto_msgTypes[5]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *GetCharacterResponse) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*GetCharacterResponse) ProtoMessage() {}
-
-func (x *GetCharacterResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_world_v1_world_proto_msgTypes[5]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use GetCharacterResponse.ProtoReflect.Descriptor instead.
-func (*GetCharacterResponse) Descriptor() ([]byte, []int) {
-	return file_world_v1_world_proto_rawDescGZIP(), []int{5}
-}
-
-func (x *GetCharacterResponse) GetCharacter() *Character {
-	if x != nil {
-		return x.Character
-	}
-	return nil
-}
-
-// Get characters by user
-type GetCharactersByUserRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	UserId        string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *GetCharactersByUserRequest) Reset() {
-	*x = GetCharactersByUserRequest{}
-	mi := &file_world_v1_world_proto_msgTypes[6]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *GetCharactersByUserRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*GetCharactersByUserRequest) ProtoMessage() {}
-
-func (x *GetCharactersByUserRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_world_v1_world_proto_msgTypes[6]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use GetCharactersByUserRequest.ProtoReflect.Descriptor instead.
-func (*GetCharactersByUserRequest) Descriptor() ([]byte, []int) {
-	return file_world_v1_world_proto_rawDescGZIP(), []int{6}
-}
-
-func (x *GetCharactersByUserRequest) GetUserId() string {
-	if x != nil {
-		return x.UserId
-	}
-	return ""
-}
-
-type GetCharactersByUserResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Characters    []*Character           `protobuf:"bytes,1,rep,name=characters,proto3" json:"characters,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *GetCharactersByUserResponse) Reset() {
-	*x = GetCharactersByUserResponse{}
-	mi := &file_world_v1_world_proto_msgTypes[7]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *GetCharactersByUserResponse) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*GetCharactersByUserResponse) ProtoMessage() {}
-
-func (x *GetCharactersByUserResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_world_v1_world_proto_msgTypes[7]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use GetCharactersByUserResponse.ProtoReflect.Descriptor instead.
-func (*GetCharactersByUserResponse) Descriptor() ([]byte, []int) {
-	return file_world_v1_world_proto_rawDescGZIP(), []int{7}
-}
-
-func (x *GetCharactersByUserResponse) GetCharacters() []*Character {
-	if x != nil {
-		return x.Characters
-	}
-	return nil
-}
-
-// Delete character
-type DeleteCharacterRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	CharacterId   string                 `protobuf:"bytes,1,opt,name=character_id,json=characterId,proto3" json:"character_id,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *DeleteCharacterRequest) Reset() {
-	*x = DeleteCharacterRequest{}
-	mi := &file_world_v1_world_proto_msgTypes[8]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *DeleteCharacterRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*DeleteCharacterRequest) ProtoMessage() {}
-
-func (x *DeleteCharacterRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_world_v1_world_proto_msgTypes[8]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use DeleteCharacterRequest.ProtoReflect.Descriptor instead.
-func (*DeleteCharacterRequest) Descriptor() ([]byte, []int) {
-	return file_world_v1_world_proto_rawDescGZIP(), []int{8}
-}
-
-func (x *DeleteCharacterRequest) GetCharacterId() string {
-	if x != nil {
-		return x.CharacterId
-	}
-	return ""
-}
-
-type DeleteCharacterResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *DeleteCharacterResponse) Reset() {
-	*x = DeleteCharacterResponse{}
-	mi := &file_world_v1_world_proto_msgTypes[9]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *DeleteCharacterResponse) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*DeleteCharacterResponse) ProtoMessage() {}
-
-func (x *DeleteCharacterResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_world_v1_world_proto_msgTypes[9]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use DeleteCharacterResponse.ProtoReflect.Descriptor instead.
-func (*DeleteCharacterResponse) Descriptor() ([]byte, []int) {
-	return file_world_v1_world_proto_rawDescGZIP(), []int{9}
-}
-
-func (x *DeleteCharacterResponse) GetSuccess() bool {
-	if x != nil {
-		return x.Success
-	}
-	return false
-}
-
-// Move character
-type MoveCharacterRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	CharacterId   string                 `protobuf:"bytes,1,opt,name=character_id,json=characterId,proto3" json:"character_id,omitempty"`
-	NewX          int32                  `protobuf:"varint,2,opt,name=new_x,json=newX,proto3" json:"new_x,omitempty"`
-	NewY          int32                  `protobuf:"varint,3,opt,name=new_y,json=newY,proto3" json:"new_y,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *MoveCharacterRequest) Reset() {
-	*x = MoveCharacterRequest{}
-	mi := &file_world_v1_world_proto_msgTypes[10]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *MoveCharacterRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*MoveCharacterRequest) ProtoMessage() {}
-
-func (x *MoveCharacterRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_world_v1_world_proto_msgTypes[10]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use MoveCharacterRequest.ProtoReflect.Descriptor instead.
-func (*MoveCharacterRequest) Descriptor() ([]byte, []int) {
-	return file_world_v1_world_proto_rawDescGZIP(), []int{10}
-}
-
-func (x *MoveCharacterRequest) GetCharacterId() string {
-	if x != nil {
-		return x.CharacterId
-	}
-	return ""
-}
-
-func (x *MoveCharacterRequest) GetNewX() int32 {
-	if x != nil {
-		return x.NewX
-	}
-	return 0
-}
-
-func (x *MoveCharacterRequest) GetNewY() int32 {
-	if x != nil {
-		return x.NewY
-	}
-	return 0
-}
-
-type MoveCharacterResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Character     *Character             `protobuf:"bytes,1,opt,name=character,proto3" json:"character,omitempty"`
-	Success       bool                   `protobuf:"varint,2,opt,name=success,proto3" json:"success,omitempty"`
-	ErrorMessage  string                 `protobuf:"bytes,3,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"` // If movement failed
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *MoveCharacterResponse) Reset() {
-	*x = MoveCharacterResponse{}
-	mi := &file_world_v1_world_proto_msgTypes[11]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *MoveCharacterResponse) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*MoveCharacterResponse) ProtoMessage() {}
-
-func (x *MoveCharacterResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_world_v1_world_proto_msgTypes[11]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use MoveCharacterResponse.ProtoReflect.Descriptor instead.
-func (*MoveCharacterResponse) Descriptor() ([]byte, []int) {
-	return file_world_v1_world_proto_rawDescGZIP(), []int{11}
-}
-
-func (x *MoveCharacterResponse) GetCharacter() *Character {
-	if x != nil {
-		return x.Character
-	}
-	return nil
-}
-
-func (x *MoveCharacterResponse) GetSuccess() bool {
-	if x != nil {
-		return x.Success
-	}
-	return false
-}
-
-func (x *MoveCharacterResponse) GetErrorMessage() string {
-	if x != nil {
-		return x.ErrorMessage
-	}
-	return ""
-}
-
 // World info
 type GetWorldInfoRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
@@ -700,7 +30,7 @@ type GetWorldInfoRequest struct {
 
 func (x *GetWorldInfoRequest) Reset() {
 	*x = GetWorldInfoRequest{}
-	mi := &file_world_v1_world_proto_msgTypes[12]
+	mi := &file_world_v1_world_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -712,7 +42,7 @@ func (x *GetWorldInfoRequest) String() string {
 func (*GetWorldInfoRequest) ProtoMessage() {}
 
 func (x *GetWorldInfoRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_world_v1_world_proto_msgTypes[12]
+	mi := &file_world_v1_world_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -725,7 +55,7 @@ func (x *GetWorldInfoRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetWorldInfoRequest.ProtoReflect.Descriptor instead.
 func (*GetWorldInfoRequest) Descriptor() ([]byte, []int) {
-	return file_world_v1_world_proto_rawDescGZIP(), []int{12}
+	return file_world_v1_world_proto_rawDescGZIP(), []int{0}
 }
 
 type WorldInfo struct {
@@ -739,7 +69,7 @@ type WorldInfo struct {
 
 func (x *WorldInfo) Reset() {
 	*x = WorldInfo{}
-	mi := &file_world_v1_world_proto_msgTypes[13]
+	mi := &file_world_v1_world_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -751,7 +81,7 @@ func (x *WorldInfo) String() string {
 func (*WorldInfo) ProtoMessage() {}
 
 func (x *WorldInfo) ProtoReflect() protoreflect.Message {
-	mi := &file_world_v1_world_proto_msgTypes[13]
+	mi := &file_world_v1_world_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -764,7 +94,7 @@ func (x *WorldInfo) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use WorldInfo.ProtoReflect.Descriptor instead.
 func (*WorldInfo) Descriptor() ([]byte, []int) {
-	return file_world_v1_world_proto_rawDescGZIP(), []int{13}
+	return file_world_v1_world_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *WorldInfo) GetName() string {
@@ -797,7 +127,7 @@ type GetWorldInfoResponse struct {
 
 func (x *GetWorldInfoResponse) Reset() {
 	*x = GetWorldInfoResponse{}
-	mi := &file_world_v1_world_proto_msgTypes[14]
+	mi := &file_world_v1_world_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -809,7 +139,7 @@ func (x *GetWorldInfoResponse) String() string {
 func (*GetWorldInfoResponse) ProtoMessage() {}
 
 func (x *GetWorldInfoResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_world_v1_world_proto_msgTypes[14]
+	mi := &file_world_v1_world_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -822,7 +152,7 @@ func (x *GetWorldInfoResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetWorldInfoResponse.ProtoReflect.Descriptor instead.
 func (*GetWorldInfoResponse) Descriptor() ([]byte, []int) {
-	return file_world_v1_world_proto_rawDescGZIP(), []int{14}
+	return file_world_v1_world_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *GetWorldInfoResponse) GetWorldInfo() *WorldInfo {
@@ -836,51 +166,7 @@ var File_world_v1_world_proto protoreflect.FileDescriptor
 
 const file_world_v1_world_proto_rawDesc = "" +
 	"\n" +
-	"\x14world/v1/world.proto\x12\bworld.v1\x1a\x1fgoogle/protobuf/timestamp.proto\"\xd1\x01\n" +
-	"\tCharacter\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\tR\x02id\x12\x17\n" +
-	"\auser_id\x18\x02 \x01(\tR\x06userId\x12\x12\n" +
-	"\x04name\x18\x03 \x01(\tR\x04name\x12\f\n" +
-	"\x01x\x18\x04 \x01(\x05R\x01x\x12\f\n" +
-	"\x01y\x18\x05 \x01(\x05R\x01y\x12\x17\n" +
-	"\achunk_x\x18\x06 \x01(\x05R\x06chunkX\x12\x17\n" +
-	"\achunk_y\x18\a \x01(\x05R\x06chunkY\x129\n" +
-	"\n" +
-	"created_at\x18\b \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\"X\n" +
-	"\bPosition\x12\f\n" +
-	"\x01x\x18\x01 \x01(\x05R\x01x\x12\f\n" +
-	"\x01y\x18\x02 \x01(\x05R\x01y\x12\x17\n" +
-	"\achunk_x\x18\x03 \x01(\x05R\x06chunkX\x12\x17\n" +
-	"\achunk_y\x18\x04 \x01(\x05R\x06chunkY\"w\n" +
-	"\x16CreateCharacterRequest\x12\x17\n" +
-	"\auser_id\x18\x01 \x01(\tR\x06userId\x12\x12\n" +
-	"\x04name\x18\x02 \x01(\tR\x04name\x12\x17\n" +
-	"\aspawn_x\x18\x03 \x01(\x05R\x06spawnX\x12\x17\n" +
-	"\aspawn_y\x18\x04 \x01(\x05R\x06spawnY\"L\n" +
-	"\x17CreateCharacterResponse\x121\n" +
-	"\tcharacter\x18\x01 \x01(\v2\x13.world.v1.CharacterR\tcharacter\"8\n" +
-	"\x13GetCharacterRequest\x12!\n" +
-	"\fcharacter_id\x18\x01 \x01(\tR\vcharacterId\"I\n" +
-	"\x14GetCharacterResponse\x121\n" +
-	"\tcharacter\x18\x01 \x01(\v2\x13.world.v1.CharacterR\tcharacter\"5\n" +
-	"\x1aGetCharactersByUserRequest\x12\x17\n" +
-	"\auser_id\x18\x01 \x01(\tR\x06userId\"R\n" +
-	"\x1bGetCharactersByUserResponse\x123\n" +
-	"\n" +
-	"characters\x18\x01 \x03(\v2\x13.world.v1.CharacterR\n" +
-	"characters\";\n" +
-	"\x16DeleteCharacterRequest\x12!\n" +
-	"\fcharacter_id\x18\x01 \x01(\tR\vcharacterId\"3\n" +
-	"\x17DeleteCharacterResponse\x12\x18\n" +
-	"\asuccess\x18\x01 \x01(\bR\asuccess\"c\n" +
-	"\x14MoveCharacterRequest\x12!\n" +
-	"\fcharacter_id\x18\x01 \x01(\tR\vcharacterId\x12\x13\n" +
-	"\x05new_x\x18\x02 \x01(\x05R\x04newX\x12\x13\n" +
-	"\x05new_y\x18\x03 \x01(\x05R\x04newY\"\x89\x01\n" +
-	"\x15MoveCharacterResponse\x121\n" +
-	"\tcharacter\x18\x01 \x01(\v2\x13.world.v1.CharacterR\tcharacter\x12\x18\n" +
-	"\asuccess\x18\x02 \x01(\bR\asuccess\x12#\n" +
-	"\rerror_message\x18\x03 \x01(\tR\ferrorMessage\"\x15\n" +
+	"\x14world/v1/world.proto\x12\bworld.v1\"\x15\n" +
 	"\x13GetWorldInfoRequest\"R\n" +
 	"\tWorldInfo\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x12\n" +
@@ -889,13 +175,8 @@ const file_world_v1_world_proto_rawDesc = "" +
 	"chunk_size\x18\x03 \x01(\x05R\tchunkSize\"J\n" +
 	"\x14GetWorldInfoResponse\x122\n" +
 	"\n" +
-	"world_info\x18\x01 \x01(\v2\x13.world.v1.WorldInfoR\tworldInfo2\x9e\x04\n" +
-	"\fWorldService\x12X\n" +
-	"\x0fCreateCharacter\x12 .world.v1.CreateCharacterRequest\x1a!.world.v1.CreateCharacterResponse\"\x00\x12O\n" +
-	"\fGetCharacter\x12\x1d.world.v1.GetCharacterRequest\x1a\x1e.world.v1.GetCharacterResponse\"\x00\x12d\n" +
-	"\x13GetCharactersByUser\x12$.world.v1.GetCharactersByUserRequest\x1a%.world.v1.GetCharactersByUserResponse\"\x00\x12X\n" +
-	"\x0fDeleteCharacter\x12 .world.v1.DeleteCharacterRequest\x1a!.world.v1.DeleteCharacterResponse\"\x00\x12R\n" +
-	"\rMoveCharacter\x12\x1e.world.v1.MoveCharacterRequest\x1a\x1f.world.v1.MoveCharacterResponse\"\x00\x12O\n" +
+	"world_info\x18\x01 \x01(\v2\x13.world.v1.WorldInfoR\tworldInfo2_\n" +
+	"\fWorldService\x12O\n" +
 	"\fGetWorldInfo\x12\x1d.world.v1.GetWorldInfoRequest\x1a\x1e.world.v1.GetWorldInfoResponse\"\x00B1Z/github.com/VoidMesh/platform/api/proto/world/v1b\x06proto3"
 
 var (
@@ -910,49 +191,21 @@ func file_world_v1_world_proto_rawDescGZIP() []byte {
 	return file_world_v1_world_proto_rawDescData
 }
 
-var file_world_v1_world_proto_msgTypes = make([]protoimpl.MessageInfo, 15)
+var file_world_v1_world_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
 var file_world_v1_world_proto_goTypes = []any{
-	(*Character)(nil),                   // 0: world.v1.Character
-	(*Position)(nil),                    // 1: world.v1.Position
-	(*CreateCharacterRequest)(nil),      // 2: world.v1.CreateCharacterRequest
-	(*CreateCharacterResponse)(nil),     // 3: world.v1.CreateCharacterResponse
-	(*GetCharacterRequest)(nil),         // 4: world.v1.GetCharacterRequest
-	(*GetCharacterResponse)(nil),        // 5: world.v1.GetCharacterResponse
-	(*GetCharactersByUserRequest)(nil),  // 6: world.v1.GetCharactersByUserRequest
-	(*GetCharactersByUserResponse)(nil), // 7: world.v1.GetCharactersByUserResponse
-	(*DeleteCharacterRequest)(nil),      // 8: world.v1.DeleteCharacterRequest
-	(*DeleteCharacterResponse)(nil),     // 9: world.v1.DeleteCharacterResponse
-	(*MoveCharacterRequest)(nil),        // 10: world.v1.MoveCharacterRequest
-	(*MoveCharacterResponse)(nil),       // 11: world.v1.MoveCharacterResponse
-	(*GetWorldInfoRequest)(nil),         // 12: world.v1.GetWorldInfoRequest
-	(*WorldInfo)(nil),                   // 13: world.v1.WorldInfo
-	(*GetWorldInfoResponse)(nil),        // 14: world.v1.GetWorldInfoResponse
-	(*timestamppb.Timestamp)(nil),       // 15: google.protobuf.Timestamp
+	(*GetWorldInfoRequest)(nil),  // 0: world.v1.GetWorldInfoRequest
+	(*WorldInfo)(nil),            // 1: world.v1.WorldInfo
+	(*GetWorldInfoResponse)(nil), // 2: world.v1.GetWorldInfoResponse
 }
 var file_world_v1_world_proto_depIdxs = []int32{
-	15, // 0: world.v1.Character.created_at:type_name -> google.protobuf.Timestamp
-	0,  // 1: world.v1.CreateCharacterResponse.character:type_name -> world.v1.Character
-	0,  // 2: world.v1.GetCharacterResponse.character:type_name -> world.v1.Character
-	0,  // 3: world.v1.GetCharactersByUserResponse.characters:type_name -> world.v1.Character
-	0,  // 4: world.v1.MoveCharacterResponse.character:type_name -> world.v1.Character
-	13, // 5: world.v1.GetWorldInfoResponse.world_info:type_name -> world.v1.WorldInfo
-	2,  // 6: world.v1.WorldService.CreateCharacter:input_type -> world.v1.CreateCharacterRequest
-	4,  // 7: world.v1.WorldService.GetCharacter:input_type -> world.v1.GetCharacterRequest
-	6,  // 8: world.v1.WorldService.GetCharactersByUser:input_type -> world.v1.GetCharactersByUserRequest
-	8,  // 9: world.v1.WorldService.DeleteCharacter:input_type -> world.v1.DeleteCharacterRequest
-	10, // 10: world.v1.WorldService.MoveCharacter:input_type -> world.v1.MoveCharacterRequest
-	12, // 11: world.v1.WorldService.GetWorldInfo:input_type -> world.v1.GetWorldInfoRequest
-	3,  // 12: world.v1.WorldService.CreateCharacter:output_type -> world.v1.CreateCharacterResponse
-	5,  // 13: world.v1.WorldService.GetCharacter:output_type -> world.v1.GetCharacterResponse
-	7,  // 14: world.v1.WorldService.GetCharactersByUser:output_type -> world.v1.GetCharactersByUserResponse
-	9,  // 15: world.v1.WorldService.DeleteCharacter:output_type -> world.v1.DeleteCharacterResponse
-	11, // 16: world.v1.WorldService.MoveCharacter:output_type -> world.v1.MoveCharacterResponse
-	14, // 17: world.v1.WorldService.GetWorldInfo:output_type -> world.v1.GetWorldInfoResponse
-	12, // [12:18] is the sub-list for method output_type
-	6,  // [6:12] is the sub-list for method input_type
-	6,  // [6:6] is the sub-list for extension type_name
-	6,  // [6:6] is the sub-list for extension extendee
-	0,  // [0:6] is the sub-list for field type_name
+	1, // 0: world.v1.GetWorldInfoResponse.world_info:type_name -> world.v1.WorldInfo
+	0, // 1: world.v1.WorldService.GetWorldInfo:input_type -> world.v1.GetWorldInfoRequest
+	2, // 2: world.v1.WorldService.GetWorldInfo:output_type -> world.v1.GetWorldInfoResponse
+	2, // [2:3] is the sub-list for method output_type
+	1, // [1:2] is the sub-list for method input_type
+	1, // [1:1] is the sub-list for extension type_name
+	1, // [1:1] is the sub-list for extension extendee
+	0, // [0:1] is the sub-list for field type_name
 }
 
 func init() { file_world_v1_world_proto_init() }
@@ -966,7 +219,7 @@ func file_world_v1_world_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_world_v1_world_proto_rawDesc), len(file_world_v1_world_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   15,
+			NumMessages:   3,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

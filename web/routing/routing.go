@@ -28,9 +28,7 @@ func RegisterRoutes(app *handlers.App) {
 
 	// Game routes (authenticated users only)
 	game := handlers.Game{App: app}
-	app.Web.Get(routes.GameCharacters.Path, handlers.AuthMiddleware(app.SessionStore), game.CharacterSelect).Name(routes.GameCharacters.Name)
+	app.Web.Get(routes.GameCharacters.Path, handlers.AuthMiddleware(app.SessionStore), game.ListCharacters).Name(routes.GameCharacters.Name)
 	app.Web.Post(routes.GameCharacterCreate.Path, handlers.AuthMiddleware(app.SessionStore), game.CreateCharacter).Name(routes.GameCharacterCreate.Name)
 	app.Web.Get(routes.GameWorldInfo.Path, handlers.AuthMiddleware(app.SessionStore), game.GetWorldInfo).Name(routes.GameWorldInfo.Name)
-	app.Web.Get(routes.GameWorld.Path, handlers.AuthMiddleware(app.SessionStore), game.GameWorld).Name(routes.GameWorld.Name)
-	app.Web.Post(routes.GameMove.Path, handlers.AuthMiddleware(app.SessionStore), game.MoveCharacter).Name(routes.GameMove.Name)
 }
