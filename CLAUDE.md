@@ -2,123 +2,106 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Project Overview
+
+VoidMesh is built using the Meower Framework, an opinionated, production-ready Go web framework for building modern applications. The project follows a microservice architecture with separate API and web servers communicating via gRPC.
+
+### Architecture
+
+- **API Server**: gRPC-based service handling business logic, database operations
+  - Located in `/api` directory
+  - Provides services for Users, World, Character, and Chunks
+  - Uses PostgreSQL with SQLC for type-safe database queries
+
+- **Web Server**: HTTP server with server-side rendering
+  - Located in `/web` directory
+  - Uses Fiber for HTTP handling
+  - Uses Templ for type-safe HTML templating
+  - Communicates with the API server via gRPC
+
+## Key Directories
+
+```
+/api
+├── proto/                # Protocol Buffer definitions
+│   ├── user/v1/         # User service definitions
+│   ├── world/v1/        # World service definitions
+│   ├── character/v1/    # Character service definitions
+│   └── chunk/v1/        # Chunk service definitions
+├── server/handlers/     # gRPC service implementations
+├── services/            # Core business logic
+├── db/                  # Database layer (SQLC generated)
+│   ├── schema.sql       # Database schema
+│   └── queries.sql      # SQL queries
+└── main.go              # API server entry point
+
+/web
+├── handlers/            # HTTP request handlers
+├── views/               # Templ templates
+├── routes/              # Route definitions
+├── grpc/                # gRPC client code
+└── main.go              # Web server entry point
+```
+
 ## Development Commands
 
-### Core Development Workflow
-```bash
-# Start full development environment with hot reload
-docker-compose up
+### Starting the Development Environment
 
-# Generate protobuf files after .proto changes
+```bash
+# Start all services (API, Web, DB, etc.)
+docker-compose up
+```
+
+This starts all services with hot reload enabled:
+- API server (gRPC) at localhost:50051
+- Web server at http://localhost:3000
+- PostgreSQL database
+- Tailwind CSS watcher
+- gRPC UI at http://localhost:50050
+- Database UI (pgweb) at http://localhost:5430
+
+### Code Generation
+
+```bash
+# Generate code from Protocol Buffer definitions
 ./scripts/generate_protobuf.sh
 
-# Generate type-safe database code after SQL changes
-sqlc generate -f api/db/sqlc.yaml
-
-# Build production CSS
-npm run build-css-prod
-
-# Build API server
-cd api && go build -o bin/api
-
-# Build web server  
-cd web && go build -o bin/web
+# Generate Go code from SQL queries
+# This happens automatically in Docker when SQL files change
+# Manual command in the API docker container:
+sqlc generate -f /src/api/db/sqlc.yaml
 ```
-
-### Service Access
-- **Web Interface**: http://localhost:3000
-- **gRPC API**: localhost:50051
-- **gRPC UI**: http://localhost:50050 (grpcui)
-- **Database UI**: http://localhost:5430 (pgweb)
-- **Mail Testing**: http://localhost:8025 (mailpit)
-
-## Architecture Overview
-
-This is a **Meower Framework** application with microservice architecture:
-
-### API Server (`/api`)
-- **Language**: Go with gRPC
-- **Database**: PostgreSQL with SQLC for type-safe queries
-- **Services**: User, Meow, World, Chunk services
-- **Authentication**: JWT middleware with configurable authentication
-- **Entry Point**: `api/main.go` → `server/server.go`
-
-### Web Server (`/web`) 
-- **Framework**: Fiber (Go HTTP framework)
-- **Templates**: Templ for type-safe HTML templating  
-- **Styling**: TailwindCSS with hot reload
-- **Communication**: gRPC client calls to API server
-- **Sessions**: SQLite-backed sessions with encrypted cookies
-- **Entry Point**: `web/main.go`
-
-### Database Layer
-- **ORM**: SQLC generates type-safe Go code from SQL
-- **Schema**: `api/db/schema.sql`
-- **Queries**: `api/db/query.*.sql` files per service
-- **Config**: `api/db/sqlc.yaml`
-
-### Protocol Buffers
-- **Services**: user/v1, meow/v1, world/v1, chunk/v1
-- **Location**: `api/proto/*/v1/*.proto`
-- **Generation**: `scripts/generate_protobuf.sh`
-
-## Development Patterns
-
-### Adding New Features
-1. Define protobuf service in `api/proto/[service]/v1/[service].proto`
-2. Add database schema to `api/db/schema.sql`
-3. Create queries in `api/db/query.[service].sql`
-4. Generate code: `sqlc generate` and `./scripts/generate_protobuf.sh`
-5. Implement handler in `api/server/handlers/[service].go`
-6. Register service in `api/server/server.go`
-7. Add web handlers in `web/handlers/[service].go`
-8. Create templates in `web/views/services/[service]/v1/`
-9. Register routes in `web/routing/routing.go`
-
-### Code Generation Requirements
-- Run `sqlc generate` after any SQL schema or query changes
-- Run `./scripts/generate_protobuf.sh` after any .proto file changes
-- Both are automatically watched in development via docker-compose
 
 ### Environment Variables
-- `DATABASE_URL`: PostgreSQL connection string (API server only)
-- `JWT_SECRET`: Required for API authentication
-- `API_ENDPOINT`: gRPC server address (api:50051 in docker)
-- `COOKIE_SECRET_KEY`: Web session encryption key
-- `ENV`: "development" or "production"
 
-## File Structure Conventions
-
-### API Structure
-- `api/proto/[service]/v1/` - Service definitions
-- `api/server/handlers/` - Business logic implementations  
-- `api/db/` - Database schema, queries, and generated code
-- `api/server/middleware/` - gRPC interceptors (JWT auth)
-
-### Web Structure  
-- `web/handlers/` - HTTP request handlers
-- `web/views/layouts/` - Base page templates
-- `web/views/pages/` - Individual page templates
-- `web/views/services/[service]/v1/` - Service-specific UI
-- `web/static/src/css/` - Source CSS files
-- `web/static/public/css/` - Generated CSS (auto-built)
-- `web/routes/` - Route constants
-- `web/routing/` - Route registration
-
-## Testing & Debugging
-
-### gRPC Testing
-- Use grpcui at http://localhost:50050 for interactive API testing
-- Health checks available at grpc-health-probe on :50051
-
-### Database Access  
-- pgweb UI at http://localhost:5430
-- Direct connection: `postgres://meower:meower@localhost:5432/meower`
-
-### Development Logs
-```bash
-# View specific service logs
-docker-compose logs api
-docker-compose logs web
-docker-compose logs -f  # Follow all logs
 ```
+# API Configuration
+DATABASE_URL=postgres://meower:meower@db:5432/meower?sslmode=disable
+JWT_SECRET=your-secret-key
+
+# Web Configuration
+API_ENDPOINT=api:50051
+COOKIE_SECRET_KEY=your-secret-key
+ENV=development  # or production
+```
+
+## Building for Production
+
+```bash
+# Build API server
+cd api && go build -o api ./main.go
+
+# Build web server
+cd web && go build -o web ./main.go
+
+# Docker build
+docker build -f api/Dockerfile -t voidmesh-api .
+docker build -f web/Dockerfile -t voidmesh-web .
+```
+
+## Project-Specific Notes
+
+1. The project recently switched from PostgreSQL to SQLite for session storage (commit 5923fa9)
+2. The web interface to play online was removed in commit 50f1362
+3. The world component was split into character and world in commit 50f1362
+4. Move cooldown was reduced from 200ms to 50ms for smoother gameplay (commit aca8865)
