@@ -1,11 +1,11 @@
-module github.com/VoidMesh/platform/web
+module github.com/VoidMesh/api/web
 
 go 1.24.3
 
-replace github.com/VoidMesh/platform/api => ../api
+replace github.com/VoidMesh/api/api => ../api
 
 require (
-	github.com/VoidMesh/platform/api v0.0.0-00010101000000-000000000000
+	github.com/VoidMesh/api/api v0.0.0-00010101000000-000000000000
 	github.com/a-h/templ v0.3.906
 	github.com/charmbracelet/log v0.4.2
 	github.com/gofiber/fiber/v2 v2.52.8

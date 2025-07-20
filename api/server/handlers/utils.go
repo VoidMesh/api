@@ -4,7 +4,7 @@ import (
 	"context"
 	"strconv"
 
-	"github.com/VoidMesh/platform/api/db"
+	"github.com/VoidMesh/api/api/db"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 

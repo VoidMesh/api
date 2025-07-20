@@ -1,8 +1,8 @@
 package routing
 
 import (
-	"github.com/VoidMesh/platform/web/handlers"
-	"github.com/VoidMesh/platform/web/routes"
+	"github.com/VoidMesh/api/web/handlers"
+	"github.com/VoidMesh/api/web/routes"
 )
 
 func RegisterRoutes(app *handlers.App) {

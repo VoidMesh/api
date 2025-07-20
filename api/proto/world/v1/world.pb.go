@@ -177,7 +177,7 @@ const file_world_v1_world_proto_rawDesc = "" +
 	"\n" +
 	"world_info\x18\x01 \x01(\v2\x13.world.v1.WorldInfoR\tworldInfo2_\n" +
 	"\fWorldService\x12O\n" +
-	"\fGetWorldInfo\x12\x1d.world.v1.GetWorldInfoRequest\x1a\x1e.world.v1.GetWorldInfoResponse\"\x00B1Z/github.com/VoidMesh/platform/api/proto/world/v1b\x06proto3"
+	"\fGetWorldInfo\x12\x1d.world.v1.GetWorldInfoRequest\x1a\x1e.world.v1.GetWorldInfoResponse\"\x00B,Z*github.com/VoidMesh/api/api/proto/world/v1b\x06proto3"
 
 var (
 	file_world_v1_world_proto_rawDescOnce sync.Once

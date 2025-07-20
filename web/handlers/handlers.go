@@ -3,8 +3,8 @@ package handlers
 import (
 	"errors"
 
-	"github.com/VoidMesh/platform/web/grpc"
-	"github.com/VoidMesh/platform/web/views/pages/custom_errors"
+	"github.com/VoidMesh/api/web/grpc"
+	"github.com/VoidMesh/api/web/views/pages/custom_errors"
 
 	"github.com/a-h/templ"
 	"github.com/gofiber/fiber/v2"

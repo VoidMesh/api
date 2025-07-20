@@ -10,8 +10,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/VoidMesh/platform/api/db"
-	userV1 "github.com/VoidMesh/platform/api/proto/user/v1"
+	"github.com/VoidMesh/api/api/db"
+	userV1 "github.com/VoidMesh/api/api/proto/user/v1"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"

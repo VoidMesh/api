@@ -7,12 +7,12 @@ import (
 	"net"
 	"os"
 
-	pbCharacterV1 "github.com/VoidMesh/platform/api/proto/character/v1"
-	pbChunkV1 "github.com/VoidMesh/platform/api/proto/chunk/v1"
-	pbUserV1 "github.com/VoidMesh/platform/api/proto/user/v1"
-	pbWorldV1 "github.com/VoidMesh/platform/api/proto/world/v1"
-	"github.com/VoidMesh/platform/api/server/handlers"
-	"github.com/VoidMesh/platform/api/server/middleware" // Uncomment to enable JWT middleware
+	pbCharacterV1 "github.com/VoidMesh/api/api/proto/character/v1"
+	pbChunkV1 "github.com/VoidMesh/api/api/proto/chunk/v1"
+	pbUserV1 "github.com/VoidMesh/api/api/proto/user/v1"
+	pbWorldV1 "github.com/VoidMesh/api/api/proto/world/v1"
+	"github.com/VoidMesh/api/api/server/handlers"
+	"github.com/VoidMesh/api/api/server/middleware" // Uncomment to enable JWT middleware
 	"github.com/jackc/pgx/v5/pgxpool"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/health"

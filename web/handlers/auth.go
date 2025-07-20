@@ -6,10 +6,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/VoidMesh/platform/web/routes"
-	"github.com/VoidMesh/platform/web/views/pages/auth"
+	"github.com/VoidMesh/api/web/routes"
+	"github.com/VoidMesh/api/web/views/pages/auth"
 
-	userV1 "github.com/VoidMesh/platform/api/proto/user/v1"
+	userV1 "github.com/VoidMesh/api/api/proto/user/v1"
 	"github.com/gofiber/fiber/v2"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"

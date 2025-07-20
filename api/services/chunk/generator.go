@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/VoidMesh/platform/api/db"
-	chunkV1 "github.com/VoidMesh/platform/api/proto/chunk/v1"
-	"github.com/VoidMesh/platform/api/services/noise"
+	"github.com/VoidMesh/api/api/db"
+	chunkV1 "github.com/VoidMesh/api/api/proto/chunk/v1"
+	"github.com/VoidMesh/api/api/services/noise"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"

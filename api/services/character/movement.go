@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/VoidMesh/platform/api/db"
-	characterV1 "github.com/VoidMesh/platform/api/proto/character/v1"
-	chunkV1 "github.com/VoidMesh/platform/api/proto/chunk/v1"
+	"github.com/VoidMesh/api/api/db"
+	characterV1 "github.com/VoidMesh/api/api/proto/character/v1"
+	chunkV1 "github.com/VoidMesh/api/api/proto/chunk/v1"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )

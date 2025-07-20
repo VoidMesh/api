@@ -611,7 +611,7 @@ const file_chunk_v1_chunk_proto_rawDesc = "" +
 	"\fChunkService\x12C\n" +
 	"\bGetChunk\x12\x19.chunk.v1.GetChunkRequest\x1a\x1a.chunk.v1.GetChunkResponse\"\x00\x12F\n" +
 	"\tGetChunks\x12\x1a.chunk.v1.GetChunksRequest\x1a\x1b.chunk.v1.GetChunksResponse\"\x00\x12^\n" +
-	"\x11GetChunksInRadius\x12\".chunk.v1.GetChunksInRadiusRequest\x1a#.chunk.v1.GetChunksInRadiusResponse\"\x00B1Z/github.com/VoidMesh/platform/api/proto/chunk/v1b\x06proto3"
+	"\x11GetChunksInRadius\x12\".chunk.v1.GetChunksInRadiusRequest\x1a#.chunk.v1.GetChunksInRadiusResponse\"\x00B,Z*github.com/VoidMesh/api/api/proto/chunk/v1b\x06proto3"
 
 var (
 	file_chunk_v1_chunk_proto_rawDescOnce sync.Once

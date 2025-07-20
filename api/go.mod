@@ -1,4 +1,4 @@
-module github.com/VoidMesh/platform/api
+module github.com/VoidMesh/api/api
 
 go 1.24.3
 

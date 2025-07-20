@@ -1,10 +1,10 @@
 package handlers
 
 import (
-	characterV1 "github.com/VoidMesh/platform/api/proto/character/v1"
-	worldV1 "github.com/VoidMesh/platform/api/proto/world/v1"
-	"github.com/VoidMesh/platform/web/grpc"
-	viewGameV1 "github.com/VoidMesh/platform/web/views/game"
+	characterV1 "github.com/VoidMesh/api/api/proto/character/v1"
+	worldV1 "github.com/VoidMesh/api/api/proto/world/v1"
+	"github.com/VoidMesh/api/web/grpc"
+	viewGameV1 "github.com/VoidMesh/api/web/views/game"
 	"github.com/gofiber/fiber/v2"
 )
 

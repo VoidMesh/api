@@ -4,9 +4,9 @@ import (
 	"context"
 	"strconv"
 
-	"github.com/VoidMesh/platform/api/db"
-	chunkV1 "github.com/VoidMesh/platform/api/proto/chunk/v1"
-	"github.com/VoidMesh/platform/api/services/chunk"
+	"github.com/VoidMesh/api/api/db"
+	chunkV1 "github.com/VoidMesh/api/api/proto/chunk/v1"
+	"github.com/VoidMesh/api/api/services/chunk"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 

@@ -1,7 +1,7 @@
 package handlers
 
 import (
-	viewHomepage "github.com/VoidMesh/platform/web/views/pages/homepage"
+	viewHomepage "github.com/VoidMesh/api/web/views/pages/homepage"
 
 	"github.com/gofiber/fiber/v2"
 )

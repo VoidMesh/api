@@ -4,9 +4,9 @@ import (
 	"os"
 	"time"
 
-	"github.com/VoidMesh/platform/web/grpc"
-	"github.com/VoidMesh/platform/web/handlers"
-	"github.com/VoidMesh/platform/web/routing"
+	"github.com/VoidMesh/api/web/grpc"
+	"github.com/VoidMesh/api/web/handlers"
+	"github.com/VoidMesh/api/web/routing"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/compress"

@@ -1357,7 +1357,7 @@ const file_user_v1_user_proto_rawDesc = "" +
 	"\x06Logout\x12\x16.user.v1.LogoutRequest\x1a\x17.user.v1.LogoutResponse\"\x00\x12e\n" +
 	"\x14RequestPasswordReset\x12$.user.v1.RequestPasswordResetRequest\x1a%.user.v1.RequestPasswordResetResponse\"\x00\x12P\n" +
 	"\rResetPassword\x12\x1d.user.v1.ResetPasswordRequest\x1a\x1e.user.v1.ResetPasswordResponse\"\x00\x12J\n" +
-	"\vVerifyEmail\x12\x1b.user.v1.VerifyEmailRequest\x1a\x1c.user.v1.VerifyEmailResponse\"\x00B0Z.github.com/VoidMesh/platform/api/proto/user/v1b\x06proto3"
+	"\vVerifyEmail\x12\x1b.user.v1.VerifyEmailRequest\x1a\x1c.user.v1.VerifyEmailResponse\"\x00B+Z)github.com/VoidMesh/api/api/proto/user/v1b\x06proto3"
 
 var (
 	file_user_v1_user_proto_rawDescOnce sync.Once

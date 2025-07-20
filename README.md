@@ -31,7 +31,7 @@ Meower combines the best of Go's ecosystem into a cohesive, Rails-like developer
 ### Installation
 
 ```bash
-go install github.com/VoidMesh/platform/cmd/meower@latest
+go install github.com/VoidMesh/api/cmd/meower@latest
 ```
 
 ### Create Your First Project
@@ -262,7 +262,7 @@ We welcome contributions! Here's how to get started:
 ### Development Setup
 
 ```bash
-git clone https://github.com/VoidMesh/platform.git
+git clone https://github.com/VoidMesh/api.git
 cd meower
 go mod tidy
 go build -o meower ./cmd/meower

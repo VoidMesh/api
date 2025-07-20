@@ -3,9 +3,9 @@ package handlers
 import (
 	"context"
 
-	worldV1 "github.com/VoidMesh/platform/api/proto/world/v1"
-	"github.com/VoidMesh/platform/api/services/chunk"
-	"github.com/VoidMesh/platform/api/services/world"
+	worldV1 "github.com/VoidMesh/api/api/proto/world/v1"
+	"github.com/VoidMesh/api/api/services/chunk"
+	"github.com/VoidMesh/api/api/services/world"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 

@@ -3,9 +3,9 @@ package handlers
 import (
 	"context"
 
-	characterV1 "github.com/VoidMesh/platform/api/proto/character/v1"
-	"github.com/VoidMesh/platform/api/services/character"
-	"github.com/VoidMesh/platform/api/services/chunk"
+	characterV1 "github.com/VoidMesh/api/api/proto/character/v1"
+	"github.com/VoidMesh/api/api/services/character"
+	"github.com/VoidMesh/api/api/services/chunk"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 

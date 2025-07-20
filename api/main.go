@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/VoidMesh/platform/api/server"
+	"github.com/VoidMesh/api/api/server"
 )
 
 func main() {

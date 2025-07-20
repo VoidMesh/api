@@ -745,7 +745,7 @@ const file_character_v1_character_proto_rawDesc = "" +
 	"\fGetCharacter\x12!.character.v1.GetCharacterRequest\x1a\".character.v1.GetCharacterResponse\"\x00\x12l\n" +
 	"\x13GetCharactersByUser\x12(.character.v1.GetCharactersByUserRequest\x1a).character.v1.GetCharactersByUserResponse\"\x00\x12`\n" +
 	"\x0fDeleteCharacter\x12$.character.v1.DeleteCharacterRequest\x1a%.character.v1.DeleteCharacterResponse\"\x00\x12Z\n" +
-	"\rMoveCharacter\x12\".character.v1.MoveCharacterRequest\x1a#.character.v1.MoveCharacterResponse\"\x00B5Z3github.com/VoidMesh/platform/api/proto/character/v1b\x06proto3"
+	"\rMoveCharacter\x12\".character.v1.MoveCharacterRequest\x1a#.character.v1.MoveCharacterResponse\"\x00B0Z.github.com/VoidMesh/api/api/proto/character/v1b\x06proto3"
 
 var (
 	file_character_v1_character_proto_rawDescOnce sync.Once
