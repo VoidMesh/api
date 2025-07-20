@@ -34,10 +34,11 @@ func NewClient() *Client {
 	}
 
 	client := &Client{
-		UserService:  userV1.NewUserServiceClient(conn),
-		WorldService: worldV1.NewWorldServiceClient(conn),
-		ChunkService: chunkV1.NewChunkServiceClient(conn),
-		conn:         conn,
+		CharacterService: characterV1.NewCharacterServiceClient(conn),
+		ChunkService:     chunkV1.NewChunkServiceClient(conn),
+		UserService:      userV1.NewUserServiceClient(conn),
+		WorldService:     worldV1.NewWorldServiceClient(conn),
+		conn:             conn,
 	}
 
 	return client
