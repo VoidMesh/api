@@ -23,7 +23,7 @@ templ ListCharacters(c *fiber.Ctx, resp *characterV1.GetCharactersByUserResponse
 							<h3 class="text-xl font-semibold mb-2">{ character.Name }</h3>
 							<p class="text-gray-600 mb-2">Position: ({ fmt.Sprintf("%d", character.X) }, { fmt.Sprintf("%d", character.Y) })</p>
 							<p class="text-gray-600 mb-4">Chunk: ({ fmt.Sprintf("%d", character.ChunkX) }, { fmt.Sprintf("%d", character.ChunkY) })</p>
-							<span class="font-mono mb-4 text-gray-600 bg-violet-200 p-1 rounded-md text-sm">{ character.Id }</span>
+							<span class="font-mono mb-4 text-gray-600 bg-violet-200 p-1 rounded-md text-sm">ID: <code>{ character.Id }</code></span>
 						</div>
 					}
 				</div>
