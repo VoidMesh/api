@@ -4,11 +4,11 @@
 *.dll
 *.so
 *.dylib
-./web/web
-./api/api
 
 # Test binary, built with `go test -c`
 *.test
+./web/web
+./api/api
 
 # Output of the go coverage tool, specifically when used with LiteIDE
 *.out
@@ -25,6 +25,9 @@ go.work
 # The temp binary file for the application
 tmp/
 
+# SQLC generated files
+api/internal/db/*.go
+
 # The templ files are generated at build time
 *_templ.go
 # The templ files are generated during watch mode,
@@ -34,8 +37,12 @@ tmp/
 # OS generated files
 **/.DS_Store
 
-# Generated CSS
-web/static/public/css/main.css
+# Generated CSS & JS
+web/static/public/css/*.css
+web/static/public/js/*.js
 
 # Dependency directories
 **/node_modules
+
+# Drafted web UI design
+design/
