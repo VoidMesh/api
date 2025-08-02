@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+package world.v1;
+
+option go_package = "github.com/VoidMesh/api/api/proto/world/v1";
+
+service WorldService {
+  // World information
+  rpc GetWorldInfo(GetWorldInfoRequest) returns (GetWorldInfoResponse) {}
+}
+
+// World info
+message GetWorldInfoRequest {}
+
+message WorldInfo {
+  string name = 1;
+  int64 seed = 2;
+  int32 chunk_size = 3;
+}
+
+message GetWorldInfoResponse {
+  WorldInfo world_info = 1;
+}

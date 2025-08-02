@@ -1,295 +1,276 @@
-# VoidMesh API
+# 🐱 Meower Framework
 
-A Go-based backend service implementing a chunk-based resource system for multiplayer harvesting mechanics, inspired by EVE Online's asteroid belts and Guild Wars 2's resource nodes.
+**An opinionated, production-ready Go web framework that makes building modern applications delightfully simple.**
 
-[![Go Version](https://img.shields.io/badge/Go-1.24.3+-blue.svg)](https://golang.org)
-[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-[![SQLite](https://img.shields.io/badge/Database-SQLite-blue.svg)](https://sqlite.org)
+Meower combines the best of Go's ecosystem into a cohesive, Rails-like developer experience. Build full-stack applications with gRPC APIs, server-side rendering, and type-safe database queries—all with a single CLI command.
 
-## Quick Start
+## ✨ Features
+
+### 🚀 **Full-Stack Go**
+
+- **API Server**: gRPC-based microservice architecture
+- **Web Server**: Fiber-powered HTTP server with server-side rendering
+- **Type Safety**: End-to-end type safety from database to frontend
+
+### 🛠️ **Developer Experience**
+
+- **One Command Setup**: `meower new my-app` creates a complete project
+- **Code Generators**: Generate services, handlers, and models instantly
+- **Hot Reload**: Live reloading for both backend and frontend changes
+- **Docker Integration**: Complete development environment in one command
+
+### 🔧 **Tech Stack**
+
+- **Backend**: Go + gRPC + PostgreSQL + SQLC
+- **Frontend**: Go Fiber + Templ templates + TailwindCSS
+- **Development**: Docker Compose + hot reload
+- **API**: Protocol Buffers for type-safe communication
+
+## 🚀 Quick Start
+
+### Installation
 
 ```bash
-# Clone repository
+go install github.com/VoidMesh/api/cmd/meower@latest
+```
+
+### Create Your First Project
+
+```bash
+# Create a new project
+meower new my-social-app -m github.com/user/my-social-app
+
+# Start development environment
+cd my-social-app
+docker-compose up
+```
+
+Your app is now running at:
+
+- **Web Interface**: http://localhost:3000
+- **gRPC API**: localhost:50051
+- **Database UI**: http://localhost:5430
+
+### Generate Components
+
+```bash
+# Generate a complete gRPC service
+meower create handler PostService
+
+# Generate with specific methods
+meower create handler UserService -m Create,Get,Update,Delete,List
+```
+
+## 📁 Project Structure
+
+```
+my-app/
+├── 🖥️  api/                    # gRPC API Server
+│   ├── proto/                 # Protocol Buffer definitions
+│   │   ├── user/v1/          # Versioned service definitions
+│   │   └── post/v1/
+│   ├── server/handlers/       # gRPC service implementations
+│   ├── db/                    # Database layer (SQLC generated)
+│   │   ├── schema.sql        # Database schema
+│   │   ├── queries.sql       # SQL queries
+│   │   └── *.go             # Generated type-safe code
+│   └── main.go               # API server entry point
+│
+├── 🌐 web/                     # Web Server
+│   ├── handlers/             # HTTP request handlers
+│   ├── views/                # Templ templates
+│   │   ├── layouts/          # Base layouts
+│   │   ├── pages/            # Page templates
+│   │   └── components/       # Reusable components
+│   ├── static/               # CSS, JS, images
+│   ├── routes/               # Route definitions
+│   └── main.go              # Web server entry point
+│
+├── 🐳 docker-compose.yml       # Development environment
+└── 📜 scripts/                 # Build and utility scripts
+```
+
+## 🎯 Core Concepts
+
+### **Microservice Architecture**
+
+Meower uses a clean separation between your API and web layers:
+
+- **API Server**: Pure business logic, database operations, gRPC endpoints
+- **Web Server**: HTTP handlers, template rendering, static assets
+- **Communication**: Type-safe gRPC calls between services
+
+### **Type Safety Everywhere**
+
+- **Database**: SQLC generates type-safe Go code from SQL queries
+- **API**: Protocol Buffers ensure type safety across service boundaries
+- **Frontend**: Templ provides type-safe HTML templating
+
+### **Convention Over Configuration**
+
+- **Standard Structure**: Consistent project layout across all Meower apps
+- **Naming Conventions**: Predictable file and package naming
+- **Code Generation**: Smart generators that follow established patterns
+
+## 🛠️ Commands Reference
+
+### Project Management
+
+```bash
+# Create new project
+meower new <project-name> [flags]
+  -m, --module string   Go module path (e.g. github.com/user/project)
+  -f, --force          Force creation even if directory exists
+```
+
+### Code Generation
+
+```bash
+# Generate gRPC service handler
+meower create handler <ServiceName> [flags]
+  -m, --methods strings   Methods to generate (default: Create,Get,Update,Delete,List)
+
+# Examples
+meower create handler UserService
+meower create handler PostService -m Create,Get,List
+meower create handler AuthService -m Login,Logout,Register
+```
+
+## 🔄 Development Workflow
+
+### 1. **Start Development Environment**
+
+```bash
+docker-compose up
+```
+
+This starts all services with hot reload enabled:
+
+- API server with live recompilation
+- Web server with Templ template reloading
+- TailwindCSS with file watching
+- PostgreSQL database
+- Development tools (pgweb, mailpit)
+
+### 2. **Make Changes**
+
+- **API Changes**: Edit files in `api/`, server restarts automatically
+- **Frontend Changes**: Edit `.templ` files, browser refreshes automatically
+- **Database Changes**: Update `schema.sql`, run migrations
+- **Styles**: Edit CSS files, TailwindCSS rebuilds automatically
+
+### 3. **Generate Code**
+
+```bash
+# After adding new SQL queries
+sqlc generate
+
+# After modifying .proto files
+./scripts/generate_protobuf.sh
+
+# Add new services
+meower create handler PaymentService
+```
+
+## 🔧 Configuration
+
+### Environment Variables
+
+```bash
+# API Configuration
+DATABASE_URL=postgres://user:pass@localhost:5432/dbname
+API_ENDPOINT=localhost:50051
+
+# Web Configuration
+COOKIE_SECRET_KEY=your-secret-key
+ENV=development  # or production
+```
+
+### Database Setup
+
+Meower uses PostgreSQL with SQLC for type-safe queries:
+
+1. **Define Schema**: Edit `api/db/schema.sql`
+2. **Write Queries**: Add queries to `api/db/queries.sql`
+3. **Generate Code**: Run `sqlc generate`
+4. **Use in Handlers**: Import and use generated functions
+
+## 🎨 Frontend Development
+
+### Templ Templates
+
+Meower uses [Templ](https://templ.guide/) for type-safe HTML templating:
+
+```go
+// views/pages/home.templ
+package pages
+
+templ HomePage(title string, posts []Post) {
+    @layouts.Base(title) {
+        <div class="container mx-auto px-4">
+            <h1 class="text-3xl font-bold">{ title }</h1>
+            for _, post := range posts {
+                @components.PostCard(post)
+            }
+        </div>
+    }
+}
+```
+
+### TailwindCSS Integration
+
+- **Automatic Building**: CSS rebuilds on file changes
+- **Component Classes**: Organized in `web/static/src/css/`
+- **Production Optimization**: Minified builds for deployment
+
+## 🚀 Deployment
+
+### Production Build
+
+```bash
+# Build API server
+cd api && go build -o api ./cmd/api
+
+# Build web server
+cd web && go build -o web ./cmd/web
+
+# Build assets
+npm run build-css-prod
+```
+
+### Docker Deployment
+
+```bash
+# Build production images
+docker build -f api/Dockerfile -t my-app-api .
+docker build -f web/Dockerfile -t my-app-web .
+
+# Or use docker-compose for production
+docker-compose -f docker-compose.prod.yml up
+```
+
+## 🤝 Contributing
+
+We welcome contributions! Here's how to get started:
+
+1. **Fork the repository**
+2. **Create a feature branch**: `git checkout -b feature/amazing-feature`
+3. **Make your changes** and add tests
+4. **Run tests**: `go test ./...`
+5. **Submit a pull request**
+
+### Development Setup
+
+```bash
 git clone https://github.com/VoidMesh/api.git
-cd api
-
-# Install dependencies
+cd meower
 go mod tidy
-
-# Initialize database
-sqlite3 game.db < internal/db/migrations/001_initial.up.sql
-
-# Run server
-go run ./cmd/server
+go build -o meower ./cmd/meower
 ```
 
-Server runs on `http://localhost:8080`
+## 📄 License
 
-## Features
-
-### 🌍 Chunk-Based World System
-- 16x16 coordinate-based spatial organization
-- Infinite world support with efficient sparse storage
-- Dynamic chunk loading and node generation
-
-### ⛏️ Resource Harvesting Mechanics
-- **Shared Resources**: Multiple players can harvest from the same node
-- **Depletion & Regeneration**: Nodes have finite yield but restore over time
-- **Quality Tiers**: Poor, Normal, and Rich resource variants
-- **Multiple Spawn Types**: Random, Static Daily, and Static Permanent nodes
-
-### 🎮 Player Management & Authentication
-- Token-based authentication system
-- Player registration and login
-- Real-time player tracking and online status
-- Player inventory and statistics
-- Position tracking and updates
-
-### 🗄️ Robust Data Layer
-- SQLite database with transaction safety
-- SQLC-generated type-safe queries
-- Database migrations with rollback support
-- Comprehensive indexing for performance
-
-### 🎛️ Template-Driven Configuration
-- Configurable spawn templates for game balancing
-- Noise-based procedural generation
-- Cluster spawning for realistic resource distribution
-- No-code resource tuning
-
-## Architecture
-
-```
-┌───────────────────────────────────────────────────────────┐
-│                      HTTP API Layer                       │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐        │
-│  │  Handlers   │  │ Middleware  │  │   Routes    │        │
-│  └─────────────┘  └─────────────┘  └─────────────┘        │
-└───────────────────────────────────────────────────────────┘
-                              │
-┌───────────────────────────────────────────────────────────┐
-│                   Business Logic Layer                    │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐        │
-│  │ChunkManager │  │ Resource    │  │ Harvest     │        │
-│  │             │  │ Generation  │  │ Sessions    │        │
-│  └─────────────┘  └─────────────┘  └─────────────┘        │
-└───────────────────────────────────────────────────────────┘
-                              │
-┌───────────────────────────────────────────────────────────┐
-│                     Data Access Layer                     │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐        │
-│  │   SQLite    │  │    SQLC     │  │ Migrations  │        │
-│  │  Database   │  │  Generated  │  │             │        │
-│  └─────────────┘  └─────────────┘  └─────────────┘        │
-└───────────────────────────────────────────────────────────┘
-```
-
-## API Endpoints
-
-### Public Endpoints
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `GET` | `/health` | Health check |
-| `GET` | `/api/v1/chunks/{x}/{z}/nodes` | Load chunk nodes |
-| `POST` | `/api/v1/players/register` | Register new player |
-| `POST` | `/api/v1/players/login` | Login and get token |
-| `GET` | `/api/v1/players/online` | List online players |
-| `GET` | `/api/v1/players/{id}/profile` | Get player profile |
-
-### Protected Endpoints (Require Authentication)
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `POST` | `/api/v1/nodes/{nodeId}/harvest` | Harvest resources from node |
-| `POST` | `/api/v1/players/logout` | Logout and invalidate token |
-| `GET` | `/api/v1/players/me` | Get current player info |
-| `PUT` | `/api/v1/players/me/position` | Update player position |
-| `GET` | `/api/v1/players/me/inventory` | Get player inventory |
-| `GET` | `/api/v1/players/me/stats` | Get player statistics |
-
-## Resource Types
-
-| Type | ID | Description | Yield Range | Regen Rate |
-|------|----|-----------|-----------| -----------|
-| Iron Ore | 1 | Basic mining resource | 100-500 | 5-10/hour |
-| Gold Ore | 2 | Valuable mining resource | 50-300 | 2-5/hour |
-| Wood | 3 | Renewable tree resource | 50-100 | 1/hour |
-| Stone | 4 | Construction material | 75-150 | 2/hour |
-
-## Documentation
-
-### 📖 Complete Documentation Set
-
-- **[API Reference](API_REFERENCE.md)** - Complete REST API reference with examples
-- **[Claude Code Integration](CLAUDE.md)** - Instructions for Claude Code development
-- **[Debug Tool Guide](cmd/debug/README.md)** - TUI debugging tool documentation
-- **[Change Log](CHANGELOG.md)** - Version history and feature updates
-
-## Development
-
-### Prerequisites
-
-- Go 1.24.3+
-- SQLite 3.x
-- Optional: Docker, make
-
-### Development Commands
-
-```bash
-# Database operations
-sqlite3 game.db < internal/db/migrations/001_initial.up.sql
-sqlc generate  # Regenerate database code
-
-# Build and run
-go build -o voidmesh-api
-./voidmesh-api
-
-# Testing
-go test ./...
-go test -race ./...
-
-# Code quality
-gofmt -w .
-golangci-lint run
-```
-
-### Project Structure
-
-```
-voidmesh-api/
-├── cmd/                      # Application entry points
-│   ├── debug/               # Debug CLI tool with TUI
-│   └── server/              # Main API server
-├── internal/                # Private application code
-│   ├── api/                 # HTTP handlers and routes
-│   ├── chunk/               # Chunk and resource management
-│   ├── player/              # Player management and authentication
-│   ├── config/              # Configuration management  
-│   └── db/                  # Database layer (SQLC generated)
-├── test/                    # Integration tests
-├── game.db                  # SQLite database
-├── API_REFERENCE.md         # Complete API documentation
-├── CLAUDE.md               # Claude Code integration guide
-└── main.go                  # Application entry point
-```
-
-## Example Usage
-
-### Authentication and Harvesting
-
-```bash
-# Register a new player
-curl -X POST http://localhost:8080/api/v1/players/register \
-  -H "Content-Type: application/json" \
-  -d '{"username": "player1", "password": "securepassword"}'
-
-# Login to get session token
-curl -X POST http://localhost:8080/api/v1/players/login \
-  -H "Content-Type: application/json" \
-  -d '{"username": "player1", "password": "securepassword"}'
-
-# Load chunk nodes
-curl http://localhost:8080/api/v1/chunks/0/0/nodes
-
-# Harvest resources (requires authentication)
-curl -X POST http://localhost:8080/api/v1/nodes/1/harvest \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer YOUR_TOKEN_HERE" \
-  -d '{"harvest_amount": 10}'
-```
-
-### JavaScript Client
-
-```javascript
-const client = new VoidMeshClient('http://localhost:8080/api/v1');
-
-// Register and login
-await client.register('player1', 'securepassword');
-const { session_token } = await client.login('player1', 'securepassword');
-
-// Set authentication token
-client.setToken(session_token);
-
-// Load chunk
-const chunk = await client.loadChunk(0, 0);
-
-// Harvest resources directly
-const result = await client.harvestNode(nodeId, 10);
-
-// Get player inventory
-const inventory = await client.getInventory();
-```
-
-## Background Services
-
-The API includes automatic background processes:
-
-- **Resource Regeneration** (hourly): Restores node yield based on regeneration rates
-- **Node Respawning** (hourly): Reactivates depleted nodes after respawn timers
-- **Player Session Management**: Tracks player login/logout status
-- **Statistics Updates**: Maintains player gameplay statistics
-
-## Docker Deployment
-
-```dockerfile
-FROM golang:1.24-alpine AS builder
-WORKDIR /app
-COPY . .
-RUN go build -o voidmesh-api
-
-FROM alpine:latest
-RUN apk add sqlite
-COPY --from=builder /app/voidmesh-api .
-EXPOSE 8080
-CMD ["./voidmesh-api"]
-```
-
-## Performance Features
-
-- **Optimized Indexes**: Spatial and temporal query optimization
-- **Transaction Safety**: All critical operations use database transactions
-- **Caching Layer**: Occupied position caching with TTL
-- **Batch Operations**: Efficient background processing
-- **Connection Pooling**: Configurable database connection management
-
-## Security Considerations
-
-**Current Implementation:**
-- Bearer token authentication system
-- Password hashing with salt and SHA-256
-- Input validation on all endpoints
-- SQL injection prevention via parameterized queries
-- Transaction-based data integrity
-- Protected routes with authentication middleware
-
-**Production Recommendations:**
-- Upgrade to bcrypt or Argon2 for password hashing
-- Implement JWT with proper expiration
-- Add rate limiting per player and IP
-- Enable request logging and monitoring
-- Use HTTPS in production
-- Restrict CORS origins from wildcard (*)
-
-## Contributing
-
-1. Fork the repository
-2. Create feature branch: `git checkout -b feature/new-feature`
-3. Make changes and add tests
-4. Run tests: `go test ./...`
-5. Submit pull request
-
-### Commit Convention
-
-```
-feat: add new feature
-fix: resolve bug
-docs: update documentation  
-refactor: improve code structure
-test: add tests
-```
-
-## License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+MIT License - see [LICENSE](LICENSE) file for details.
 
 ## Support
 
@@ -300,3 +281,21 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ---
 
 Built with ❤️ for multiplayer game developers
+
+## 🎉 Why Meower?
+
+**"Building web applications shouldn't require assembling 20 different tools."**
+
+Meower gives you:
+
+- ✅ **Batteries Included**: Everything you need out of the box
+- ✅ **Type Safety**: Catch errors at compile time, not runtime
+- ✅ **Developer Joy**: Fast feedback loops and intuitive workflows
+- ✅ **Production Ready**: Built for real applications, not just demos
+- ✅ **Go All The Way**: Pure Go stack with excellent performance
+
+---
+
+**Made with 🐱 by developers who believe web development should be fun again.**
+
+_May your code purr smoothly and your builds never hiss!_ 🚀

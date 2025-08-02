@@ -1,0 +1,87 @@
+package viewHomepage
+
+import (
+	"github.com/VoidMesh/api/web/routes"
+	"github.com/VoidMesh/api/web/views/layouts"
+	"github.com/gofiber/fiber/v2"
+)
+
+templ Index(c *fiber.Ctx) {
+	@layouts.Main(c) {
+		<div class="max-w-4xl mx-auto py-12">
+			if c.Locals("user_id") != nil {
+				// Authenticated user view
+				<div class="text-center mb-12">
+					<h1 class="text-4xl font-bold text-gray-800 mb-4">
+						Welcome back, { getString(c.Locals("display_name")) }! 🌌
+					</h1>
+					<p class="text-xl text-gray-600 mb-8">
+						Ready to explore the infinite VoidMesh?
+					</p>
+					<div class="space-x-4">
+						<a
+							href={ templ.SafeURL(c.App().GetRoute(routes.GameCharacters.Name).Path) }
+							class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-6 rounded-lg transition duration-200"
+						>
+							Enter Game
+						</a>
+						<a
+							href={ templ.SafeURL(c.App().GetRoute(routes.GameWorldInfo.Name).Path) }
+							class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-3 px-6 rounded-lg transition duration-200"
+						>
+							World Info
+						</a>
+					</div>
+				</div>
+			} else {
+				// Guest user view
+				<div class="text-center mb-12">
+					<h1 class="text-5xl font-bold text-gray-800 mb-6">
+						Welcome to VoidMesh! 🌌
+					</h1>
+					<p class="text-xl text-gray-600 mb-8">
+						An infinite procedurally-generated world waiting to be explored.
+					</p>
+					<div class="space-x-4">
+						<a
+							href={ templ.SafeURL(c.App().GetRoute(routes.SignupShow.Name).Path) }
+							class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-8 rounded-lg transition duration-200"
+						>
+							Start Exploring
+						</a>
+						<a
+							href={ templ.SafeURL(c.App().GetRoute(routes.LoginShow.Name).Path) }
+							class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg transition duration-200"
+						>
+							Login
+						</a>
+					</div>
+				</div>
+				<div class="grid md:grid-cols-3 gap-8 mt-16">
+					<div class="text-center p-6 bg-white rounded-lg shadow-md">
+						<div class="text-4xl mb-4">🗺️</div>
+						<h3 class="text-xl font-semibold mb-2">Infinite Exploration</h3>
+						<p class="text-gray-600">Discover an endless procedurally-generated world with diverse terrain types.</p>
+					</div>
+					<div class="text-center p-6 bg-white rounded-lg shadow-md">
+						<div class="text-4xl mb-4">⚡</div>
+						<h3 class="text-xl font-semibold mb-2">Real-time Movement</h3>
+						<p class="text-gray-600">Move your character instantly through the world with responsive controls.</p>
+					</div>
+					<div class="text-center p-6 bg-white rounded-lg shadow-md">
+						<div class="text-4xl mb-4">🎮</div>
+						<h3 class="text-xl font-semibold mb-2">Multiple Characters</h3>
+						<p class="text-gray-600">Create and manage multiple characters, each with their own journey.</p>
+					</div>
+				</div>
+			}
+		</div>
+	}
+}
+
+func getString(value interface{}) string {
+	if str, ok := value.(string); ok {
+		return str
+	}
+	return ""
+}
