@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/VoidMesh/api/api/db"
+	"github.com/VoidMesh/api/api/internal/logging"
 	characterV1 "github.com/VoidMesh/api/api/proto/character/v1"
 	chunkV1 "github.com/VoidMesh/api/api/proto/chunk/v1"
 	"google.golang.org/grpc/codes"
@@ -22,51 +23,82 @@ const (
 
 // MoveCharacter handles character movement with anti-cheat validation
 func (s *Service) MoveCharacter(ctx context.Context, req *characterV1.MoveCharacterRequest) (*characterV1.MoveCharacterResponse, error) {
+	logger := logging.WithFields("character_id", req.CharacterId, "new_x", req.NewX, "new_y", req.NewY)
+	logger.Debug("Processing character movement request")
+
+	start := time.Now()
+
 	// Get character first
+	logger.Debug("Loading character data for movement validation")
 	charUUID, err := parseUUID(req.CharacterId)
 	if err != nil {
+		logger.Error("Invalid character ID format", "error", err)
 		return nil, status.Errorf(codes.InvalidArgument, "invalid character ID: %v", err)
 	}
 
 	character, err := db.New(s.db).GetCharacterById(ctx, charUUID)
 	if err != nil {
+		logger.Warn("Character not found for movement", "error", err)
 		return nil, status.Errorf(codes.NotFound, "character not found: %v", err)
 	}
 
+	loggerWithChar := logger.With("current_x", character.X, "current_y", character.Y)
+	loggerWithChar.Debug("Character loaded, validating movement")
+
 	// Anti-cheat validation
+	loggerWithChar.Debug("Running anti-cheat movement validation")
 	if !s.validateMovement(character, req.NewX, req.NewY) {
+		deltaX := req.NewX - character.X
+		deltaY := req.NewY - character.Y
+		loggerWithChar.Warn("Movement rejected by anti-cheat validation",
+			"delta_x", deltaX, "delta_y", deltaY, "duration", time.Since(start))
 		return &characterV1.MoveCharacterResponse{
 			Success:      false,
 			ErrorMessage: "Invalid movement: too far or too fast",
 		}, nil
 	}
+	loggerWithChar.Debug("Anti-cheat validation passed")
 
 	// Check rate limiting
 	characterID := req.CharacterId
 	lastMove, exists := movementCache[characterID]
-	if exists && time.Since(lastMove) < MovementCooldown {
-		return &characterV1.MoveCharacterResponse{
-			Success:      false,
-			ErrorMessage: "Movement too fast, please wait",
-		}, nil
+	loggerWithChar.Debug("Checking movement rate limiting", "exists", exists)
+	if exists {
+		timeSinceLastMove := time.Since(lastMove)
+		loggerWithChar.Debug("Time since last movement", "elapsed", timeSinceLastMove, "cooldown", MovementCooldown)
+		if timeSinceLastMove < MovementCooldown {
+			loggerWithChar.Warn("Movement rejected: rate limit exceeded",
+				"time_since_last", timeSinceLastMove, "required_cooldown", MovementCooldown)
+			return &characterV1.MoveCharacterResponse{
+				Success:      false,
+				ErrorMessage: "Movement too fast, please wait",
+			}, nil
+		}
 	}
+	loggerWithChar.Debug("Rate limiting check passed")
 
 	// Validate destination terrain
+	loggerWithChar.Debug("Validating destination terrain")
 	valid, err := s.isValidMovePosition(ctx, req.NewX, req.NewY)
 	if err != nil {
+		loggerWithChar.Error("Failed to validate destination terrain", "error", err)
 		return nil, status.Errorf(codes.Internal, "failed to validate position: %v", err)
 	}
 	if !valid {
+		loggerWithChar.Warn("Movement rejected: invalid destination terrain")
 		return &characterV1.MoveCharacterResponse{
 			Success:      false,
 			ErrorMessage: "Cannot move to that position (water or stone)",
 		}, nil
 	}
+	loggerWithChar.Debug("Destination terrain validation passed")
 
 	// Calculate new chunk coordinates
 	newChunkX, newChunkY := s.worldToChunkCoords(req.NewX, req.NewY)
+	loggerWithChar.Debug("Calculated new chunk coordinates", "new_chunk_x", newChunkX, "new_chunk_y", newChunkY)
 
 	// Update character position
+	loggerWithChar.Debug("Updating character position in database")
 	updatedCharacter, err := db.New(s.db).UpdateCharacterPosition(ctx, db.UpdateCharacterPositionParams{
 		ID:     charUUID,
 		X:      req.NewX,
@@ -75,11 +107,17 @@ func (s *Service) MoveCharacter(ctx context.Context, req *characterV1.MoveCharac
 		ChunkY: newChunkY,
 	})
 	if err != nil {
+		loggerWithChar.Error("Failed to update character position in database", "error", err)
 		return nil, status.Errorf(codes.Internal, "failed to update character position: %v", err)
 	}
 
 	// Update movement cache
 	movementCache[characterID] = time.Now()
+	loggerWithChar.Debug("Updated movement cache timestamp")
+
+	duration := time.Since(start)
+	loggerWithChar.Info("Character movement completed successfully",
+		"final_x", updatedCharacter.X, "final_y", updatedCharacter.Y, "duration", duration)
 
 	return &characterV1.MoveCharacterResponse{
 		Character: s.dbCharacterToProto(updatedCharacter),

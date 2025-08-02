@@ -2,11 +2,11 @@ package server
 
 import (
 	"context"
-	"fmt"
-	"log"
 	"net"
 	"os"
+	"time"
 
+	"github.com/VoidMesh/api/api/internal/logging"
 	pbCharacterV1 "github.com/VoidMesh/api/api/proto/character/v1"
 	pbChunkV1 "github.com/VoidMesh/api/api/proto/chunk/v1"
 	pbUserV1 "github.com/VoidMesh/api/api/proto/user/v1"
@@ -21,49 +21,92 @@ import (
 )
 
 func Serve() {
+	logger := logging.GetLogger()
+	logger.Info("Starting VoidMesh gRPC server initialization")
+
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
+	logger.Debug("Context created for server lifecycle management")
+
 	// Create a listener on TCP port for gRPC server
+	logger.Debug("Creating TCP listener on port 50051")
 	lis, err := net.Listen("tcp", ":50051")
 	if err != nil {
-		log.Fatalf("failed to listen: %v\n", err)
+		logger.Fatal("Failed to create TCP listener", "error", err, "port", 50051)
 	}
 	defer lis.Close()
+	logger.Info("TCP listener created successfully", "address", lis.Addr().String())
 
 	// Create a new gRPC server
-	// To enable JWT authentication, uncomment the following lines:
+	logger.Debug("Initializing gRPC server with JWT authentication")
+
+	// Configure JWT authentication
 	jwtSecret := []byte(os.Getenv("JWT_SECRET"))
 	if len(jwtSecret) == 0 {
-		log.Fatal("JWT_SECRET environment variable is required for production")
+		logger.Fatal("JWT_SECRET environment variable is required for production")
 	}
+	logger.Debug("JWT secret loaded", "length", len(jwtSecret))
 	g := grpc.NewServer(
 		grpc.UnaryInterceptor(middleware.JWTAuthInterceptor(jwtSecret)),
 	)
+	logger.Info("gRPC server created with JWT authentication interceptor")
 
-	defer g.GracefulStop()
+	defer func() {
+		logger.Info("Initiating graceful server shutdown")
+		g.GracefulStop()
+		logger.Info("Server shutdown completed")
+	}()
 
 	// Register reflection service
+	logger.Debug("Registering gRPC reflection service")
 	reflection.Register(g)
+	logger.Debug("gRPC reflection service registered successfully")
 
 	// Register health check service
-	grpc_health_v1.RegisterHealthServer(g, health.NewServer())
+	logger.Debug("Registering health check service")
+	healthServer := health.NewServer()
+	grpc_health_v1.RegisterHealthServer(g, healthServer)
+	logger.Debug("Health check service registered successfully")
 
 	// Create a new PostgreSQL connection pool
-	db, err := pgxpool.New(ctx, os.Getenv("DATABASE_URL"))
+	databaseURL := os.Getenv("DATABASE_URL")
+	logger.Debug("Connecting to PostgreSQL database", "url_length", len(databaseURL))
+
+	start := time.Now()
+	db, err := pgxpool.New(ctx, databaseURL)
+	connectionDuration := time.Since(start)
+
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Unable to connect to database: %v\n", err)
+		logger.Fatal("Failed to connect to database", "error", err, "duration", connectionDuration)
 	}
+	logger.Info("Database connection pool created successfully", "duration", connectionDuration)
 
 	// Register V1 services
+	logger.Debug("Registering gRPC service handlers")
+
+	logger.Debug("Registering UserService")
 	pbUserV1.RegisterUserServiceServer(g, handlers.NewUserServer(db))
+
+	logger.Debug("Registering WorldService")
 	pbWorldV1.RegisterWorldServiceServer(g, handlers.NewWorldServer(db))
+
+	logger.Debug("Registering CharacterService")
 	pbCharacterV1.RegisterCharacterServiceServer(g, handlers.NewCharacterServer(db))
+
+	logger.Debug("Registering ChunkService")
 	pbChunkV1.RegisterChunkServiceServer(g, handlers.NewChunkServer(db))
 
+	logger.Info("All gRPC services registered successfully")
+
 	// Serve the gRPC server
-	log.Printf("API server listening at %v", lis.Addr())
+	logger.Info("🚀 VoidMesh API server ready to accept connections",
+		"address", lis.Addr().String(),
+		"services", []string{"User", "World", "Character", "Chunk"},
+		"features", []string{"JWT Auth", "Health Check", "Reflection"})
+
+	logger.Debug("Starting to serve gRPC requests")
 	if err := g.Serve(lis); err != nil {
-		log.Fatalf("failed to serve: %v", err)
+		logger.Fatal("gRPC server failed to serve", "error", err)
 	}
 }

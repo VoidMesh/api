@@ -5,12 +5,12 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"fmt"
-	"log"
 	"os"
 	"strings"
 	"time"
 
 	"github.com/VoidMesh/api/api/db"
+	"github.com/VoidMesh/api/api/internal/logging"
 	userV1 "github.com/VoidMesh/api/api/proto/user/v1"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/jackc/pgx/v5/pgtype"
@@ -27,6 +27,8 @@ type userServiceServer struct {
 }
 
 func NewUserServer(db *pgxpool.Pool) userV1.UserServiceServer {
+	logger := logging.GetLogger()
+	logger.Debug("Creating new UserService server instance")
 	return &userServiceServer{db: db}
 }
 
@@ -82,13 +84,15 @@ func getJWTSecret() string {
 		}
 
 		// In production, fail fast if JWT_SECRET is not set
-		log.Fatal("SECURITY ERROR: JWT_SECRET environment variable is required in production. " +
+		logger := logging.GetLogger()
+		logger.Fatal("SECURITY ERROR: JWT_SECRET environment variable is required in production. " +
 			"Please set a secure secret key with at least 32 characters.")
 	}
 
 	// Validate secret length for security
 	if len(secret) < 32 {
-		log.Fatalf("SECURITY ERROR: JWT_SECRET must be at least 32 characters long for adequate security. Current length: %d characters", len(secret))
+		logger := logging.GetLogger()
+		logger.Fatal("SECURITY ERROR: JWT_SECRET must be at least 32 characters long for adequate security", "current_length", len(secret), "required_length", 32)
 	}
 
 	// Validate secret complexity (basic check)
@@ -179,13 +183,21 @@ func parseUUID(uuidStr string) (pgtype.UUID, error) {
 
 // CreateUser creates a new user
 func (s *userServiceServer) CreateUser(ctx context.Context, req *userV1.CreateUserRequest) (*userV1.CreateUserResponse, error) {
+	logger := logging.WithFields("operation", "CreateUser", "username", req.Username, "email", req.Email)
+	logger.Debug("Starting user creation process")
+
+	start := time.Now()
 	// Hash the password
+	logger.Debug("Hashing user password")
 	hashedPassword, err := hashPassword(req.Password)
 	if err != nil {
+		logger.Error("Failed to hash password", "error", err)
 		return nil, status.Errorf(codes.Internal, "failed to hash password: %v", err)
 	}
+	logger.Debug("Password hashed successfully")
 
 	// Create user in database
+	logger.Debug("Creating user record in database")
 	user, err := db.New(s.db).CreateUser(ctx, db.CreateUserParams{
 		Username:     req.Username,
 		DisplayName:  req.DisplayName,
@@ -195,14 +207,21 @@ func (s *userServiceServer) CreateUser(ctx context.Context, req *userV1.CreateUs
 	if err != nil {
 		if strings.Contains(err.Error(), "duplicate key") {
 			if strings.Contains(err.Error(), "username") {
+				logger.Warn("User creation failed: username already exists", "username", req.Username)
 				return nil, status.Errorf(codes.AlreadyExists, "username already exists")
 			}
 			if strings.Contains(err.Error(), "email") {
+				logger.Warn("User creation failed: email already exists", "email", req.Email)
 				return nil, status.Errorf(codes.AlreadyExists, "email already exists")
 			}
 		}
+		logger.Error("Failed to create user in database", "error", err)
 		return nil, status.Errorf(codes.Internal, "failed to create user: %v", err)
 	}
+
+	duration := time.Since(start)
+	userID := hex.EncodeToString(user.ID.Bytes[:])
+	logger.Info("User created successfully", "user_id", userID, "duration", duration)
 
 	return &userV1.CreateUserResponse{
 		User: s.dbUserToProto(user),
@@ -343,30 +362,46 @@ func (s *userServiceServer) ListUsers(ctx context.Context, req *userV1.ListUsers
 
 // Login authenticates a user
 func (s *userServiceServer) Login(ctx context.Context, req *userV1.LoginRequest) (*userV1.LoginResponse, error) {
+	logger := logging.WithFields("operation", "Login", "username_or_email", req.UsernameOrEmail)
+	logger.Debug("Starting user authentication process")
+
+	start := time.Now()
 	var user db.User
 	var err error
 
 	// Try to find user by email or username
 	if strings.Contains(req.UsernameOrEmail, "@") {
+		logger.Debug("Looking up user by email")
 		user, err = db.New(s.db).GetUserByEmail(ctx, req.UsernameOrEmail)
 	} else {
+		logger.Debug("Looking up user by username")
 		user, err = db.New(s.db).GetUserByUsername(ctx, req.UsernameOrEmail)
 	}
 
 	if err != nil {
+		logger.Warn("Authentication failed: user not found", "duration", time.Since(start))
 		return nil, status.Errorf(codes.Unauthenticated, "invalid credentials")
 	}
 
+	userID := hex.EncodeToString(user.ID.Bytes[:])
+	loggerWithUser := logger.With("user_id", userID, "username", user.Username)
+	loggerWithUser.Debug("User found, validating credentials")
+
 	// Check if account is locked
 	if user.AccountLocked.Bool {
+		loggerWithUser.Warn("Authentication failed: account is locked", "failed_attempts", user.FailedLoginAttempts.Int32)
 		return nil, status.Errorf(codes.PermissionDenied, "account is locked")
 	}
 
 	// Check password
+	loggerWithUser.Debug("Validating password hash")
 	if !checkPasswordHash(req.Password, user.PasswordHash) {
 		// Increment failed login attempts
 		attempts := user.FailedLoginAttempts.Int32 + 1
 		locked := attempts >= 5
+
+		loggerWithUser.Warn("Authentication failed: invalid password",
+			"attempts", attempts, "will_lock", locked, "duration", time.Since(start))
 
 		_, err = db.New(s.db).UpdateLoginAttempts(ctx, db.UpdateLoginAttemptsParams{
 			ID:                  user.ID,
@@ -374,38 +409,44 @@ func (s *userServiceServer) Login(ctx context.Context, req *userV1.LoginRequest)
 			AccountLocked:       pgtype.Bool{Bool: locked, Valid: true},
 		})
 		if err != nil {
-			// Log error but don't expose it
-			fmt.Printf("Failed to update login attempts: %v\n", err)
+			loggerWithUser.Error("Failed to update login attempts", "error", err)
 		}
 
 		return nil, status.Errorf(codes.Unauthenticated, "invalid credentials")
 	}
 
 	// Reset failed login attempts and update last login
+	loggerWithUser.Debug("Resetting failed login attempts")
 	_, err = db.New(s.db).UpdateLoginAttempts(ctx, db.UpdateLoginAttemptsParams{
 		ID:                  user.ID,
 		FailedLoginAttempts: pgtype.Int4{Int32: 0, Valid: true},
 		AccountLocked:       pgtype.Bool{Bool: false, Valid: true},
 	})
 	if err != nil {
+		loggerWithUser.Error("Failed to reset login attempts", "error", err)
 		return nil, status.Errorf(codes.Internal, "failed to update login attempts: %v", err)
 	}
 
 	// Update last login time
+	loggerWithUser.Debug("Updating last login timestamp")
 	_, err = db.New(s.db).UpdateLastLoginAt(ctx, db.UpdateLastLoginAtParams{
 		ID:          user.ID,
 		LastLoginAt: pgtype.Timestamp{Time: time.Now(), Valid: true},
 	})
 	if err != nil {
-		// Log error but don't fail the login
-		fmt.Printf("Failed to update last login time: %v\n", err)
+		loggerWithUser.Error("Failed to update last login time", "error", err)
 	}
 
 	// Generate JWT token
+	loggerWithUser.Debug("Generating JWT token")
 	token, err := generateJWTToken(user.ID.String(), user.Username)
 	if err != nil {
+		loggerWithUser.Error("Failed to generate JWT token", "error", err)
 		return nil, status.Errorf(codes.Internal, "failed to generate JWT token: %v", err)
 	}
+
+	duration := time.Since(start)
+	loggerWithUser.Info("User authentication successful", "duration", duration)
 
 	return &userV1.LoginResponse{
 		Token: token,
@@ -451,7 +492,9 @@ func (s *userServiceServer) RequestPasswordReset(ctx context.Context, req *userV
 	}
 
 	// In a real implementation, send email with token
-	fmt.Printf("Password reset token for %s: %s\n", req.Email, token)
+	logger := logging.WithFields("operation", "RequestPasswordReset", "email", req.Email)
+	logger.Info("Password reset token generated", "token_length", len(token))
+	logger.Debug("Password reset token", "token", token) // Only show in debug mode
 
 	return &userV1.RequestPasswordResetResponse{
 		Success: true,
@@ -481,14 +524,15 @@ func (s *userServiceServer) ResetPassword(ctx context.Context, req *userV1.Reset
 	}
 
 	// Clear reset token
+	logger := logging.WithFields("operation", "ResetPassword", "user_id", hex.EncodeToString(user.ID.Bytes[:]))
+	logger.Debug("Clearing password reset token")
 	_, err = db.New(s.db).UpdatePasswordResetToken(ctx, db.UpdatePasswordResetTokenParams{
 		ID:                   user.ID,
 		ResetPasswordToken:   pgtype.Text{Valid: false},
 		ResetPasswordExpires: pgtype.Timestamp{Valid: false},
 	})
 	if err != nil {
-		// Log error but don't fail the reset
-		fmt.Printf("Failed to clear reset token: %v\n", err)
+		logger.Error("Failed to clear reset token", "error", err)
 	}
 
 	return &userV1.ResetPasswordResponse{

@@ -76,6 +76,7 @@ services:
     tty: true
     restart: unless-stopped
     environment:
+      LOG_LEVEL: "debug"
       DATABASE_URL: "postgres://meower:meower@db:5432/meower?sslmode=disable"
       JWT_SECRET: "NOz2sZGgFo52Np3AZ4XJAkY9FH5GP7Yzye1ZSnNYRqc="
     ports:

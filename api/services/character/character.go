@@ -3,8 +3,10 @@ package character
 import (
 	"context"
 	"encoding/hex"
+	"time"
 
 	"github.com/VoidMesh/api/api/db"
+	"github.com/VoidMesh/api/api/internal/logging"
 	characterV1 "github.com/VoidMesh/api/api/proto/character/v1"
 	chunkV1 "github.com/VoidMesh/api/api/proto/chunk/v1"
 	"github.com/VoidMesh/api/api/services/chunk"
@@ -22,6 +24,8 @@ type Service struct {
 }
 
 func NewService(db *pgxpool.Pool, chunkService *chunk.Service) *Service {
+	logger := logging.GetLogger()
+	logger.Debug("Creating new character service", "chunk_size", chunk.ChunkSize)
 	return &Service{
 		db:           db,
 		chunkService: chunkService,
@@ -112,10 +116,17 @@ func (s *Service) isValidSpawnPosition(ctx context.Context, x, y int32) (bool, e
 
 // CreateCharacter creates a new character for a user
 func (s *Service) CreateCharacter(ctx context.Context, req *characterV1.CreateCharacterRequest) (*characterV1.CreateCharacterResponse, error) {
+	logger := logging.WithFields("user_id", req.UserId, "character_name", req.Name, "spawn_x", req.SpawnX, "spawn_y", req.SpawnY)
+	logger.Debug("Starting character creation process")
+
+	start := time.Now()
+
 	userUUID, err := parseUUID(req.UserId)
 	if err != nil {
+		logger.Error("Invalid user ID format", "error", err)
 		return nil, status.Errorf(codes.InvalidArgument, "invalid user ID: %v", err)
 	}
+	logger.Debug("User ID parsed successfully")
 
 	// Set spawn position (default to 0,0 if not specified)
 	spawnX := req.SpawnX
@@ -133,6 +144,7 @@ func (s *Service) CreateCharacter(ctx context.Context, req *characterV1.CreateCh
 
 	chunkX, chunkY := s.worldToChunkCoords(spawnX, spawnY)
 
+	logger.Debug("Creating character record in database")
 	character, err := db.New(s.db).CreateCharacter(ctx, db.CreateCharacterParams{
 		UserID: userUUID,
 		Name:   req.Name,
@@ -143,10 +155,16 @@ func (s *Service) CreateCharacter(ctx context.Context, req *characterV1.CreateCh
 	})
 	if err != nil {
 		if err.Error() == "duplicate key value violates unique constraint" {
+			logger.Warn("Character creation failed: name already exists", "name", req.Name)
 			return nil, status.Errorf(codes.AlreadyExists, "character with name '%s' already exists for this user", req.Name)
 		}
+		logger.Error("Failed to create character in database", "error", err)
 		return nil, status.Errorf(codes.Internal, "failed to create character: %v", err)
 	}
+
+	duration := time.Since(start)
+	characterID := hex.EncodeToString(character.ID.Bytes[:])
+	logger.Info("Character created successfully", "character_id", characterID, "final_x", character.X, "final_y", character.Y, "duration", duration)
 
 	return &characterV1.CreateCharacterResponse{
 		Character: s.dbCharacterToProto(character),

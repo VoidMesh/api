@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/VoidMesh/api/api/db"
+	"github.com/VoidMesh/api/api/internal/logging"
 	chunkV1 "github.com/VoidMesh/api/api/proto/chunk/v1"
 	"github.com/VoidMesh/api/api/services/noise"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -25,6 +26,8 @@ type Service struct {
 }
 
 func NewService(db *pgxpool.Pool, worldSeed int64) *Service {
+	logger := logging.GetLogger()
+	logger.Debug("Creating new chunk service", "world_seed", worldSeed, "chunk_size", ChunkSize)
 	return &Service{
 		db:        db,
 		noiseGen:  noise.NewGenerator(worldSeed),
@@ -35,9 +38,16 @@ func NewService(db *pgxpool.Pool, worldSeed int64) *Service {
 
 // GenerateChunk creates a new chunk using procedural generation
 func (s *Service) GenerateChunk(chunkX, chunkY int32) (*chunkV1.ChunkData, error) {
+	logger := logging.WithChunkCoords(chunkX, chunkY)
+	logger.Debug("Starting chunk generation")
+
+	start := time.Now()
 	cells := make([]*chunkV1.TerrainCell, ChunkSize*ChunkSize)
+	logger.Debug("Allocated terrain cells array", "total_cells", ChunkSize*ChunkSize)
 
 	// Generate terrain for each cell in the chunk
+	logger.Debug("Generating terrain cells using noise")
+	terrainCounts := make(map[chunkV1.TerrainType]int)
 	for y := int32(0); y < ChunkSize; y++ {
 		for x := int32(0); x < ChunkSize; x++ {
 			// Calculate world coordinates
@@ -46,6 +56,7 @@ func (s *Service) GenerateChunk(chunkX, chunkY int32) (*chunkV1.ChunkData, error
 
 			// Generate terrain type based on noise
 			terrainType := s.getTerrainType(worldX, worldY)
+			terrainCounts[terrainType]++
 
 			// Store in row-major order
 			index := y*ChunkSize + x
@@ -54,6 +65,11 @@ func (s *Service) GenerateChunk(chunkX, chunkY int32) (*chunkV1.ChunkData, error
 			}
 		}
 	}
+
+	logger.Debug("Terrain generation completed", "terrain_distribution", terrainCounts)
+
+	duration := time.Since(start)
+	logger.Info("Chunk generation completed", "duration", duration, "cells_generated", len(cells))
 
 	return &chunkV1.ChunkData{
 		ChunkX:      chunkX,
@@ -90,11 +106,19 @@ func (s *Service) getTerrainType(x, y int32) chunkV1.TerrainType {
 
 // GetOrCreateChunk retrieves a chunk from database or generates it if it doesn't exist
 func (s *Service) GetOrCreateChunk(ctx context.Context, chunkX, chunkY int32) (*chunkV1.ChunkData, error) {
+	logger := logging.WithChunkCoords(chunkX, chunkY)
+	logger.Debug("Getting or creating chunk")
+
+	start := time.Now()
+
 	// Try to get chunk from database first
+	logger.Debug("Checking database for existing chunk")
 	chunk, err := s.getChunkFromDB(ctx, chunkX, chunkY)
 	if err == nil {
+		logger.Debug("Chunk found in database", "duration", time.Since(start))
 		return chunk, nil
 	}
+	logger.Debug("Chunk not found in database, will generate", "error", err)
 
 	// Chunk doesn't exist, generate it
 	generatedChunk, err := s.GenerateChunk(chunkX, chunkY)
