@@ -9,6 +9,7 @@ package v1
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
+	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	reflect "reflect"
 	sync "sync"
 	unsafe "unsafe"
@@ -21,27 +22,31 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// World info
-type GetWorldInfoRequest struct {
+// World represents a game world
+type World struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            []byte                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	Seed          int64                  `protobuf:"varint,3,opt,name=seed,proto3" json:"seed,omitempty"`
+	CreatedAt     *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *GetWorldInfoRequest) Reset() {
-	*x = GetWorldInfoRequest{}
+func (x *World) Reset() {
+	*x = World{}
 	mi := &file_world_v1_world_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *GetWorldInfoRequest) String() string {
+func (x *World) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*GetWorldInfoRequest) ProtoMessage() {}
+func (*World) ProtoMessage() {}
 
-func (x *GetWorldInfoRequest) ProtoReflect() protoreflect.Message {
+func (x *World) ProtoReflect() protoreflect.Message {
 	mi := &file_world_v1_world_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -53,92 +58,106 @@ func (x *GetWorldInfoRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use GetWorldInfoRequest.ProtoReflect.Descriptor instead.
-func (*GetWorldInfoRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use World.ProtoReflect.Descriptor instead.
+func (*World) Descriptor() ([]byte, []int) {
 	return file_world_v1_world_proto_rawDescGZIP(), []int{0}
 }
 
-type WorldInfo struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	Seed          int64                  `protobuf:"varint,2,opt,name=seed,proto3" json:"seed,omitempty"`
-	ChunkSize     int32                  `protobuf:"varint,3,opt,name=chunk_size,json=chunkSize,proto3" json:"chunk_size,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *WorldInfo) Reset() {
-	*x = WorldInfo{}
-	mi := &file_world_v1_world_proto_msgTypes[1]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *WorldInfo) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*WorldInfo) ProtoMessage() {}
-
-func (x *WorldInfo) ProtoReflect() protoreflect.Message {
-	mi := &file_world_v1_world_proto_msgTypes[1]
+func (x *World) GetId() []byte {
 	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
+		return x.Id
 	}
-	return mi.MessageOf(x)
+	return nil
 }
 
-// Deprecated: Use WorldInfo.ProtoReflect.Descriptor instead.
-func (*WorldInfo) Descriptor() ([]byte, []int) {
-	return file_world_v1_world_proto_rawDescGZIP(), []int{1}
-}
-
-func (x *WorldInfo) GetName() string {
+func (x *World) GetName() string {
 	if x != nil {
 		return x.Name
 	}
 	return ""
 }
 
-func (x *WorldInfo) GetSeed() int64 {
+func (x *World) GetSeed() int64 {
 	if x != nil {
 		return x.Seed
 	}
 	return 0
 }
 
-func (x *WorldInfo) GetChunkSize() int32 {
+func (x *World) GetCreatedAt() *timestamppb.Timestamp {
 	if x != nil {
-		return x.ChunkSize
+		return x.CreatedAt
 	}
-	return 0
+	return nil
 }
 
-type GetWorldInfoResponse struct {
+// GetWorldRequest is the request for retrieving a world by ID
+type GetWorldRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	WorldInfo     *WorldInfo             `protobuf:"bytes,1,opt,name=world_info,json=worldInfo,proto3" json:"world_info,omitempty"`
+	WorldId       []byte                 `protobuf:"bytes,1,opt,name=world_id,json=worldId,proto3" json:"world_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *GetWorldInfoResponse) Reset() {
-	*x = GetWorldInfoResponse{}
+func (x *GetWorldRequest) Reset() {
+	*x = GetWorldRequest{}
+	mi := &file_world_v1_world_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetWorldRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetWorldRequest) ProtoMessage() {}
+
+func (x *GetWorldRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_world_v1_world_proto_msgTypes[1]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetWorldRequest.ProtoReflect.Descriptor instead.
+func (*GetWorldRequest) Descriptor() ([]byte, []int) {
+	return file_world_v1_world_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *GetWorldRequest) GetWorldId() []byte {
+	if x != nil {
+		return x.WorldId
+	}
+	return nil
+}
+
+// GetWorldResponse is the response for retrieving a world
+type GetWorldResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	World         *World                 `protobuf:"bytes,1,opt,name=world,proto3" json:"world,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetWorldResponse) Reset() {
+	*x = GetWorldResponse{}
 	mi := &file_world_v1_world_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *GetWorldInfoResponse) String() string {
+func (x *GetWorldResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*GetWorldInfoResponse) ProtoMessage() {}
+func (*GetWorldResponse) ProtoMessage() {}
 
-func (x *GetWorldInfoResponse) ProtoReflect() protoreflect.Message {
+func (x *GetWorldResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_world_v1_world_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -150,34 +169,398 @@ func (x *GetWorldInfoResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use GetWorldInfoResponse.ProtoReflect.Descriptor instead.
-func (*GetWorldInfoResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use GetWorldResponse.ProtoReflect.Descriptor instead.
+func (*GetWorldResponse) Descriptor() ([]byte, []int) {
 	return file_world_v1_world_proto_rawDescGZIP(), []int{2}
 }
 
-func (x *GetWorldInfoResponse) GetWorldInfo() *WorldInfo {
+func (x *GetWorldResponse) GetWorld() *World {
 	if x != nil {
-		return x.WorldInfo
+		return x.World
 	}
 	return nil
+}
+
+// GetDefaultWorldRequest is the request for retrieving the default world
+type GetDefaultWorldRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetDefaultWorldRequest) Reset() {
+	*x = GetDefaultWorldRequest{}
+	mi := &file_world_v1_world_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetDefaultWorldRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetDefaultWorldRequest) ProtoMessage() {}
+
+func (x *GetDefaultWorldRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_world_v1_world_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetDefaultWorldRequest.ProtoReflect.Descriptor instead.
+func (*GetDefaultWorldRequest) Descriptor() ([]byte, []int) {
+	return file_world_v1_world_proto_rawDescGZIP(), []int{3}
+}
+
+// GetDefaultWorldResponse is the response for retrieving the default world
+type GetDefaultWorldResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	World         *World                 `protobuf:"bytes,1,opt,name=world,proto3" json:"world,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetDefaultWorldResponse) Reset() {
+	*x = GetDefaultWorldResponse{}
+	mi := &file_world_v1_world_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetDefaultWorldResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetDefaultWorldResponse) ProtoMessage() {}
+
+func (x *GetDefaultWorldResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_world_v1_world_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetDefaultWorldResponse.ProtoReflect.Descriptor instead.
+func (*GetDefaultWorldResponse) Descriptor() ([]byte, []int) {
+	return file_world_v1_world_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *GetDefaultWorldResponse) GetWorld() *World {
+	if x != nil {
+		return x.World
+	}
+	return nil
+}
+
+// ListWorldsRequest is the request for retrieving all worlds
+type ListWorldsRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListWorldsRequest) Reset() {
+	*x = ListWorldsRequest{}
+	mi := &file_world_v1_world_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListWorldsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListWorldsRequest) ProtoMessage() {}
+
+func (x *ListWorldsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_world_v1_world_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListWorldsRequest.ProtoReflect.Descriptor instead.
+func (*ListWorldsRequest) Descriptor() ([]byte, []int) {
+	return file_world_v1_world_proto_rawDescGZIP(), []int{5}
+}
+
+// ListWorldsResponse is the response for retrieving all worlds
+type ListWorldsResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Worlds        []*World               `protobuf:"bytes,1,rep,name=worlds,proto3" json:"worlds,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListWorldsResponse) Reset() {
+	*x = ListWorldsResponse{}
+	mi := &file_world_v1_world_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListWorldsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListWorldsResponse) ProtoMessage() {}
+
+func (x *ListWorldsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_world_v1_world_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListWorldsResponse.ProtoReflect.Descriptor instead.
+func (*ListWorldsResponse) Descriptor() ([]byte, []int) {
+	return file_world_v1_world_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *ListWorldsResponse) GetWorlds() []*World {
+	if x != nil {
+		return x.Worlds
+	}
+	return nil
+}
+
+// UpdateWorldNameRequest is the request for updating a world s name
+type UpdateWorldNameRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	WorldId       []byte                 `protobuf:"bytes,1,opt,name=world_id,json=worldId,proto3" json:"world_id,omitempty"`
+	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *UpdateWorldNameRequest) Reset() {
+	*x = UpdateWorldNameRequest{}
+	mi := &file_world_v1_world_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UpdateWorldNameRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UpdateWorldNameRequest) ProtoMessage() {}
+
+func (x *UpdateWorldNameRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_world_v1_world_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UpdateWorldNameRequest.ProtoReflect.Descriptor instead.
+func (*UpdateWorldNameRequest) Descriptor() ([]byte, []int) {
+	return file_world_v1_world_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *UpdateWorldNameRequest) GetWorldId() []byte {
+	if x != nil {
+		return x.WorldId
+	}
+	return nil
+}
+
+func (x *UpdateWorldNameRequest) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+// UpdateWorldNameResponse is the response for updating a world s name
+type UpdateWorldNameResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	World         *World                 `protobuf:"bytes,1,opt,name=world,proto3" json:"world,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *UpdateWorldNameResponse) Reset() {
+	*x = UpdateWorldNameResponse{}
+	mi := &file_world_v1_world_proto_msgTypes[8]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UpdateWorldNameResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UpdateWorldNameResponse) ProtoMessage() {}
+
+func (x *UpdateWorldNameResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_world_v1_world_proto_msgTypes[8]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UpdateWorldNameResponse.ProtoReflect.Descriptor instead.
+func (*UpdateWorldNameResponse) Descriptor() ([]byte, []int) {
+	return file_world_v1_world_proto_rawDescGZIP(), []int{8}
+}
+
+func (x *UpdateWorldNameResponse) GetWorld() *World {
+	if x != nil {
+		return x.World
+	}
+	return nil
+}
+
+// DeleteWorldRequest is the request for deleting a world
+type DeleteWorldRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	WorldId       []byte                 `protobuf:"bytes,1,opt,name=world_id,json=worldId,proto3" json:"world_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DeleteWorldRequest) Reset() {
+	*x = DeleteWorldRequest{}
+	mi := &file_world_v1_world_proto_msgTypes[9]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DeleteWorldRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DeleteWorldRequest) ProtoMessage() {}
+
+func (x *DeleteWorldRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_world_v1_world_proto_msgTypes[9]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DeleteWorldRequest.ProtoReflect.Descriptor instead.
+func (*DeleteWorldRequest) Descriptor() ([]byte, []int) {
+	return file_world_v1_world_proto_rawDescGZIP(), []int{9}
+}
+
+func (x *DeleteWorldRequest) GetWorldId() []byte {
+	if x != nil {
+		return x.WorldId
+	}
+	return nil
+}
+
+// DeleteWorldResponse is the response for deleting a world
+type DeleteWorldResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DeleteWorldResponse) Reset() {
+	*x = DeleteWorldResponse{}
+	mi := &file_world_v1_world_proto_msgTypes[10]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DeleteWorldResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DeleteWorldResponse) ProtoMessage() {}
+
+func (x *DeleteWorldResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_world_v1_world_proto_msgTypes[10]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DeleteWorldResponse.ProtoReflect.Descriptor instead.
+func (*DeleteWorldResponse) Descriptor() ([]byte, []int) {
+	return file_world_v1_world_proto_rawDescGZIP(), []int{10}
 }
 
 var File_world_v1_world_proto protoreflect.FileDescriptor
 
 const file_world_v1_world_proto_rawDesc = "" +
 	"\n" +
-	"\x14world/v1/world.proto\x12\bworld.v1\"\x15\n" +
-	"\x13GetWorldInfoRequest\"R\n" +
-	"\tWorldInfo\x12\x12\n" +
-	"\x04name\x18\x01 \x01(\tR\x04name\x12\x12\n" +
-	"\x04seed\x18\x02 \x01(\x03R\x04seed\x12\x1d\n" +
+	"\x14world/v1/world.proto\x12\bworld.v1\x1a\x1fgoogle/protobuf/timestamp.proto\"z\n" +
+	"\x05World\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\fR\x02id\x12\x12\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\x12\x12\n" +
+	"\x04seed\x18\x03 \x01(\x03R\x04seed\x129\n" +
 	"\n" +
-	"chunk_size\x18\x03 \x01(\x05R\tchunkSize\"J\n" +
-	"\x14GetWorldInfoResponse\x122\n" +
+	"created_at\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\",\n" +
+	"\x0fGetWorldRequest\x12\x19\n" +
+	"\bworld_id\x18\x01 \x01(\fR\aworldId\"9\n" +
+	"\x10GetWorldResponse\x12%\n" +
+	"\x05world\x18\x01 \x01(\v2\x0f.world.v1.WorldR\x05world\"\x18\n" +
+	"\x16GetDefaultWorldRequest\"@\n" +
+	"\x17GetDefaultWorldResponse\x12%\n" +
+	"\x05world\x18\x01 \x01(\v2\x0f.world.v1.WorldR\x05world\"\x13\n" +
+	"\x11ListWorldsRequest\"=\n" +
+	"\x12ListWorldsResponse\x12'\n" +
+	"\x06worlds\x18\x01 \x03(\v2\x0f.world.v1.WorldR\x06worlds\"G\n" +
+	"\x16UpdateWorldNameRequest\x12\x19\n" +
+	"\bworld_id\x18\x01 \x01(\fR\aworldId\x12\x12\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\"@\n" +
+	"\x17UpdateWorldNameResponse\x12%\n" +
+	"\x05world\x18\x01 \x01(\v2\x0f.world.v1.WorldR\x05world\"/\n" +
+	"\x12DeleteWorldRequest\x12\x19\n" +
+	"\bworld_id\x18\x01 \x01(\fR\aworldId\"\x15\n" +
+	"\x13DeleteWorldResponse2\x96\x03\n" +
+	"\fWorldService\x12A\n" +
+	"\bGetWorld\x12\x19.world.v1.GetWorldRequest\x1a\x1a.world.v1.GetWorldResponse\x12V\n" +
+	"\x0fGetDefaultWorld\x12 .world.v1.GetDefaultWorldRequest\x1a!.world.v1.GetDefaultWorldResponse\x12G\n" +
 	"\n" +
-	"world_info\x18\x01 \x01(\v2\x13.world.v1.WorldInfoR\tworldInfo2_\n" +
-	"\fWorldService\x12O\n" +
-	"\fGetWorldInfo\x12\x1d.world.v1.GetWorldInfoRequest\x1a\x1e.world.v1.GetWorldInfoResponse\"\x00B,Z*github.com/VoidMesh/api/api/proto/world/v1b\x06proto3"
+	"ListWorlds\x12\x1b.world.v1.ListWorldsRequest\x1a\x1c.world.v1.ListWorldsResponse\x12V\n" +
+	"\x0fUpdateWorldName\x12 .world.v1.UpdateWorldNameRequest\x1a!.world.v1.UpdateWorldNameResponse\x12J\n" +
+	"\vDeleteWorld\x12\x1c.world.v1.DeleteWorldRequest\x1a\x1d.world.v1.DeleteWorldResponseB,Z*github.com/VoidMesh/api/api/proto/world/v1b\x06proto3"
 
 var (
 	file_world_v1_world_proto_rawDescOnce sync.Once
@@ -191,21 +574,42 @@ func file_world_v1_world_proto_rawDescGZIP() []byte {
 	return file_world_v1_world_proto_rawDescData
 }
 
-var file_world_v1_world_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
+var file_world_v1_world_proto_msgTypes = make([]protoimpl.MessageInfo, 11)
 var file_world_v1_world_proto_goTypes = []any{
-	(*GetWorldInfoRequest)(nil),  // 0: world.v1.GetWorldInfoRequest
-	(*WorldInfo)(nil),            // 1: world.v1.WorldInfo
-	(*GetWorldInfoResponse)(nil), // 2: world.v1.GetWorldInfoResponse
+	(*World)(nil),                   // 0: world.v1.World
+	(*GetWorldRequest)(nil),         // 1: world.v1.GetWorldRequest
+	(*GetWorldResponse)(nil),        // 2: world.v1.GetWorldResponse
+	(*GetDefaultWorldRequest)(nil),  // 3: world.v1.GetDefaultWorldRequest
+	(*GetDefaultWorldResponse)(nil), // 4: world.v1.GetDefaultWorldResponse
+	(*ListWorldsRequest)(nil),       // 5: world.v1.ListWorldsRequest
+	(*ListWorldsResponse)(nil),      // 6: world.v1.ListWorldsResponse
+	(*UpdateWorldNameRequest)(nil),  // 7: world.v1.UpdateWorldNameRequest
+	(*UpdateWorldNameResponse)(nil), // 8: world.v1.UpdateWorldNameResponse
+	(*DeleteWorldRequest)(nil),      // 9: world.v1.DeleteWorldRequest
+	(*DeleteWorldResponse)(nil),     // 10: world.v1.DeleteWorldResponse
+	(*timestamppb.Timestamp)(nil),   // 11: google.protobuf.Timestamp
 }
 var file_world_v1_world_proto_depIdxs = []int32{
-	1, // 0: world.v1.GetWorldInfoResponse.world_info:type_name -> world.v1.WorldInfo
-	0, // 1: world.v1.WorldService.GetWorldInfo:input_type -> world.v1.GetWorldInfoRequest
-	2, // 2: world.v1.WorldService.GetWorldInfo:output_type -> world.v1.GetWorldInfoResponse
-	2, // [2:3] is the sub-list for method output_type
-	1, // [1:2] is the sub-list for method input_type
-	1, // [1:1] is the sub-list for extension type_name
-	1, // [1:1] is the sub-list for extension extendee
-	0, // [0:1] is the sub-list for field type_name
+	11, // 0: world.v1.World.created_at:type_name -> google.protobuf.Timestamp
+	0,  // 1: world.v1.GetWorldResponse.world:type_name -> world.v1.World
+	0,  // 2: world.v1.GetDefaultWorldResponse.world:type_name -> world.v1.World
+	0,  // 3: world.v1.ListWorldsResponse.worlds:type_name -> world.v1.World
+	0,  // 4: world.v1.UpdateWorldNameResponse.world:type_name -> world.v1.World
+	1,  // 5: world.v1.WorldService.GetWorld:input_type -> world.v1.GetWorldRequest
+	3,  // 6: world.v1.WorldService.GetDefaultWorld:input_type -> world.v1.GetDefaultWorldRequest
+	5,  // 7: world.v1.WorldService.ListWorlds:input_type -> world.v1.ListWorldsRequest
+	7,  // 8: world.v1.WorldService.UpdateWorldName:input_type -> world.v1.UpdateWorldNameRequest
+	9,  // 9: world.v1.WorldService.DeleteWorld:input_type -> world.v1.DeleteWorldRequest
+	2,  // 10: world.v1.WorldService.GetWorld:output_type -> world.v1.GetWorldResponse
+	4,  // 11: world.v1.WorldService.GetDefaultWorld:output_type -> world.v1.GetDefaultWorldResponse
+	6,  // 12: world.v1.WorldService.ListWorlds:output_type -> world.v1.ListWorldsResponse
+	8,  // 13: world.v1.WorldService.UpdateWorldName:output_type -> world.v1.UpdateWorldNameResponse
+	10, // 14: world.v1.WorldService.DeleteWorld:output_type -> world.v1.DeleteWorldResponse
+	10, // [10:15] is the sub-list for method output_type
+	5,  // [5:10] is the sub-list for method input_type
+	5,  // [5:5] is the sub-list for extension type_name
+	5,  // [5:5] is the sub-list for extension extendee
+	0,  // [0:5] is the sub-list for field type_name
 }
 
 func init() { file_world_v1_world_proto_init() }
@@ -219,7 +623,7 @@ func file_world_v1_world_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_world_v1_world_proto_rawDesc), len(file_world_v1_world_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   3,
+			NumMessages:   11,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

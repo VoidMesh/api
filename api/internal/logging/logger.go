@@ -107,3 +107,8 @@ func WithChunkCoords(chunkX, chunkY int32) *log.Logger {
 func WithDuration(operation string, duration interface{}) *log.Logger {
 	return WithFields("operation", operation, "duration", duration)
 }
+
+// WithComponent creates a logger with component context
+func WithComponent(component string) *log.Logger {
+	return WithFields("component", component)
+}

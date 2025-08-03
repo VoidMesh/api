@@ -4,18 +4,21 @@ import (
 	"context"
 	"net"
 	"os"
-	"strconv"
 	"time"
 
-	"github.com/VoidMesh/api/api/db"
 	"github.com/VoidMesh/api/api/internal/logging"
 	pbCharacterV1 "github.com/VoidMesh/api/api/proto/character/v1"
 	pbChunkV1 "github.com/VoidMesh/api/api/proto/chunk/v1"
+	pbResourceNodeV1 "github.com/VoidMesh/api/api/proto/resource_node/v1"
+	pbTerrainV1 "github.com/VoidMesh/api/api/proto/terrain/v1"
 	pbUserV1 "github.com/VoidMesh/api/api/proto/user/v1"
 	pbWorldV1 "github.com/VoidMesh/api/api/proto/world/v1"
 	"github.com/VoidMesh/api/api/server/handlers"
 	"github.com/VoidMesh/api/api/server/middleware" // Uncomment to enable JWT middleware
 	"github.com/VoidMesh/api/api/services/noise"
+	"github.com/VoidMesh/api/api/services/resource_node"
+	"github.com/VoidMesh/api/api/services/terrain"
+	"github.com/VoidMesh/api/api/services/world"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/health"
@@ -85,17 +88,19 @@ func Serve() {
 	}
 	logger.Info("Database connection pool created successfully", "duration", connectionDuration)
 
-	// Get world seed for noise generator
-	worldSeed := int64(12345) // Default seed
-	if setting, err := db.New(dbPool).GetWorldSetting(ctx, "seed"); err == nil {
-		if seed, err := strconv.ParseInt(setting.Value, 10, 64); err == nil {
-			worldSeed = seed
-		}
+	// Create world service
+	worldService := world.NewService(dbPool, logger)
+
+	// Get default world or create if it doesn't exist
+	defaultWorld, err := worldService.GetDefaultWorld(ctx)
+	if err != nil {
+		logger.Error("Failed to get default world", "error", err)
+		return
 	}
-	logger.Debug("World seed loaded", "seed", worldSeed)
+	logger.Debug("Default world loaded", "world_id", defaultWorld.ID, "seed", defaultWorld.Seed)
 
 	// Create shared noise generator
-	noiseGen := noise.NewGenerator(worldSeed)
+	noiseGen := noise.NewGenerator(defaultWorld.Seed)
 
 	// Register V1 services
 	logger.Debug("Registering gRPC service handlers")
@@ -104,20 +109,27 @@ func Serve() {
 	pbUserV1.RegisterUserServiceServer(g, handlers.NewUserServer(dbPool))
 
 	logger.Debug("Registering WorldService")
-	pbWorldV1.RegisterWorldServiceServer(g, handlers.NewWorldServer(dbPool))
+	pbWorldV1.RegisterWorldServiceServer(g, handlers.NewWorldHandler(worldService))
 
 	logger.Debug("Registering CharacterService")
 	pbCharacterV1.RegisterCharacterServiceServer(g, handlers.NewCharacterServer(dbPool))
 
+	logger.Debug("Registering TerrainService")
+	pbTerrainV1.RegisterTerrainServiceServer(g, handlers.NewTerrainHandler(terrain.NewService()))
+
+	logger.Debug("Registering ResourceNodeService")
+	resourceNodeService := resource_node.NewNodeService(dbPool, noiseGen, worldService)
+	pbResourceNodeV1.RegisterResourceNodeServiceServer(g, handlers.NewResourceNodeHandler(resourceNodeService, worldService))
+
 	logger.Debug("Registering ChunkService")
-	pbChunkV1.RegisterChunkServiceServer(g, handlers.NewChunkServer(dbPool, noiseGen))
+	pbChunkV1.RegisterChunkServiceServer(g, handlers.NewChunkServer(dbPool, worldService, noiseGen))
 
 	logger.Info("All gRPC services registered successfully")
 
 	// Serve the gRPC server
 	logger.Info("🚀 VoidMesh API server ready to accept connections",
 		"address", lis.Addr().String(),
-		"services", []string{"User", "World", "Character", "Chunk"},
+		"services", []string{"User", "World", "Character", "Chunk", "ResourceNode", "Terrain"},
 		"features", []string{"JWT Auth", "Health Check", "Reflection"})
 
 	logger.Debug("Starting to serve gRPC requests")

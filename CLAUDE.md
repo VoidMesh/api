@@ -45,7 +45,7 @@ VoidMesh is built using the Meower Framework, an opinionated, production-ready G
 │   │   ├── query.users.sql
 │   │   ├── query.characters.sql
 │   │   ├── query.chunks.sql
-│   │   └── query.world_settings.sql
+│   │   └── query.worlds.sql
 │   └── sqlc.yaml        # SQLC configuration
 ├── internal/            # Internal packages
 │   └── logging/         # Structured logging system
@@ -164,4 +164,4 @@ The project uses the following main database tables:
 - `users`: User accounts with authentication information
 - `characters`: Player characters with position data
 - `chunks`: World map chunks with terrain data
-- `world_settings`: Global configuration settings
+- `worlds`: World configuration with seed, name, and creation time

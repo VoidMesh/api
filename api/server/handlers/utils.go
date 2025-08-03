@@ -1,25 +1,4 @@
 package handlers
 
-import (
-	"context"
-	"strconv"
-
-	"github.com/VoidMesh/api/api/db"
-	"github.com/jackc/pgx/v5/pgxpool"
-)
-
-// getWorldSeed retrieves the world seed from database
-func getWorldSeed(pool *pgxpool.Pool) (int64, error) {
-	ctx := context.Background()
-	setting, err := db.New(pool).GetWorldSetting(ctx, "seed")
-	if err != nil {
-		return 0, err
-	}
-
-	seed, err := strconv.ParseInt(setting.Value, 10, 64)
-	if err != nil {
-		return 0, err
-	}
-
-	return seed, nil
-}
+// This file contains utility functions for handlers
+// The previous getWorldSeed function has been removed as we now use the world service

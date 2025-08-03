@@ -20,34 +20,24 @@ type Character struct {
 }
 
 type Chunk struct {
+	WorldID     pgtype.UUID
 	ChunkX      int32
 	ChunkY      int32
-	Seed        int64
 	ChunkData   []byte
 	GeneratedAt pgtype.Timestamp
 }
 
 type ResourceNode struct {
-	ID             int32
-	ResourceTypeID int32
-	ChunkX         int32
-	ChunkY         int32
-	ClusterID      string
-	PosX           int32
-	PosY           int32
-	Size           int32
-	CreatedAt      pgtype.Timestamp
-}
-
-type ResourceType struct {
-	ID          int32
-	Name        string
-	Description pgtype.Text
-	TerrainType string
-	Rarity      string
-	VisualData  []byte
-	Properties  []byte
-	CreatedAt   pgtype.Timestamp
+	ID                 int32
+	ResourceNodeTypeID int32
+	WorldID            pgtype.UUID
+	ChunkX             int32
+	ChunkY             int32
+	ClusterID          string
+	PosX               int32
+	PosY               int32
+	Size               int32
+	CreatedAt          pgtype.Timestamp
 }
 
 type User struct {
@@ -65,7 +55,9 @@ type User struct {
 	FailedLoginAttempts  pgtype.Int4
 }
 
-type WorldSetting struct {
-	Key   string
-	Value string
+type World struct {
+	ID        pgtype.UUID
+	Name      string
+	Seed      int64
+	CreatedAt pgtype.Timestamp
 }

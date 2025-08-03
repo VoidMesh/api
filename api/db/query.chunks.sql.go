@@ -7,52 +7,55 @@ package db
 
 import (
 	"context"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const chunkExists = `-- name: ChunkExists :one
 SELECT EXISTS(
     SELECT 1 FROM chunks
-    WHERE chunk_x = $1 AND chunk_y = $2
+    WHERE world_id = $1 AND chunk_x = $2 AND chunk_y = $3
 )
 `
 
 type ChunkExistsParams struct {
-	ChunkX int32
-	ChunkY int32
+	WorldID pgtype.UUID
+	ChunkX  int32
+	ChunkY  int32
 }
 
 func (q *Queries) ChunkExists(ctx context.Context, arg ChunkExistsParams) (bool, error) {
-	row := q.db.QueryRow(ctx, chunkExists, arg.ChunkX, arg.ChunkY)
+	row := q.db.QueryRow(ctx, chunkExists, arg.WorldID, arg.ChunkX, arg.ChunkY)
 	var exists bool
 	err := row.Scan(&exists)
 	return exists, err
 }
 
 const createChunk = `-- name: CreateChunk :one
-INSERT INTO chunks (chunk_x, chunk_y, seed, chunk_data)
+INSERT INTO chunks (world_id, chunk_x, chunk_y, chunk_data)
 VALUES ($1, $2, $3, $4)
-RETURNING chunk_x, chunk_y, seed, chunk_data, generated_at
+RETURNING world_id, chunk_x, chunk_y, chunk_data, generated_at
 `
 
 type CreateChunkParams struct {
+	WorldID   pgtype.UUID
 	ChunkX    int32
 	ChunkY    int32
-	Seed      int64
 	ChunkData []byte
 }
 
 func (q *Queries) CreateChunk(ctx context.Context, arg CreateChunkParams) (Chunk, error) {
 	row := q.db.QueryRow(ctx, createChunk,
+		arg.WorldID,
 		arg.ChunkX,
 		arg.ChunkY,
-		arg.Seed,
 		arg.ChunkData,
 	)
 	var i Chunk
 	err := row.Scan(
+		&i.WorldID,
 		&i.ChunkX,
 		&i.ChunkY,
-		&i.Seed,
 		&i.ChunkData,
 		&i.GeneratedAt,
 	)
@@ -61,36 +64,38 @@ func (q *Queries) CreateChunk(ctx context.Context, arg CreateChunkParams) (Chunk
 
 const deleteChunk = `-- name: DeleteChunk :exec
 DELETE FROM chunks
-WHERE chunk_x = $1 AND chunk_y = $2
+WHERE world_id = $1 AND chunk_x = $2 AND chunk_y = $3
 `
 
 type DeleteChunkParams struct {
-	ChunkX int32
-	ChunkY int32
+	WorldID pgtype.UUID
+	ChunkX  int32
+	ChunkY  int32
 }
 
 func (q *Queries) DeleteChunk(ctx context.Context, arg DeleteChunkParams) error {
-	_, err := q.db.Exec(ctx, deleteChunk, arg.ChunkX, arg.ChunkY)
+	_, err := q.db.Exec(ctx, deleteChunk, arg.WorldID, arg.ChunkX, arg.ChunkY)
 	return err
 }
 
 const getChunk = `-- name: GetChunk :one
-SELECT chunk_x, chunk_y, seed, chunk_data, generated_at FROM chunks
-WHERE chunk_x = $1 AND chunk_y = $2
+SELECT world_id, chunk_x, chunk_y, chunk_data, generated_at FROM chunks
+WHERE world_id = $1 AND chunk_x = $2 AND chunk_y = $3
 `
 
 type GetChunkParams struct {
-	ChunkX int32
-	ChunkY int32
+	WorldID pgtype.UUID
+	ChunkX  int32
+	ChunkY  int32
 }
 
 func (q *Queries) GetChunk(ctx context.Context, arg GetChunkParams) (Chunk, error) {
-	row := q.db.QueryRow(ctx, getChunk, arg.ChunkX, arg.ChunkY)
+	row := q.db.QueryRow(ctx, getChunk, arg.WorldID, arg.ChunkX, arg.ChunkY)
 	var i Chunk
 	err := row.Scan(
+		&i.WorldID,
 		&i.ChunkX,
 		&i.ChunkY,
-		&i.Seed,
 		&i.ChunkData,
 		&i.GeneratedAt,
 	)
@@ -98,13 +103,15 @@ func (q *Queries) GetChunk(ctx context.Context, arg GetChunkParams) (Chunk, erro
 }
 
 const getChunks = `-- name: GetChunks :many
-SELECT chunk_x, chunk_y, seed, chunk_data, generated_at FROM chunks
-WHERE chunk_x >= $1 AND chunk_x <= $2 
-AND chunk_y >= $3 AND chunk_y <= $4
+SELECT world_id, chunk_x, chunk_y, chunk_data, generated_at FROM chunks
+WHERE world_id = $1
+AND chunk_x >= $2 AND chunk_x <= $3 
+AND chunk_y >= $4 AND chunk_y <= $5
 ORDER BY chunk_x, chunk_y
 `
 
 type GetChunksParams struct {
+	WorldID  pgtype.UUID
 	ChunkX   int32
 	ChunkX_2 int32
 	ChunkY   int32
@@ -113,6 +120,7 @@ type GetChunksParams struct {
 
 func (q *Queries) GetChunks(ctx context.Context, arg GetChunksParams) ([]Chunk, error) {
 	rows, err := q.db.Query(ctx, getChunks,
+		arg.WorldID,
 		arg.ChunkX,
 		arg.ChunkX_2,
 		arg.ChunkY,
@@ -126,9 +134,9 @@ func (q *Queries) GetChunks(ctx context.Context, arg GetChunksParams) ([]Chunk, 
 	for rows.Next() {
 		var i Chunk
 		if err := rows.Scan(
+			&i.WorldID,
 			&i.ChunkX,
 			&i.ChunkY,
-			&i.Seed,
 			&i.ChunkData,
 			&i.GeneratedAt,
 		); err != nil {

@@ -4,21 +4,21 @@
 
 - **/api/db/migrations/schema.sql** - Updated with resource_types and resource_nodes tables
 - **/api/db/migrations/seed_resources.sql** - Seed data for resource types
-- **/api/db/queries/query.resources.sql** - SQL queries for resource operations
+- **/api/db/queries/query.resource_nodes.sql** - SQL queries for resource node operations
 
 ## Protocol Buffer Definitions
 
-- **/api/proto/resource/v1/resource.proto** - New protobuf definitions for resources
+- **/api/proto/resource_node/v1/resource_node.proto** - New protobuf definitions for resource nodes
 - **/api/proto/chunk/v1/chunk.proto** - Updated to include resources in chunks
 
 ## Core Implementation
 
-- **/api/services/resource/generator.go** - Main resource generation and management system
+- **/api/services/resource_node/generator.go** - Main resource node generation and management system
 - **/api/services/chunk/chunk_resource_integration.go** - Integration with chunk system
 
 ## Server
 
-- **/api/server/handlers/resource.go** - gRPC service handler for resources
+- **/api/server/handlers/resource_node.go** - gRPC service handler for resource nodes
 
 ## Testing and Utilities
 

@@ -2,22 +2,77 @@ syntax = "proto3";
 
 package world.v1;
 
+import "google/protobuf/timestamp.proto";
+
 option go_package = "github.com/VoidMesh/api/api/proto/world/v1";
 
+// WorldService provides operations for managing worlds
 service WorldService {
-  // World information
-  rpc GetWorldInfo(GetWorldInfoRequest) returns (GetWorldInfoResponse) {}
+  // GetWorld retrieves a world by ID
+  rpc GetWorld(GetWorldRequest) returns (GetWorldResponse);
+  
+  // GetDefaultWorld retrieves the default world
+  rpc GetDefaultWorld(GetDefaultWorldRequest) returns (GetDefaultWorldResponse);
+  
+  // ListWorlds retrieves all worlds
+  rpc ListWorlds(ListWorldsRequest) returns (ListWorldsResponse);
+  
+  // UpdateWorldName updates a world s name
+  rpc UpdateWorldName(UpdateWorldNameRequest) returns (UpdateWorldNameResponse);
+  
+  // DeleteWorld deletes a world
+  rpc DeleteWorld(DeleteWorldRequest) returns (DeleteWorldResponse);
 }
 
-// World info
-message GetWorldInfoRequest {}
-
-message WorldInfo {
-  string name = 1;
-  int64 seed = 2;
-  int32 chunk_size = 3;
+// World represents a game world
+message World {
+  bytes id = 1;
+  string name = 2;
+  int64 seed = 3;
+  google.protobuf.Timestamp created_at = 4;
 }
 
-message GetWorldInfoResponse {
-  WorldInfo world_info = 1;
+// GetWorldRequest is the request for retrieving a world by ID
+message GetWorldRequest {
+  bytes world_id = 1;
 }
+
+// GetWorldResponse is the response for retrieving a world
+message GetWorldResponse {
+  World world = 1;
+}
+
+// GetDefaultWorldRequest is the request for retrieving the default world
+message GetDefaultWorldRequest {}
+
+// GetDefaultWorldResponse is the response for retrieving the default world
+message GetDefaultWorldResponse {
+  World world = 1;
+}
+
+// ListWorldsRequest is the request for retrieving all worlds
+message ListWorldsRequest {}
+
+// ListWorldsResponse is the response for retrieving all worlds
+message ListWorldsResponse {
+  repeated World worlds = 1;
+}
+
+// UpdateWorldNameRequest is the request for updating a world s name
+message UpdateWorldNameRequest {
+  bytes world_id = 1;
+  string name = 2;
+}
+
+// UpdateWorldNameResponse is the response for updating a world s name
+message UpdateWorldNameResponse {
+  World world = 1;
+}
+
+// DeleteWorldRequest is the request for deleting a world
+message DeleteWorldRequest {
+  bytes world_id = 1;
+}
+
+// DeleteWorldResponse is the response for deleting a world
+message DeleteWorldResponse {}

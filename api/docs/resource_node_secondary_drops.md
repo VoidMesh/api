@@ -1,4 +1,4 @@
-# Resource Secondary Drops System
+# Resource Node Secondary Drops System
 
 ## Overview
 

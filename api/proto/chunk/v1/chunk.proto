@@ -3,7 +3,7 @@ syntax = "proto3";
 package chunk.v1;
 
 import "google/protobuf/timestamp.proto";
-import "resource/v1/resource.proto";
+import "resource_node/v1/resource_node.proto";
 
 option go_package = "github.com/VoidMesh/api/api/proto/chunk/v1";
 
@@ -33,18 +33,20 @@ message ChunkData {
   repeated TerrainCell cells = 3; // 32x32 = 1024 cells, row-major order
   int64 seed = 4;
   google.protobuf.Timestamp generated_at = 5;
-  repeated resource.v1.ResourceNode resources = 6; // Resource nodes in this chunk
+  repeated resource_node.v1.ResourceNode resource_nodes = 6; // Resource nodes in this chunk
 }
 
 message ChunkCoordinate {
-  int32 chunk_x = 1;
-  int32 chunk_y = 2;
+  bytes world_id = 1; // Optional, uses default world if not provided
+  int32 chunk_x = 2;
+  int32 chunk_y = 3;
 }
 
 // Get single chunk
 message GetChunkRequest {
-  int32 chunk_x = 1;
-  int32 chunk_y = 2;
+  bytes world_id = 1; // Optional, uses default world if not provided
+  int32 chunk_x = 2;
+  int32 chunk_y = 3;
 }
 
 message GetChunkResponse {
@@ -53,10 +55,11 @@ message GetChunkResponse {
 
 // Get multiple chunks in a rectangle
 message GetChunksRequest {
-  int32 min_chunk_x = 1;
-  int32 max_chunk_x = 2;
-  int32 min_chunk_y = 3;
-  int32 max_chunk_y = 4;
+  bytes world_id = 1; // Optional, uses default world if not provided
+  int32 min_chunk_x = 2;
+  int32 max_chunk_x = 3;
+  int32 min_chunk_y = 4;
+  int32 max_chunk_y = 5;
 }
 
 message GetChunksResponse {
@@ -65,9 +68,10 @@ message GetChunksResponse {
 
 // Get chunks in radius around a point
 message GetChunksInRadiusRequest {
-  int32 center_chunk_x = 1;
-  int32 center_chunk_y = 2;
-  int32 radius = 3; // Radius in chunks
+  bytes world_id = 1; // Optional, uses default world if not provided
+  int32 center_chunk_x = 2;
+  int32 center_chunk_y = 3;
+  int32 radius = 4; // Radius in chunks
 }
 
 message GetChunksInRadiusResponse {

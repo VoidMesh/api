@@ -1,6 +1,6 @@
-# Resource System Integration Guide
+# Resource Node System Integration Guide
 
-This document explains how to integrate the new resource spawning system with your existing chunk generation system in VoidMesh.
+This document explains how to integrate the new resource node spawning system with your existing chunk generation system in VoidMesh.
 
 ## Overview
 
@@ -11,6 +11,7 @@ The resource system adds harvestable resource nodes to the world, spawning them 
 ### 1. Database Updates
 
 The system adds two new tables to the database:
+
 - `resource_types`: Defines different types of resources and their properties
 - `resource_nodes`: Stores individual resource node instances in the world
 
@@ -19,7 +20,8 @@ All necessary database tables and seed data are already included in the `schema.
 ### 2. Protobuf Changes
 
 The system adds new protobuf definitions:
-- New `resource/v1/resource.proto` file defining resource messages and services
+
+- New `resource_node/v1/resource_node.proto` file defining resource node messages and services
 - Updated `chunk/v1/chunk.proto` to include resources in the `ChunkData` message
 
 Regenerate the protobuf code:
@@ -30,50 +32,50 @@ Regenerate the protobuf code:
 
 ### 3. Integration with Chunk Service
 
-To integrate resources with your existing chunk generation system, we've provided a `ResourceGeneratorIntegration` component. Here's how to use it:
+To integrate resource nodes with your existing chunk generation system, we've provided a `ResourceNodeGeneratorIntegration` component. Here's how to use it:
 
 #### 3.1. In Your Chunk Service
 
-Integrate the resource system with your chunk service by adding the following code to your chunk service:
+Integrate the resource node system with your chunk service by adding the following code to your chunk service:
 
 ```go
 // In your chunk service implementation file
 
-// Import the ResourceGeneratorIntegration
+// Import the ResourceNodeGeneratorIntegration
 import (
     // ... existing imports
-    "github.com/VoidMesh/api/api/services/chunk" // Contains the ResourceGeneratorIntegration
+    "github.com/VoidMesh/api/api/services/chunk" // Contains the ResourceNodeGeneratorIntegration
 )
 
 // Add the integration to your service struct
 type Service struct {
     // ... existing fields
-    resourceIntegration *chunk.ResourceGeneratorIntegration
+    resourceNodeIntegration *chunk.ResourceNodeGeneratorIntegration
 }
 
 // Initialize it in your constructor
 func NewService(db db.DBTX, noiseGen *noise.Generator) *Service {
     // ... existing initialization
-    
+
     // Create the resource integration
-    resourceIntegration := chunk.NewResourceGeneratorIntegration(db, noiseGen)
-    
+    resourceNodeIntegration := chunk.NewResourceNodeGeneratorIntegration(db, noiseGen)
+
     return &Service{
         // ... existing fields
-        resourceIntegration: resourceIntegration,
+        resourceNodeIntegration: resourceNodeIntegration,
     }
 }
 ```
 
 #### 3.2. Modify Your Chunk Methods
 
-Add resource generation and attachment to your chunk methods:
+Add resource node generation and attachment to your chunk methods:
 
 ```go
 // When generating a new chunk
 func (s *Service) GenerateChunk(ctx context.Context, chunkX, chunkY int32) (*chunkV1.ChunkData, error) {
     // ... your existing terrain generation code
-    
+
     // After terrain is generated
     chunk := &chunkV1.ChunkData{
         ChunkX: chunkX,
@@ -81,13 +83,13 @@ func (s *Service) GenerateChunk(ctx context.Context, chunkX, chunkY int32) (*chu
         Cells:  cells,
         // ... other fields
     }
-    
+
     // Generate and attach resources
-    if err := s.resourceIntegration.GenerateAndAttachResources(ctx, chunk); err != nil {
+    if err := s.resourceNodeIntegration.GenerateAndAttachResourceNodes(ctx, chunk); err != nil {
         // Log the error but continue - resources are optional
         s.logger.Error("Failed to generate resources", "error", err)
     }
-    
+
     // ... store chunk in database
     return chunk, nil
 }
@@ -95,31 +97,31 @@ func (s *Service) GenerateChunk(ctx context.Context, chunkX, chunkY int32) (*chu
 // When retrieving an existing chunk
 func (s *Service) GetChunk(ctx context.Context, chunkX, chunkY int32) (*chunkV1.ChunkData, error) {
     // ... your existing chunk retrieval code
-    
+
     // After retrieving the chunk
-    if err := s.resourceIntegration.AttachResourcesToChunk(ctx, chunk); err != nil {
+    if err := s.resourceNodeIntegration.AttachResourceNodesToChunk(ctx, chunk); err != nil {
         // Log the error but continue - resources are optional
         s.logger.Error("Failed to attach resources", "error", err)
     }
-    
+
     return chunk, nil
 }
 
 // When retrieving multiple chunks
 func (s *Service) GetChunksInRange(ctx context.Context, minX, maxX, minY, maxY int32) ([]*chunkV1.ChunkData, error) {
     // ... your existing chunks retrieval code
-    
+
     // After retrieving all chunks
-    if err := s.resourceIntegration.AttachResourcesToChunks(ctx, chunks); err != nil {
+    if err := s.resourceNodeIntegration.AttachResourceNodesToChunks(ctx, chunks); err != nil {
         // Log the error but continue - resources are optional
         s.logger.Error("Failed to attach resources to chunks", "error", err)
     }
-    
+
     return chunks, nil
 }
 ```
 
-### 4. Add Resource Service to gRPC Server
+### 4. Add ResourceNode Service to gRPC Server
 
 We've provided a service registration function that you can use. Simply import and call it in your server initialization code:
 
@@ -132,34 +134,34 @@ import (
 
 func main() {
     // ... your existing code
-    
+
     // Create gRPC server
     grpcServer := grpc.NewServer()
-    
-    // Register all services including the resource service
+
+    // Register all services including the resource node service
     server.RegisterServices(grpcServer, database, worldSeed)
-    
+
     // ... continue with server startup
 }
 ```
 
-If you prefer to register services manually, here's how to register just the resource service:
+If you prefer to register services manually, here's how to register just the resource node service:
 
 ```go
 // Create noise generator with the same seed as your chunk service
 noiseGen := noise.NewGenerator(worldSeed)
 
-// Create resource service
-resourceService := resource.NewService(database, noiseGen)
+// Create resource node service
+resourceNodeService := resource_node.NewService(database, noiseGen)
 
-// Create and register resource handler
-resourceHandler := handlers.NewResourceHandler(resourceService)
-resourceV1.RegisterResourceServiceServer(grpcServer, resourceHandler)
+// Create and register resource node handler
+resourceNodeHandler := handlers.NewResourceNodeHandler(resourceNodeService)
+resourceNodeV1.RegisterResourceNodeServiceServer(grpcServer, resourceNodeHandler)
 ```
 
 ## Testing
 
-To test that resources are being properly generated and attached to chunks:
+To test that resource nodes are being properly generated and attached to chunks:
 
 1. Start the server with the updated code
 2. Request a chunk via the gRPC API
@@ -171,33 +173,38 @@ To test that resources are being properly generated and attached to chunks:
 The system comes pre-configured with several resource types for each terrain:
 
 ### Grass Terrain
+
 - Herb Patches (medicinal plants, cooking ingredients)
 - Berry Bushes (food, crafting materials)
 - Mineral Outcroppings (stone, metals)
 
 ### Water Terrain
+
 - Fishing Spots (different fish varieties)
 - Kelp/Seaweed Beds (crafting materials, food)
 - Pearl Formations (rare crafting components)
 
 ### Sand Terrain
+
 - Crystals/Gems (crafting, magical components)
 - Clay Deposits (building materials, pottery)
 - Desert Plants (special ingredients, rare materials)
 
 ### Wood/Forest Terrain (Dirt Terrain)
+
 - Harvestable Trees (different wood types)
 - Mushroom Circles (alchemy ingredients, food)
 - Wild Honey Hives (food, crafting materials)
 
 ### Stone Terrain
+
 - Stone Veins (building materials)
 - Gem Deposits (valuable gems)
 - Metal Ores (crafting materials)
 
 ## Configuration
 
-Resource generation can be tuned by modifying the constants in the `resource/generator.go` file:
+Resource node generation can be tuned by modifying the constants in the `resource_node/generator.go` file:
 
 - `ResourceNoiseScale`: Controls the large-scale distribution of resources
 - `ResourceDetailScale`: Controls the fine detail of resource distribution

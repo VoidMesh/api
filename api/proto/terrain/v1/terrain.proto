@@ -1,0 +1,54 @@
+syntax = "proto3";
+
+package terrain.v1;
+
+option go_package = "github.com/VoidMesh/api/api/proto/terrain/v1";
+
+// Terrain related messages and services
+service TerrainService {
+  // Get all terrain types
+  rpc GetTerrainTypes(GetTerrainTypesRequest) returns (GetTerrainTypesResponse) {}
+}
+
+// Terrain types match those defined in chunk.proto
+enum TerrainType {
+  TERRAIN_TYPE_UNSPECIFIED = 0;
+  TERRAIN_TYPE_GRASS = 1;
+  TERRAIN_TYPE_WATER = 2;
+  TERRAIN_TYPE_STONE = 3;
+  TERRAIN_TYPE_SAND = 4;
+  TERRAIN_TYPE_DIRT = 5;
+}
+
+// Terrain type properties
+message TerrainTypeInfo {
+  TerrainType type = 1;
+  string name = 2;
+  string description = 3;
+  TerrainVisual visual = 4;
+  TerrainProperties properties = 5;
+}
+
+// Visual properties of terrain
+message TerrainVisual {
+  string base_color = 1;
+  string texture = 2;
+  float roughness = 3;
+}
+
+// Physical properties of terrain
+message TerrainProperties {
+  float movement_speed_multiplier = 1;
+  bool is_water = 2;
+  bool is_passable = 3;
+}
+
+// Request to get all terrain types
+message GetTerrainTypesRequest {
+  // Empty request
+}
+
+// Response with all terrain types
+message GetTerrainTypesResponse {
+  repeated TerrainTypeInfo terrain_types = 1;
+}

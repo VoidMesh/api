@@ -1,0 +1,141 @@
+syntax = "proto3";
+
+package resource_node.v1;
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/VoidMesh/api/api/proto/resource_node/v1";
+
+// Resource node related messages and services
+service ResourceNodeService {
+  // Resource node discovery operations
+  rpc GetResourcesInChunk(GetResourcesInChunkRequest) returns (GetResourcesInChunkResponse) {}
+  rpc GetResourcesInChunks(GetResourcesInChunksRequest) returns (GetResourcesInChunksResponse) {}
+
+  // Resource node type information
+  rpc GetResourceNodeTypes(GetResourceNodeTypesRequest) returns (GetResourceNodeTypesResponse) {}
+}
+
+// Resource node rarity levels
+enum ResourceRarity {
+  RESOURCE_RARITY_UNSPECIFIED = 0;
+  RESOURCE_RARITY_COMMON = 1;
+  RESOURCE_RARITY_UNCOMMON = 2;
+  RESOURCE_RARITY_RARE = 3;
+  RESOURCE_RARITY_VERY_RARE = 4;
+}
+
+// Resource node type identifiers
+enum ResourceNodeTypeId {
+  RESOURCE_NODE_TYPE_ID_UNSPECIFIED = 0;
+
+  // Grass Terrain Resources
+  RESOURCE_NODE_TYPE_ID_HERB_PATCH = 1;
+  RESOURCE_NODE_TYPE_ID_BERRY_BUSH = 2;
+  RESOURCE_NODE_TYPE_ID_MINERAL_OUTCROPPING = 3;
+
+  // Water Terrain Resources
+  RESOURCE_NODE_TYPE_ID_FISHING_SPOT = 4;
+  RESOURCE_NODE_TYPE_ID_KELP_BED = 5;
+  RESOURCE_NODE_TYPE_ID_PEARL_FORMATION = 6;
+
+  // Sand Terrain Resources
+  RESOURCE_NODE_TYPE_ID_CRYSTAL_FORMATION = 7;
+  RESOURCE_NODE_TYPE_ID_CLAY_DEPOSIT = 8;
+  RESOURCE_NODE_TYPE_ID_DESERT_PLANT = 9;
+
+  // Dirt/Stone Terrain Resources
+  RESOURCE_NODE_TYPE_ID_HARVESTABLE_TREE = 10;
+  RESOURCE_NODE_TYPE_ID_MUSHROOM_CIRCLE = 11;
+  RESOURCE_NODE_TYPE_ID_WILD_HONEY_HIVE = 12;
+  RESOURCE_NODE_TYPE_ID_STONE_VEIN = 13;
+  RESOURCE_NODE_TYPE_ID_GEM_DEPOSIT = 14;
+  RESOURCE_NODE_TYPE_ID_METAL_ORE = 15;
+}
+
+// Resource node secondary drop information
+message SecondaryDrop {
+  string name = 1;
+  float chance = 2;
+  int32 min_amount = 3;
+  int32 max_amount = 4;
+}
+
+// Resource node properties
+message ResourceProperties {
+  int32 harvest_time = 1; // Time in seconds to harvest
+  int32 respawn_time = 2; // Time in seconds for respawn
+  int32 yield_min = 3; // Minimum yield per harvest
+  int32 yield_max = 4; // Maximum yield per harvest
+  repeated SecondaryDrop secondary_drops = 5; // Possible secondary drops
+}
+
+// Resource node visual data
+message ResourceVisual {
+  string sprite = 1; // Sprite identifier
+  string color = 2; // Color in hex format
+}
+
+// Resource node type information
+message ResourceNodeType {
+  int32 id = 1;
+  string name = 2;
+  string description = 3;
+  string terrain_type = 4;
+  ResourceRarity rarity = 5;
+  ResourceVisual visual_data = 6;
+  ResourceProperties properties = 7;
+}
+
+// Resource node instance
+message ResourceNode {
+  int32 id = 1;
+  ResourceNodeTypeId resource_node_type_id = 2;
+  ResourceNodeType resource_node_type = 3;
+  int32 chunk_x = 4;
+  int32 chunk_y = 5;
+  int32 pos_x = 6;
+  int32 pos_y = 7;
+  string cluster_id = 8;
+  int32 size = 9;
+  google.protobuf.Timestamp created_at = 10;
+}
+
+// Request to get resource nodes in a specific chunk
+message GetResourcesInChunkRequest {
+  bytes world_id = 1;
+  int32 chunk_x = 2;
+  int32 chunk_y = 3;
+}
+
+// Response with resource nodes in a chunk
+message GetResourcesInChunkResponse {
+  repeated ResourceNode resources = 1;
+}
+
+// Request to get resource nodes in multiple chunks
+message GetResourcesInChunksRequest {
+  repeated ChunkCoordinate coordinates = 1;
+}
+
+// Chunk coordinate pair
+message ChunkCoordinate {
+  bytes world_id = 1;
+  int32 chunk_x = 2;
+  int32 chunk_y = 3;
+}
+
+// Response with resource nodes in multiple chunks
+message GetResourcesInChunksResponse {
+  repeated ResourceNode resources = 1;
+}
+
+// Request to get all resource node types
+message GetResourceNodeTypesRequest {
+  // Empty request
+}
+
+// Response with all resource node types
+message GetResourceNodeTypesResponse {
+  repeated ResourceNodeType resource_node_types = 1;
+}

@@ -7,7 +7,7 @@
 package v1
 
 import (
-	v1 "github.com/VoidMesh/api/api/proto/resource/v1"
+	v1 "github.com/VoidMesh/api/api/proto/resource_node/v1"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
@@ -132,7 +132,7 @@ type ChunkData struct {
 	Cells         []*TerrainCell         `protobuf:"bytes,3,rep,name=cells,proto3" json:"cells,omitempty"` // 32x32 = 1024 cells, row-major order
 	Seed          int64                  `protobuf:"varint,4,opt,name=seed,proto3" json:"seed,omitempty"`
 	GeneratedAt   *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=generated_at,json=generatedAt,proto3" json:"generated_at,omitempty"`
-	Resources     []*v1.ResourceNode     `protobuf:"bytes,6,rep,name=resources,proto3" json:"resources,omitempty"` // Resource nodes in this chunk
+	ResourceNodes []*v1.ResourceNode     `protobuf:"bytes,6,rep,name=resource_nodes,json=resourceNodes,proto3" json:"resource_nodes,omitempty"` // Resource nodes in this chunk
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -202,17 +202,18 @@ func (x *ChunkData) GetGeneratedAt() *timestamppb.Timestamp {
 	return nil
 }
 
-func (x *ChunkData) GetResources() []*v1.ResourceNode {
+func (x *ChunkData) GetResourceNodes() []*v1.ResourceNode {
 	if x != nil {
-		return x.Resources
+		return x.ResourceNodes
 	}
 	return nil
 }
 
 type ChunkCoordinate struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	ChunkX        int32                  `protobuf:"varint,1,opt,name=chunk_x,json=chunkX,proto3" json:"chunk_x,omitempty"`
-	ChunkY        int32                  `protobuf:"varint,2,opt,name=chunk_y,json=chunkY,proto3" json:"chunk_y,omitempty"`
+	WorldId       []byte                 `protobuf:"bytes,1,opt,name=world_id,json=worldId,proto3" json:"world_id,omitempty"` // Optional, uses default world if not provided
+	ChunkX        int32                  `protobuf:"varint,2,opt,name=chunk_x,json=chunkX,proto3" json:"chunk_x,omitempty"`
+	ChunkY        int32                  `protobuf:"varint,3,opt,name=chunk_y,json=chunkY,proto3" json:"chunk_y,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -247,6 +248,13 @@ func (*ChunkCoordinate) Descriptor() ([]byte, []int) {
 	return file_chunk_v1_chunk_proto_rawDescGZIP(), []int{2}
 }
 
+func (x *ChunkCoordinate) GetWorldId() []byte {
+	if x != nil {
+		return x.WorldId
+	}
+	return nil
+}
+
 func (x *ChunkCoordinate) GetChunkX() int32 {
 	if x != nil {
 		return x.ChunkX
@@ -264,8 +272,9 @@ func (x *ChunkCoordinate) GetChunkY() int32 {
 // Get single chunk
 type GetChunkRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	ChunkX        int32                  `protobuf:"varint,1,opt,name=chunk_x,json=chunkX,proto3" json:"chunk_x,omitempty"`
-	ChunkY        int32                  `protobuf:"varint,2,opt,name=chunk_y,json=chunkY,proto3" json:"chunk_y,omitempty"`
+	WorldId       []byte                 `protobuf:"bytes,1,opt,name=world_id,json=worldId,proto3" json:"world_id,omitempty"` // Optional, uses default world if not provided
+	ChunkX        int32                  `protobuf:"varint,2,opt,name=chunk_x,json=chunkX,proto3" json:"chunk_x,omitempty"`
+	ChunkY        int32                  `protobuf:"varint,3,opt,name=chunk_y,json=chunkY,proto3" json:"chunk_y,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -298,6 +307,13 @@ func (x *GetChunkRequest) ProtoReflect() protoreflect.Message {
 // Deprecated: Use GetChunkRequest.ProtoReflect.Descriptor instead.
 func (*GetChunkRequest) Descriptor() ([]byte, []int) {
 	return file_chunk_v1_chunk_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *GetChunkRequest) GetWorldId() []byte {
+	if x != nil {
+		return x.WorldId
+	}
+	return nil
 }
 
 func (x *GetChunkRequest) GetChunkX() int32 {
@@ -361,10 +377,11 @@ func (x *GetChunkResponse) GetChunk() *ChunkData {
 // Get multiple chunks in a rectangle
 type GetChunksRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	MinChunkX     int32                  `protobuf:"varint,1,opt,name=min_chunk_x,json=minChunkX,proto3" json:"min_chunk_x,omitempty"`
-	MaxChunkX     int32                  `protobuf:"varint,2,opt,name=max_chunk_x,json=maxChunkX,proto3" json:"max_chunk_x,omitempty"`
-	MinChunkY     int32                  `protobuf:"varint,3,opt,name=min_chunk_y,json=minChunkY,proto3" json:"min_chunk_y,omitempty"`
-	MaxChunkY     int32                  `protobuf:"varint,4,opt,name=max_chunk_y,json=maxChunkY,proto3" json:"max_chunk_y,omitempty"`
+	WorldId       []byte                 `protobuf:"bytes,1,opt,name=world_id,json=worldId,proto3" json:"world_id,omitempty"` // Optional, uses default world if not provided
+	MinChunkX     int32                  `protobuf:"varint,2,opt,name=min_chunk_x,json=minChunkX,proto3" json:"min_chunk_x,omitempty"`
+	MaxChunkX     int32                  `protobuf:"varint,3,opt,name=max_chunk_x,json=maxChunkX,proto3" json:"max_chunk_x,omitempty"`
+	MinChunkY     int32                  `protobuf:"varint,4,opt,name=min_chunk_y,json=minChunkY,proto3" json:"min_chunk_y,omitempty"`
+	MaxChunkY     int32                  `protobuf:"varint,5,opt,name=max_chunk_y,json=maxChunkY,proto3" json:"max_chunk_y,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -397,6 +414,13 @@ func (x *GetChunksRequest) ProtoReflect() protoreflect.Message {
 // Deprecated: Use GetChunksRequest.ProtoReflect.Descriptor instead.
 func (*GetChunksRequest) Descriptor() ([]byte, []int) {
 	return file_chunk_v1_chunk_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *GetChunksRequest) GetWorldId() []byte {
+	if x != nil {
+		return x.WorldId
+	}
+	return nil
 }
 
 func (x *GetChunksRequest) GetMinChunkX() int32 {
@@ -474,9 +498,10 @@ func (x *GetChunksResponse) GetChunks() []*ChunkData {
 // Get chunks in radius around a point
 type GetChunksInRadiusRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	CenterChunkX  int32                  `protobuf:"varint,1,opt,name=center_chunk_x,json=centerChunkX,proto3" json:"center_chunk_x,omitempty"`
-	CenterChunkY  int32                  `protobuf:"varint,2,opt,name=center_chunk_y,json=centerChunkY,proto3" json:"center_chunk_y,omitempty"`
-	Radius        int32                  `protobuf:"varint,3,opt,name=radius,proto3" json:"radius,omitempty"` // Radius in chunks
+	WorldId       []byte                 `protobuf:"bytes,1,opt,name=world_id,json=worldId,proto3" json:"world_id,omitempty"` // Optional, uses default world if not provided
+	CenterChunkX  int32                  `protobuf:"varint,2,opt,name=center_chunk_x,json=centerChunkX,proto3" json:"center_chunk_x,omitempty"`
+	CenterChunkY  int32                  `protobuf:"varint,3,opt,name=center_chunk_y,json=centerChunkY,proto3" json:"center_chunk_y,omitempty"`
+	Radius        int32                  `protobuf:"varint,4,opt,name=radius,proto3" json:"radius,omitempty"` // Radius in chunks
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -509,6 +534,13 @@ func (x *GetChunksInRadiusRequest) ProtoReflect() protoreflect.Message {
 // Deprecated: Use GetChunksInRadiusRequest.ProtoReflect.Descriptor instead.
 func (*GetChunksInRadiusRequest) Descriptor() ([]byte, []int) {
 	return file_chunk_v1_chunk_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *GetChunksInRadiusRequest) GetWorldId() []byte {
+	if x != nil {
+		return x.WorldId
+	}
+	return nil
 }
 
 func (x *GetChunksInRadiusRequest) GetCenterChunkX() int32 {
@@ -580,35 +612,39 @@ var File_chunk_v1_chunk_proto protoreflect.FileDescriptor
 
 const file_chunk_v1_chunk_proto_rawDesc = "" +
 	"\n" +
-	"\x14chunk/v1/chunk.proto\x12\bchunk.v1\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1aresource/v1/resource.proto\"G\n" +
+	"\x14chunk/v1/chunk.proto\x12\bchunk.v1\x1a\x1fgoogle/protobuf/timestamp.proto\x1a$resource_node/v1/resource_node.proto\"G\n" +
 	"\vTerrainCell\x128\n" +
-	"\fterrain_type\x18\x01 \x01(\x0e2\x15.chunk.v1.TerrainTypeR\vterrainType\"\xf6\x01\n" +
+	"\fterrain_type\x18\x01 \x01(\x0e2\x15.chunk.v1.TerrainTypeR\vterrainType\"\x84\x02\n" +
 	"\tChunkData\x12\x17\n" +
 	"\achunk_x\x18\x01 \x01(\x05R\x06chunkX\x12\x17\n" +
 	"\achunk_y\x18\x02 \x01(\x05R\x06chunkY\x12+\n" +
 	"\x05cells\x18\x03 \x03(\v2\x15.chunk.v1.TerrainCellR\x05cells\x12\x12\n" +
 	"\x04seed\x18\x04 \x01(\x03R\x04seed\x12=\n" +
-	"\fgenerated_at\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\vgeneratedAt\x127\n" +
-	"\tresources\x18\x06 \x03(\v2\x19.resource.v1.ResourceNodeR\tresources\"C\n" +
-	"\x0fChunkCoordinate\x12\x17\n" +
-	"\achunk_x\x18\x01 \x01(\x05R\x06chunkX\x12\x17\n" +
-	"\achunk_y\x18\x02 \x01(\x05R\x06chunkY\"C\n" +
-	"\x0fGetChunkRequest\x12\x17\n" +
-	"\achunk_x\x18\x01 \x01(\x05R\x06chunkX\x12\x17\n" +
-	"\achunk_y\x18\x02 \x01(\x05R\x06chunkY\"=\n" +
+	"\fgenerated_at\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\vgeneratedAt\x12E\n" +
+	"\x0eresource_nodes\x18\x06 \x03(\v2\x1e.resource_node.v1.ResourceNodeR\rresourceNodes\"^\n" +
+	"\x0fChunkCoordinate\x12\x19\n" +
+	"\bworld_id\x18\x01 \x01(\fR\aworldId\x12\x17\n" +
+	"\achunk_x\x18\x02 \x01(\x05R\x06chunkX\x12\x17\n" +
+	"\achunk_y\x18\x03 \x01(\x05R\x06chunkY\"^\n" +
+	"\x0fGetChunkRequest\x12\x19\n" +
+	"\bworld_id\x18\x01 \x01(\fR\aworldId\x12\x17\n" +
+	"\achunk_x\x18\x02 \x01(\x05R\x06chunkX\x12\x17\n" +
+	"\achunk_y\x18\x03 \x01(\x05R\x06chunkY\"=\n" +
 	"\x10GetChunkResponse\x12)\n" +
-	"\x05chunk\x18\x01 \x01(\v2\x13.chunk.v1.ChunkDataR\x05chunk\"\x92\x01\n" +
-	"\x10GetChunksRequest\x12\x1e\n" +
-	"\vmin_chunk_x\x18\x01 \x01(\x05R\tminChunkX\x12\x1e\n" +
-	"\vmax_chunk_x\x18\x02 \x01(\x05R\tmaxChunkX\x12\x1e\n" +
-	"\vmin_chunk_y\x18\x03 \x01(\x05R\tminChunkY\x12\x1e\n" +
-	"\vmax_chunk_y\x18\x04 \x01(\x05R\tmaxChunkY\"@\n" +
+	"\x05chunk\x18\x01 \x01(\v2\x13.chunk.v1.ChunkDataR\x05chunk\"\xad\x01\n" +
+	"\x10GetChunksRequest\x12\x19\n" +
+	"\bworld_id\x18\x01 \x01(\fR\aworldId\x12\x1e\n" +
+	"\vmin_chunk_x\x18\x02 \x01(\x05R\tminChunkX\x12\x1e\n" +
+	"\vmax_chunk_x\x18\x03 \x01(\x05R\tmaxChunkX\x12\x1e\n" +
+	"\vmin_chunk_y\x18\x04 \x01(\x05R\tminChunkY\x12\x1e\n" +
+	"\vmax_chunk_y\x18\x05 \x01(\x05R\tmaxChunkY\"@\n" +
 	"\x11GetChunksResponse\x12+\n" +
-	"\x06chunks\x18\x01 \x03(\v2\x13.chunk.v1.ChunkDataR\x06chunks\"~\n" +
-	"\x18GetChunksInRadiusRequest\x12$\n" +
-	"\x0ecenter_chunk_x\x18\x01 \x01(\x05R\fcenterChunkX\x12$\n" +
-	"\x0ecenter_chunk_y\x18\x02 \x01(\x05R\fcenterChunkY\x12\x16\n" +
-	"\x06radius\x18\x03 \x01(\x05R\x06radius\"H\n" +
+	"\x06chunks\x18\x01 \x03(\v2\x13.chunk.v1.ChunkDataR\x06chunks\"\x99\x01\n" +
+	"\x18GetChunksInRadiusRequest\x12\x19\n" +
+	"\bworld_id\x18\x01 \x01(\fR\aworldId\x12$\n" +
+	"\x0ecenter_chunk_x\x18\x02 \x01(\x05R\fcenterChunkX\x12$\n" +
+	"\x0ecenter_chunk_y\x18\x03 \x01(\x05R\fcenterChunkY\x12\x16\n" +
+	"\x06radius\x18\x04 \x01(\x05R\x06radius\"H\n" +
 	"\x19GetChunksInRadiusResponse\x12+\n" +
 	"\x06chunks\x18\x01 \x03(\v2\x13.chunk.v1.ChunkDataR\x06chunks*\xa1\x01\n" +
 	"\vTerrainType\x12\x1c\n" +
@@ -649,13 +685,13 @@ var file_chunk_v1_chunk_proto_goTypes = []any{
 	(*GetChunksInRadiusRequest)(nil),  // 8: chunk.v1.GetChunksInRadiusRequest
 	(*GetChunksInRadiusResponse)(nil), // 9: chunk.v1.GetChunksInRadiusResponse
 	(*timestamppb.Timestamp)(nil),     // 10: google.protobuf.Timestamp
-	(*v1.ResourceNode)(nil),           // 11: resource.v1.ResourceNode
+	(*v1.ResourceNode)(nil),           // 11: resource_node.v1.ResourceNode
 }
 var file_chunk_v1_chunk_proto_depIdxs = []int32{
 	0,  // 0: chunk.v1.TerrainCell.terrain_type:type_name -> chunk.v1.TerrainType
 	1,  // 1: chunk.v1.ChunkData.cells:type_name -> chunk.v1.TerrainCell
 	10, // 2: chunk.v1.ChunkData.generated_at:type_name -> google.protobuf.Timestamp
-	11, // 3: chunk.v1.ChunkData.resources:type_name -> resource.v1.ResourceNode
+	11, // 3: chunk.v1.ChunkData.resource_nodes:type_name -> resource_node.v1.ResourceNode
 	2,  // 4: chunk.v1.GetChunkResponse.chunk:type_name -> chunk.v1.ChunkData
 	2,  // 5: chunk.v1.GetChunksResponse.chunks:type_name -> chunk.v1.ChunkData
 	2,  // 6: chunk.v1.GetChunksInRadiusResponse.chunks:type_name -> chunk.v1.ChunkData

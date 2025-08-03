@@ -2,56 +2,79 @@ package world
 
 import (
 	"context"
-	"strconv"
+	"fmt"
+	"math/rand"
+
+	"github.com/charmbracelet/log"
+	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/VoidMesh/api/api/db"
-	worldV1 "github.com/VoidMesh/api/api/proto/world/v1"
-	"github.com/VoidMesh/api/api/services/chunk"
-	"github.com/jackc/pgx/v5/pgxpool"
 )
 
+// Service provides operations on worlds
 type Service struct {
-	db           *pgxpool.Pool
-	chunkService *chunk.Service
-	worldSeed    int64
-	chunkSize    int32
+	pool    *pgxpool.Pool
+	queries *db.Queries
+	logger  *log.Logger
 }
 
-func NewService(db *pgxpool.Pool, chunkService *chunk.Service, worldSeed int64) *Service {
+// NewService creates a new world service
+func NewService(pool *pgxpool.Pool, logger *log.Logger) *Service {
 	return &Service{
-		db:           db,
-		chunkService: chunkService,
-		worldSeed:    worldSeed,
-		chunkSize:    chunk.ChunkSize,
+		pool:    pool,
+		queries: db.New(pool),
+		logger:  logger.With("component", "world-service"),
 	}
 }
 
-// GetWorldInfo returns information about the world
-func (s *Service) GetWorldInfo(ctx context.Context, req *worldV1.GetWorldInfoRequest) (*worldV1.GetWorldInfoResponse, error) {
-	// Get world settings from database
-	nameSetting, err := db.New(s.db).GetWorldSetting(ctx, "world_name")
+// GetDefaultWorld gets or creates the default world
+func (s *Service) GetDefaultWorld(ctx context.Context) (db.World, error) {
+	world, err := s.queries.GetDefaultWorld(ctx)
 	if err != nil {
-		nameSetting.Value = "VoidMesh World" // Default name
+		// Create a default world if none exists
+		s.logger.Info("No default world found, creating a new one")
+		world, err = s.createWorld(ctx, "VoidMesh World")
+		if err != nil {
+			return db.World{}, fmt.Errorf("failed to create default world: %w", err)
+		}
 	}
+	return world, nil
+}
 
-	seedSetting, err := db.New(s.db).GetWorldSetting(ctx, "seed")
-	if err != nil {
-		seedSetting.Value = strconv.FormatInt(s.worldSeed, 10)
-	}
+// GetWorldByID gets a world by ID
+func (s *Service) GetWorldByID(ctx context.Context, id pgtype.UUID) (db.World, error) {
+	return s.queries.GetWorldByID(ctx, id)
+}
 
-	chunkSizeSetting, err := db.New(s.db).GetWorldSetting(ctx, "chunk_size")
-	if err != nil {
-		chunkSizeSetting.Value = "32"
-	}
+// ListWorlds gets all worlds
+func (s *Service) ListWorlds(ctx context.Context) ([]db.World, error) {
+	return s.queries.ListWorlds(ctx)
+}
 
-	seed, _ := strconv.ParseInt(seedSetting.Value, 10, 64)
-	chunkSizeInt, _ := strconv.ParseInt(chunkSizeSetting.Value, 10, 32)
+// CreateWorld creates a new world with a random seed
+func (s *Service) createWorld(ctx context.Context, name string) (db.World, error) {
+	seed := rand.Int63()
+	return s.queries.CreateWorld(ctx, db.CreateWorldParams{
+		Name: name,
+		Seed: seed,
+	})
+}
 
-	return &worldV1.GetWorldInfoResponse{
-		WorldInfo: &worldV1.WorldInfo{
-			Name:      nameSetting.Value,
-			Seed:      seed,
-			ChunkSize: int32(chunkSizeInt),
-		},
-	}, nil
+// UpdateWorld updates a world's name
+func (s *Service) UpdateWorld(ctx context.Context, id pgtype.UUID, name string) (db.World, error) {
+	return s.queries.UpdateWorld(ctx, db.UpdateWorldParams{
+		ID:   id,
+		Name: name,
+	})
+}
+
+// DeleteWorld deletes a world
+func (s *Service) DeleteWorld(ctx context.Context, id pgtype.UUID) error {
+	return s.queries.DeleteWorld(ctx, id)
+}
+
+// ChunkSize returns the chunk size (hardcoded to 32)
+func (s *Service) ChunkSize() int32 {
+	return 32
 }

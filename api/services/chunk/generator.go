@@ -9,6 +9,8 @@ import (
 	"github.com/VoidMesh/api/api/internal/logging"
 	chunkV1 "github.com/VoidMesh/api/api/proto/chunk/v1"
 	"github.com/VoidMesh/api/api/services/noise"
+	"github.com/VoidMesh/api/api/services/world"
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -19,23 +21,32 @@ const (
 )
 
 type Service struct {
-	db                  *pgxpool.Pool
-	noiseGen            *noise.Generator
-	worldSeed           int64
-	chunkSize           int32
-	resourceIntegration *ResourceGeneratorIntegration
+	db                      *pgxpool.Pool
+	noiseGen                *noise.Generator
+	worldService            *world.Service
+	defaultWorldID          pgtype.UUID
+	chunkSize               int32
+	resourceNodeIntegration *ResourceNodeGeneratorIntegration
 }
 
-func NewService(db *pgxpool.Pool, worldSeed int64, noiseGen *noise.Generator) *Service {
+func NewService(db *pgxpool.Pool, worldService *world.Service, noiseGen *noise.Generator) *Service {
 	logger := logging.GetLogger()
-	logger.Debug("Creating new chunk service", "world_seed", worldSeed, "chunk_size", ChunkSize)
-	resourceIntegration := NewResourceGeneratorIntegration(db, noiseGen)
+	logger.Debug("Creating new chunk service", "chunk_size", ChunkSize)
+	resourceNodeIntegration := NewResourceNodeGeneratorIntegration(db, noiseGen, worldService)
+
+	// Get default world or create if it doesn't exist
+	defaultWorld, err := worldService.GetDefaultWorld(context.Background())
+	if err != nil {
+		logger.Error("Failed to get default world", "error", err)
+	}
+
 	return &Service{
-		db:                  db,
-		noiseGen:            noiseGen,
-		worldSeed:           worldSeed,
-		chunkSize:           ChunkSize,
-		resourceIntegration: resourceIntegration,
+		db:                      db,
+		noiseGen:                noiseGen,
+		worldService:            worldService,
+		defaultWorldID:          defaultWorld.ID,
+		chunkSize:               ChunkSize,
+		resourceNodeIntegration: resourceNodeIntegration,
 	}
 }
 
@@ -74,11 +85,17 @@ func (s *Service) GenerateChunk(chunkX, chunkY int32) (*chunkV1.ChunkData, error
 	duration := time.Since(start)
 	logger.Info("Chunk generation completed", "duration", duration, "cells_generated", len(cells))
 
+	// Get world seed for the default world
+	world, err := s.worldService.GetWorldByID(context.Background(), s.defaultWorldID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get world: %w", err)
+	}
+
 	chunk := &chunkV1.ChunkData{
 		ChunkX:      chunkX,
 		ChunkY:      chunkY,
 		Cells:       cells,
-		Seed:        s.worldSeed,
+		Seed:        world.Seed,
 		GeneratedAt: timestamppb.New(time.Now()),
 	}
 
@@ -122,7 +139,7 @@ func (s *Service) GetOrCreateChunk(ctx context.Context, chunkX, chunkY int32) (*
 	if err == nil {
 		logger.Debug("Chunk found in database, attaching resources", "duration", time.Since(start))
 		// Attach resources to existing chunk
-		err = s.resourceIntegration.AttachResourcesToChunk(ctx, chunk)
+		err = s.resourceNodeIntegration.AttachResourceNodesToChunk(ctx, chunk)
 		if err != nil {
 			logger.Error("Failed to attach resources to existing chunk", "error", err)
 			// Don't fail chunk retrieval if resource attachment fails
@@ -145,7 +162,7 @@ func (s *Service) GetOrCreateChunk(ctx context.Context, chunkX, chunkY int32) (*
 
 	// Generate and attach resources after chunk is saved
 	logger.Debug("Generating resources for new chunk")
-	err = s.resourceIntegration.GenerateAndAttachResources(ctx, generatedChunk)
+	err = s.resourceNodeIntegration.GenerateAndAttachResourceNodes(ctx, generatedChunk)
 	if err != nil {
 		logger.Error("Failed to generate resources for chunk", "error", err)
 		// Don't fail chunk generation if resource generation fails
@@ -157,8 +174,9 @@ func (s *Service) GetOrCreateChunk(ctx context.Context, chunkX, chunkY int32) (*
 // getChunkFromDB retrieves a chunk from the database
 func (s *Service) getChunkFromDB(ctx context.Context, chunkX, chunkY int32) (*chunkV1.ChunkData, error) {
 	dbChunk, err := db.New(s.db).GetChunk(ctx, db.GetChunkParams{
-		ChunkX: chunkX,
-		ChunkY: chunkY,
+		WorldID: s.defaultWorldID,
+		ChunkX:  chunkX,
+		ChunkY:  chunkY,
 	})
 	if err != nil {
 		return nil, err
@@ -183,9 +201,9 @@ func (s *Service) saveChunkToDB(ctx context.Context, chunk *chunkV1.ChunkData) e
 	}
 
 	_, err = db.New(s.db).CreateChunk(ctx, db.CreateChunkParams{
+		WorldID:   s.defaultWorldID,
 		ChunkX:    chunk.ChunkX,
 		ChunkY:    chunk.ChunkY,
-		Seed:      chunk.Seed,
 		ChunkData: data,
 	})
 

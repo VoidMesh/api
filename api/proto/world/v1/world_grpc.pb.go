@@ -19,15 +19,29 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	WorldService_GetWorldInfo_FullMethodName = "/world.v1.WorldService/GetWorldInfo"
+	WorldService_GetWorld_FullMethodName        = "/world.v1.WorldService/GetWorld"
+	WorldService_GetDefaultWorld_FullMethodName = "/world.v1.WorldService/GetDefaultWorld"
+	WorldService_ListWorlds_FullMethodName      = "/world.v1.WorldService/ListWorlds"
+	WorldService_UpdateWorldName_FullMethodName = "/world.v1.WorldService/UpdateWorldName"
+	WorldService_DeleteWorld_FullMethodName     = "/world.v1.WorldService/DeleteWorld"
 )
 
 // WorldServiceClient is the client API for WorldService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+//
+// WorldService provides operations for managing worlds
 type WorldServiceClient interface {
-	// World information
-	GetWorldInfo(ctx context.Context, in *GetWorldInfoRequest, opts ...grpc.CallOption) (*GetWorldInfoResponse, error)
+	// GetWorld retrieves a world by ID
+	GetWorld(ctx context.Context, in *GetWorldRequest, opts ...grpc.CallOption) (*GetWorldResponse, error)
+	// GetDefaultWorld retrieves the default world
+	GetDefaultWorld(ctx context.Context, in *GetDefaultWorldRequest, opts ...grpc.CallOption) (*GetDefaultWorldResponse, error)
+	// ListWorlds retrieves all worlds
+	ListWorlds(ctx context.Context, in *ListWorldsRequest, opts ...grpc.CallOption) (*ListWorldsResponse, error)
+	// UpdateWorldName updates a world s name
+	UpdateWorldName(ctx context.Context, in *UpdateWorldNameRequest, opts ...grpc.CallOption) (*UpdateWorldNameResponse, error)
+	// DeleteWorld deletes a world
+	DeleteWorld(ctx context.Context, in *DeleteWorldRequest, opts ...grpc.CallOption) (*DeleteWorldResponse, error)
 }
 
 type worldServiceClient struct {
@@ -38,10 +52,50 @@ func NewWorldServiceClient(cc grpc.ClientConnInterface) WorldServiceClient {
 	return &worldServiceClient{cc}
 }
 
-func (c *worldServiceClient) GetWorldInfo(ctx context.Context, in *GetWorldInfoRequest, opts ...grpc.CallOption) (*GetWorldInfoResponse, error) {
+func (c *worldServiceClient) GetWorld(ctx context.Context, in *GetWorldRequest, opts ...grpc.CallOption) (*GetWorldResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(GetWorldInfoResponse)
-	err := c.cc.Invoke(ctx, WorldService_GetWorldInfo_FullMethodName, in, out, cOpts...)
+	out := new(GetWorldResponse)
+	err := c.cc.Invoke(ctx, WorldService_GetWorld_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *worldServiceClient) GetDefaultWorld(ctx context.Context, in *GetDefaultWorldRequest, opts ...grpc.CallOption) (*GetDefaultWorldResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetDefaultWorldResponse)
+	err := c.cc.Invoke(ctx, WorldService_GetDefaultWorld_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *worldServiceClient) ListWorlds(ctx context.Context, in *ListWorldsRequest, opts ...grpc.CallOption) (*ListWorldsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListWorldsResponse)
+	err := c.cc.Invoke(ctx, WorldService_ListWorlds_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *worldServiceClient) UpdateWorldName(ctx context.Context, in *UpdateWorldNameRequest, opts ...grpc.CallOption) (*UpdateWorldNameResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(UpdateWorldNameResponse)
+	err := c.cc.Invoke(ctx, WorldService_UpdateWorldName_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *worldServiceClient) DeleteWorld(ctx context.Context, in *DeleteWorldRequest, opts ...grpc.CallOption) (*DeleteWorldResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(DeleteWorldResponse)
+	err := c.cc.Invoke(ctx, WorldService_DeleteWorld_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -51,9 +105,19 @@ func (c *worldServiceClient) GetWorldInfo(ctx context.Context, in *GetWorldInfoR
 // WorldServiceServer is the server API for WorldService service.
 // All implementations must embed UnimplementedWorldServiceServer
 // for forward compatibility.
+//
+// WorldService provides operations for managing worlds
 type WorldServiceServer interface {
-	// World information
-	GetWorldInfo(context.Context, *GetWorldInfoRequest) (*GetWorldInfoResponse, error)
+	// GetWorld retrieves a world by ID
+	GetWorld(context.Context, *GetWorldRequest) (*GetWorldResponse, error)
+	// GetDefaultWorld retrieves the default world
+	GetDefaultWorld(context.Context, *GetDefaultWorldRequest) (*GetDefaultWorldResponse, error)
+	// ListWorlds retrieves all worlds
+	ListWorlds(context.Context, *ListWorldsRequest) (*ListWorldsResponse, error)
+	// UpdateWorldName updates a world s name
+	UpdateWorldName(context.Context, *UpdateWorldNameRequest) (*UpdateWorldNameResponse, error)
+	// DeleteWorld deletes a world
+	DeleteWorld(context.Context, *DeleteWorldRequest) (*DeleteWorldResponse, error)
 	mustEmbedUnimplementedWorldServiceServer()
 }
 
@@ -64,8 +128,20 @@ type WorldServiceServer interface {
 // pointer dereference when methods are called.
 type UnimplementedWorldServiceServer struct{}
 
-func (UnimplementedWorldServiceServer) GetWorldInfo(context.Context, *GetWorldInfoRequest) (*GetWorldInfoResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetWorldInfo not implemented")
+func (UnimplementedWorldServiceServer) GetWorld(context.Context, *GetWorldRequest) (*GetWorldResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetWorld not implemented")
+}
+func (UnimplementedWorldServiceServer) GetDefaultWorld(context.Context, *GetDefaultWorldRequest) (*GetDefaultWorldResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetDefaultWorld not implemented")
+}
+func (UnimplementedWorldServiceServer) ListWorlds(context.Context, *ListWorldsRequest) (*ListWorldsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListWorlds not implemented")
+}
+func (UnimplementedWorldServiceServer) UpdateWorldName(context.Context, *UpdateWorldNameRequest) (*UpdateWorldNameResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateWorldName not implemented")
+}
+func (UnimplementedWorldServiceServer) DeleteWorld(context.Context, *DeleteWorldRequest) (*DeleteWorldResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteWorld not implemented")
 }
 func (UnimplementedWorldServiceServer) mustEmbedUnimplementedWorldServiceServer() {}
 func (UnimplementedWorldServiceServer) testEmbeddedByValue()                      {}
@@ -88,20 +164,92 @@ func RegisterWorldServiceServer(s grpc.ServiceRegistrar, srv WorldServiceServer)
 	s.RegisterService(&WorldService_ServiceDesc, srv)
 }
 
-func _WorldService_GetWorldInfo_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetWorldInfoRequest)
+func _WorldService_GetWorld_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetWorldRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(WorldServiceServer).GetWorldInfo(ctx, in)
+		return srv.(WorldServiceServer).GetWorld(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: WorldService_GetWorldInfo_FullMethodName,
+		FullMethod: WorldService_GetWorld_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(WorldServiceServer).GetWorldInfo(ctx, req.(*GetWorldInfoRequest))
+		return srv.(WorldServiceServer).GetWorld(ctx, req.(*GetWorldRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _WorldService_GetDefaultWorld_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetDefaultWorldRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WorldServiceServer).GetDefaultWorld(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: WorldService_GetDefaultWorld_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WorldServiceServer).GetDefaultWorld(ctx, req.(*GetDefaultWorldRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _WorldService_ListWorlds_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListWorldsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WorldServiceServer).ListWorlds(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: WorldService_ListWorlds_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WorldServiceServer).ListWorlds(ctx, req.(*ListWorldsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _WorldService_UpdateWorldName_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateWorldNameRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WorldServiceServer).UpdateWorldName(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: WorldService_UpdateWorldName_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WorldServiceServer).UpdateWorldName(ctx, req.(*UpdateWorldNameRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _WorldService_DeleteWorld_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteWorldRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WorldServiceServer).DeleteWorld(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: WorldService_DeleteWorld_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WorldServiceServer).DeleteWorld(ctx, req.(*DeleteWorldRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -114,8 +262,24 @@ var WorldService_ServiceDesc = grpc.ServiceDesc{
 	HandlerType: (*WorldServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "GetWorldInfo",
-			Handler:    _WorldService_GetWorldInfo_Handler,
+			MethodName: "GetWorld",
+			Handler:    _WorldService_GetWorld_Handler,
+		},
+		{
+			MethodName: "GetDefaultWorld",
+			Handler:    _WorldService_GetDefaultWorld_Handler,
+		},
+		{
+			MethodName: "ListWorlds",
+			Handler:    _WorldService_ListWorlds_Handler,
+		},
+		{
+			MethodName: "UpdateWorldName",
+			Handler:    _WorldService_UpdateWorldName_Handler,
+		},
+		{
+			MethodName: "DeleteWorld",
+			Handler:    _WorldService_DeleteWorld_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

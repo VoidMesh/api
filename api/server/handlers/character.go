@@ -9,6 +9,7 @@ import (
 	"github.com/VoidMesh/api/api/services/character"
 	"github.com/VoidMesh/api/api/services/chunk"
 	"github.com/VoidMesh/api/api/services/noise"
+	"github.com/VoidMesh/api/api/services/world"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -21,20 +22,20 @@ func NewCharacterServer(db *pgxpool.Pool) characterV1.CharacterServiceServer {
 	logger := logging.GetLogger()
 	logger.Debug("Creating new CharacterService server instance")
 
-	// Get world seed from database
-	logger.Debug("Loading world seed from database")
-	worldSeed, err := getWorldSeed(db)
+	// Create world service first
+	worldService := world.NewService(db, logger)
+
+	// Get default world or create if it doesn't exist
+	defaultWorld, err := worldService.GetDefaultWorld(context.Background())
 	if err != nil {
-		logger.Warn("Failed to load world seed from database, using default", "error", err, "default_seed", 12345)
-		worldSeed = 12345 // Default seed
-	} else {
-		logger.Debug("World seed loaded successfully", "seed", worldSeed)
+		logger.Error("Failed to get default world", "error", err)
+		return nil
 	}
 
 	// Create chunk service with noise generator
-	logger.Debug("Initializing chunk service", "world_seed", worldSeed)
-	noiseGen := noise.NewGenerator(worldSeed)
-	chunkService := chunk.NewService(db, worldSeed, noiseGen)
+	logger.Debug("Initializing chunk service", "world_seed", defaultWorld.Seed)
+	noiseGen := noise.NewGenerator(defaultWorld.Seed)
+	chunkService := chunk.NewService(db, worldService, noiseGen)
 
 	// Create character service
 	logger.Debug("Initializing character service")

@@ -13,9 +13,9 @@ We've implemented a complete resource node spawning system for VoidMesh. This sy
 - Added seed data for initial resource types
 
 ### 2. Protocol Buffer Definitions
-- Created new `resource.proto` file with resource-related messages and services
+- Created new `resource_node.proto` file with resource_node-related messages and services
 - Added resource nodes to the `ChunkData` message in `chunk.proto`
-- Defined a dedicated `ResourceService` for resource-specific operations
+- Defined a dedicated `ResourceNodeService` for resource_node-specific operations
 
 ### 3. Resource Generation Algorithm
 - Implemented a multi-layered Perlin noise-based spawning system
@@ -25,15 +25,15 @@ We've implemented a complete resource node spawning system for VoidMesh. This sy
 - Ensured deterministic generation based on world seed
 
 ### 4. Integration with Chunk System
-- Created `ResourceGeneratorIntegration` to bridge chunk and resource systems
+- Created `ResourceNodeGeneratorIntegration` to bridge chunk and resource_node systems
 - Implemented methods to generate and attach resources to new chunks
 - Added functionality to retrieve and attach existing resources to loaded chunks
 - Provided batch operations for multiple chunks
 
 ### 5. Service and Handlers
-- Implemented `ResourceService` for core resource generation and retrieval logic
-- Created gRPC handler for the `ResourceService` interface
-- Added methods for querying resources by chunk or by range
+- Implemented `ResourceNodeService` for core resource_node generation and retrieval logic
+- Created gRPC handler for the `ResourceNodeService` interface
+- Added methods for querying resource_nodes by chunk or by range
 
 ### 6. Testing Utility
 - Developed a standalone test program to validate resource generation
@@ -52,10 +52,10 @@ We've implemented a complete resource node spawning system for VoidMesh. This sy
 
 ## Integration Points
 
-The resource system integrates with the existing codebase through:
+The resource_node system integrates with the existing codebase through:
 1. Database schema extensions
 2. Protobuf additions
-3. The `ResourceGeneratorIntegration` class that hooks into the chunk generation process
+3. The `ResourceNodeGeneratorIntegration` class that hooks into the chunk generation process
 
 ## Next Steps
 
@@ -68,7 +68,7 @@ The resource system integrates with the existing codebase through:
 
 ## Configuration Options
 
-The resource generation system is highly configurable through constants in the `resource/generator.go` file:
+The resource_node generation system is highly configurable through constants in the `resource_node/generator.go` file:
 - Resource distribution scales
 - Buffer zone size
 - Cluster parameters
