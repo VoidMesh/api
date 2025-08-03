@@ -148,7 +148,7 @@ services:
       timeout: 10s
       retries: 10
     volumes:
-      - ./api/db/schema.sql:/docker-entrypoint-initdb.d/schema.sql
+      - ./api/db/migrations/schema.sql:/docker-entrypoint-initdb.d/schema.sql
 
   pgweb:
     image: sosedoff/pgweb

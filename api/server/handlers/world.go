@@ -5,6 +5,7 @@ import (
 
 	worldV1 "github.com/VoidMesh/api/api/proto/world/v1"
 	"github.com/VoidMesh/api/api/services/chunk"
+	"github.com/VoidMesh/api/api/services/noise"
 	"github.com/VoidMesh/api/api/services/world"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -21,8 +22,9 @@ func NewWorldServer(db *pgxpool.Pool) worldV1.WorldServiceServer {
 		worldSeed = 12345 // Default seed
 	}
 
-	// Create chunk service
-	chunkService := chunk.NewService(db, worldSeed)
+	// Create chunk service with noise generator
+	noiseGen := noise.NewGenerator(worldSeed)
+	chunkService := chunk.NewService(db, worldSeed, noiseGen)
 
 	// Create world service
 	worldService := world.NewService(db, chunkService, worldSeed)

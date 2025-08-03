@@ -7,6 +7,7 @@ import (
 	"github.com/VoidMesh/api/api/db"
 	chunkV1 "github.com/VoidMesh/api/api/proto/chunk/v1"
 	"github.com/VoidMesh/api/api/services/chunk"
+	"github.com/VoidMesh/api/api/services/noise"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -15,15 +16,15 @@ type chunkServiceServer struct {
 	service *chunk.Service
 }
 
-func NewChunkServer(db *pgxpool.Pool) chunkV1.ChunkServiceServer {
+func NewChunkServer(db *pgxpool.Pool, noiseGen *noise.Generator) chunkV1.ChunkServiceServer {
 	// Get world seed from database
 	worldSeed, err := getWorldSeedForChunk(db)
 	if err != nil {
 		worldSeed = 12345 // Default seed
 	}
 
-	// Create chunk service
-	chunkService := chunk.NewService(db, worldSeed)
+	// Create chunk service with shared noise generator
+	chunkService := chunk.NewService(db, worldSeed, noiseGen)
 
 	return &chunkServiceServer{
 		service: chunkService,

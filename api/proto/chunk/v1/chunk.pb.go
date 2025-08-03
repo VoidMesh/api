@@ -7,6 +7,7 @@
 package v1
 
 import (
+	v1 "github.com/VoidMesh/api/api/proto/resource/v1"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
@@ -131,6 +132,7 @@ type ChunkData struct {
 	Cells         []*TerrainCell         `protobuf:"bytes,3,rep,name=cells,proto3" json:"cells,omitempty"` // 32x32 = 1024 cells, row-major order
 	Seed          int64                  `protobuf:"varint,4,opt,name=seed,proto3" json:"seed,omitempty"`
 	GeneratedAt   *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=generated_at,json=generatedAt,proto3" json:"generated_at,omitempty"`
+	Resources     []*v1.ResourceNode     `protobuf:"bytes,6,rep,name=resources,proto3" json:"resources,omitempty"` // Resource nodes in this chunk
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -196,6 +198,13 @@ func (x *ChunkData) GetSeed() int64 {
 func (x *ChunkData) GetGeneratedAt() *timestamppb.Timestamp {
 	if x != nil {
 		return x.GeneratedAt
+	}
+	return nil
+}
+
+func (x *ChunkData) GetResources() []*v1.ResourceNode {
+	if x != nil {
+		return x.Resources
 	}
 	return nil
 }
@@ -571,15 +580,16 @@ var File_chunk_v1_chunk_proto protoreflect.FileDescriptor
 
 const file_chunk_v1_chunk_proto_rawDesc = "" +
 	"\n" +
-	"\x14chunk/v1/chunk.proto\x12\bchunk.v1\x1a\x1fgoogle/protobuf/timestamp.proto\"G\n" +
+	"\x14chunk/v1/chunk.proto\x12\bchunk.v1\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1aresource/v1/resource.proto\"G\n" +
 	"\vTerrainCell\x128\n" +
-	"\fterrain_type\x18\x01 \x01(\x0e2\x15.chunk.v1.TerrainTypeR\vterrainType\"\xbd\x01\n" +
+	"\fterrain_type\x18\x01 \x01(\x0e2\x15.chunk.v1.TerrainTypeR\vterrainType\"\xf6\x01\n" +
 	"\tChunkData\x12\x17\n" +
 	"\achunk_x\x18\x01 \x01(\x05R\x06chunkX\x12\x17\n" +
 	"\achunk_y\x18\x02 \x01(\x05R\x06chunkY\x12+\n" +
 	"\x05cells\x18\x03 \x03(\v2\x15.chunk.v1.TerrainCellR\x05cells\x12\x12\n" +
 	"\x04seed\x18\x04 \x01(\x03R\x04seed\x12=\n" +
-	"\fgenerated_at\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\vgeneratedAt\"C\n" +
+	"\fgenerated_at\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\vgeneratedAt\x127\n" +
+	"\tresources\x18\x06 \x03(\v2\x19.resource.v1.ResourceNodeR\tresources\"C\n" +
 	"\x0fChunkCoordinate\x12\x17\n" +
 	"\achunk_x\x18\x01 \x01(\x05R\x06chunkX\x12\x17\n" +
 	"\achunk_y\x18\x02 \x01(\x05R\x06chunkY\"C\n" +
@@ -639,25 +649,27 @@ var file_chunk_v1_chunk_proto_goTypes = []any{
 	(*GetChunksInRadiusRequest)(nil),  // 8: chunk.v1.GetChunksInRadiusRequest
 	(*GetChunksInRadiusResponse)(nil), // 9: chunk.v1.GetChunksInRadiusResponse
 	(*timestamppb.Timestamp)(nil),     // 10: google.protobuf.Timestamp
+	(*v1.ResourceNode)(nil),           // 11: resource.v1.ResourceNode
 }
 var file_chunk_v1_chunk_proto_depIdxs = []int32{
 	0,  // 0: chunk.v1.TerrainCell.terrain_type:type_name -> chunk.v1.TerrainType
 	1,  // 1: chunk.v1.ChunkData.cells:type_name -> chunk.v1.TerrainCell
 	10, // 2: chunk.v1.ChunkData.generated_at:type_name -> google.protobuf.Timestamp
-	2,  // 3: chunk.v1.GetChunkResponse.chunk:type_name -> chunk.v1.ChunkData
-	2,  // 4: chunk.v1.GetChunksResponse.chunks:type_name -> chunk.v1.ChunkData
-	2,  // 5: chunk.v1.GetChunksInRadiusResponse.chunks:type_name -> chunk.v1.ChunkData
-	4,  // 6: chunk.v1.ChunkService.GetChunk:input_type -> chunk.v1.GetChunkRequest
-	6,  // 7: chunk.v1.ChunkService.GetChunks:input_type -> chunk.v1.GetChunksRequest
-	8,  // 8: chunk.v1.ChunkService.GetChunksInRadius:input_type -> chunk.v1.GetChunksInRadiusRequest
-	5,  // 9: chunk.v1.ChunkService.GetChunk:output_type -> chunk.v1.GetChunkResponse
-	7,  // 10: chunk.v1.ChunkService.GetChunks:output_type -> chunk.v1.GetChunksResponse
-	9,  // 11: chunk.v1.ChunkService.GetChunksInRadius:output_type -> chunk.v1.GetChunksInRadiusResponse
-	9,  // [9:12] is the sub-list for method output_type
-	6,  // [6:9] is the sub-list for method input_type
-	6,  // [6:6] is the sub-list for extension type_name
-	6,  // [6:6] is the sub-list for extension extendee
-	0,  // [0:6] is the sub-list for field type_name
+	11, // 3: chunk.v1.ChunkData.resources:type_name -> resource.v1.ResourceNode
+	2,  // 4: chunk.v1.GetChunkResponse.chunk:type_name -> chunk.v1.ChunkData
+	2,  // 5: chunk.v1.GetChunksResponse.chunks:type_name -> chunk.v1.ChunkData
+	2,  // 6: chunk.v1.GetChunksInRadiusResponse.chunks:type_name -> chunk.v1.ChunkData
+	4,  // 7: chunk.v1.ChunkService.GetChunk:input_type -> chunk.v1.GetChunkRequest
+	6,  // 8: chunk.v1.ChunkService.GetChunks:input_type -> chunk.v1.GetChunksRequest
+	8,  // 9: chunk.v1.ChunkService.GetChunksInRadius:input_type -> chunk.v1.GetChunksInRadiusRequest
+	5,  // 10: chunk.v1.ChunkService.GetChunk:output_type -> chunk.v1.GetChunkResponse
+	7,  // 11: chunk.v1.ChunkService.GetChunks:output_type -> chunk.v1.GetChunksResponse
+	9,  // 12: chunk.v1.ChunkService.GetChunksInRadius:output_type -> chunk.v1.GetChunksInRadiusResponse
+	10, // [10:13] is the sub-list for method output_type
+	7,  // [7:10] is the sub-list for method input_type
+	7,  // [7:7] is the sub-list for extension type_name
+	7,  // [7:7] is the sub-list for extension extendee
+	0,  // [0:7] is the sub-list for field type_name
 }
 
 func init() { file_chunk_v1_chunk_proto_init() }

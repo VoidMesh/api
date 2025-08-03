@@ -1,0 +1,74 @@
+syntax = "proto3";
+
+package resource.v1;
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/VoidMesh/api/api/proto/resource/v1";
+
+// Resource related messages and services
+service ResourceService {
+  // Resource discovery operations
+  rpc GetResourcesInChunk(GetResourcesInChunkRequest) returns (GetResourcesInChunkResponse) {}
+  rpc GetResourcesInChunks(GetResourcesInChunksRequest) returns (GetResourcesInChunksResponse) {}
+}
+
+// Resource rarity levels
+enum ResourceRarity {
+  RESOURCE_RARITY_UNSPECIFIED = 0;
+  RESOURCE_RARITY_COMMON = 1;
+  RESOURCE_RARITY_UNCOMMON = 2;
+  RESOURCE_RARITY_RARE = 3;
+  RESOURCE_RARITY_VERY_RARE = 4;
+}
+
+// Resource type information
+message ResourceType {
+  int32 id = 1;
+  string name = 2;
+  string description = 3;
+  string terrain_type = 4;
+  ResourceRarity rarity = 5;
+  map<string, string> visual_data = 6;
+  map<string, string> properties = 7;
+}
+
+// Resource node instance
+message ResourceNode {
+  int32 id = 1;
+  ResourceType resource_type = 2;
+  int32 chunk_x = 3;
+  int32 chunk_y = 4;
+  int32 pos_x = 5;
+  int32 pos_y = 6;
+  string cluster_id = 7;
+  int32 size = 8;
+  google.protobuf.Timestamp created_at = 9;
+}
+
+// Request to get resources in a specific chunk
+message GetResourcesInChunkRequest {
+  int32 chunk_x = 1;
+  int32 chunk_y = 2;
+}
+
+// Response with resources in a chunk
+message GetResourcesInChunkResponse {
+  repeated ResourceNode resources = 1;
+}
+
+// Request to get resources in multiple chunks
+message GetResourcesInChunksRequest {
+  repeated ChunkCoordinate coordinates = 1;
+}
+
+// Chunk coordinate pair
+message ChunkCoordinate {
+  int32 chunk_x = 1;
+  int32 chunk_y = 2;
+}
+
+// Response with resources in multiple chunks
+message GetResourcesInChunksResponse {
+  repeated ResourceNode resources = 1;
+}

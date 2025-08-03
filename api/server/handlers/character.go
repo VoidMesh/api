@@ -8,6 +8,7 @@ import (
 	characterV1 "github.com/VoidMesh/api/api/proto/character/v1"
 	"github.com/VoidMesh/api/api/services/character"
 	"github.com/VoidMesh/api/api/services/chunk"
+	"github.com/VoidMesh/api/api/services/noise"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -30,9 +31,10 @@ func NewCharacterServer(db *pgxpool.Pool) characterV1.CharacterServiceServer {
 		logger.Debug("World seed loaded successfully", "seed", worldSeed)
 	}
 
-	// Create chunk service
+	// Create chunk service with noise generator
 	logger.Debug("Initializing chunk service", "world_seed", worldSeed)
-	chunkService := chunk.NewService(db, worldSeed)
+	noiseGen := noise.NewGenerator(worldSeed)
+	chunkService := chunk.NewService(db, worldSeed, noiseGen)
 
 	// Create character service
 	logger.Debug("Initializing character service")

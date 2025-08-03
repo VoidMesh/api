@@ -3,6 +3,7 @@ syntax = "proto3";
 package chunk.v1;
 
 import "google/protobuf/timestamp.proto";
+import "resource/v1/resource.proto";
 
 option go_package = "github.com/VoidMesh/api/api/proto/chunk/v1";
 
@@ -32,6 +33,7 @@ message ChunkData {
   repeated TerrainCell cells = 3; // 32x32 = 1024 cells, row-major order
   int64 seed = 4;
   google.protobuf.Timestamp generated_at = 5;
+  repeated resource.v1.ResourceNode resources = 6; // Resource nodes in this chunk
 }
 
 message ChunkCoordinate {

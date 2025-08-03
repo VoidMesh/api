@@ -19,20 +19,23 @@ const (
 )
 
 type Service struct {
-	db        *pgxpool.Pool
-	noiseGen  *noise.Generator
-	worldSeed int64
-	chunkSize int32
+	db                  *pgxpool.Pool
+	noiseGen            *noise.Generator
+	worldSeed           int64
+	chunkSize           int32
+	resourceIntegration *ResourceGeneratorIntegration
 }
 
-func NewService(db *pgxpool.Pool, worldSeed int64) *Service {
+func NewService(db *pgxpool.Pool, worldSeed int64, noiseGen *noise.Generator) *Service {
 	logger := logging.GetLogger()
 	logger.Debug("Creating new chunk service", "world_seed", worldSeed, "chunk_size", ChunkSize)
+	resourceIntegration := NewResourceGeneratorIntegration(db, noiseGen)
 	return &Service{
-		db:        db,
-		noiseGen:  noise.NewGenerator(worldSeed),
-		worldSeed: worldSeed,
-		chunkSize: ChunkSize,
+		db:                  db,
+		noiseGen:            noiseGen,
+		worldSeed:           worldSeed,
+		chunkSize:           ChunkSize,
+		resourceIntegration: resourceIntegration,
 	}
 }
 
@@ -71,13 +74,15 @@ func (s *Service) GenerateChunk(chunkX, chunkY int32) (*chunkV1.ChunkData, error
 	duration := time.Since(start)
 	logger.Info("Chunk generation completed", "duration", duration, "cells_generated", len(cells))
 
-	return &chunkV1.ChunkData{
+	chunk := &chunkV1.ChunkData{
 		ChunkX:      chunkX,
 		ChunkY:      chunkY,
 		Cells:       cells,
 		Seed:        s.worldSeed,
 		GeneratedAt: timestamppb.New(time.Now()),
-	}, nil
+	}
+
+	return chunk, nil
 }
 
 // getTerrainType determines terrain type based on noise values
@@ -115,7 +120,13 @@ func (s *Service) GetOrCreateChunk(ctx context.Context, chunkX, chunkY int32) (*
 	logger.Debug("Checking database for existing chunk")
 	chunk, err := s.getChunkFromDB(ctx, chunkX, chunkY)
 	if err == nil {
-		logger.Debug("Chunk found in database", "duration", time.Since(start))
+		logger.Debug("Chunk found in database, attaching resources", "duration", time.Since(start))
+		// Attach resources to existing chunk
+		err = s.resourceIntegration.AttachResourcesToChunk(ctx, chunk)
+		if err != nil {
+			logger.Error("Failed to attach resources to existing chunk", "error", err)
+			// Don't fail chunk retrieval if resource attachment fails
+		}
 		return chunk, nil
 	}
 	logger.Debug("Chunk not found in database, will generate", "error", err)
@@ -130,6 +141,14 @@ func (s *Service) GetOrCreateChunk(ctx context.Context, chunkX, chunkY int32) (*
 	err = s.saveChunkToDB(ctx, generatedChunk)
 	if err != nil {
 		return nil, fmt.Errorf("failed to save chunk: %w", err)
+	}
+
+	// Generate and attach resources after chunk is saved
+	logger.Debug("Generating resources for new chunk")
+	err = s.resourceIntegration.GenerateAndAttachResources(ctx, generatedChunk)
+	if err != nil {
+		logger.Error("Failed to generate resources for chunk", "error", err)
+		// Don't fail chunk generation if resource generation fails
 	}
 
 	return generatedChunk, nil

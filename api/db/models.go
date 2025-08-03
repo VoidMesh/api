@@ -27,6 +27,29 @@ type Chunk struct {
 	GeneratedAt pgtype.Timestamp
 }
 
+type ResourceNode struct {
+	ID             int32
+	ResourceTypeID int32
+	ChunkX         int32
+	ChunkY         int32
+	ClusterID      string
+	PosX           int32
+	PosY           int32
+	Size           int32
+	CreatedAt      pgtype.Timestamp
+}
+
+type ResourceType struct {
+	ID          int32
+	Name        string
+	Description pgtype.Text
+	TerrainType string
+	Rarity      string
+	VisualData  []byte
+	Properties  []byte
+	CreatedAt   pgtype.Timestamp
+}
+
 type User struct {
 	ID                   pgtype.UUID
 	Username             string

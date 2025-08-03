@@ -4,8 +4,10 @@ import (
 	"context"
 	"net"
 	"os"
+	"strconv"
 	"time"
 
+	"github.com/VoidMesh/api/api/db"
 	"github.com/VoidMesh/api/api/internal/logging"
 	pbCharacterV1 "github.com/VoidMesh/api/api/proto/character/v1"
 	pbChunkV1 "github.com/VoidMesh/api/api/proto/chunk/v1"
@@ -13,6 +15,7 @@ import (
 	pbWorldV1 "github.com/VoidMesh/api/api/proto/world/v1"
 	"github.com/VoidMesh/api/api/server/handlers"
 	"github.com/VoidMesh/api/api/server/middleware" // Uncomment to enable JWT middleware
+	"github.com/VoidMesh/api/api/services/noise"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/health"
@@ -74,7 +77,7 @@ func Serve() {
 	logger.Debug("Connecting to PostgreSQL database", "url_length", len(databaseURL))
 
 	start := time.Now()
-	db, err := pgxpool.New(ctx, databaseURL)
+	dbPool, err := pgxpool.New(ctx, databaseURL)
 	connectionDuration := time.Since(start)
 
 	if err != nil {
@@ -82,20 +85,32 @@ func Serve() {
 	}
 	logger.Info("Database connection pool created successfully", "duration", connectionDuration)
 
+	// Get world seed for noise generator
+	worldSeed := int64(12345) // Default seed
+	if setting, err := db.New(dbPool).GetWorldSetting(ctx, "seed"); err == nil {
+		if seed, err := strconv.ParseInt(setting.Value, 10, 64); err == nil {
+			worldSeed = seed
+		}
+	}
+	logger.Debug("World seed loaded", "seed", worldSeed)
+
+	// Create shared noise generator
+	noiseGen := noise.NewGenerator(worldSeed)
+
 	// Register V1 services
 	logger.Debug("Registering gRPC service handlers")
 
 	logger.Debug("Registering UserService")
-	pbUserV1.RegisterUserServiceServer(g, handlers.NewUserServer(db))
+	pbUserV1.RegisterUserServiceServer(g, handlers.NewUserServer(dbPool))
 
 	logger.Debug("Registering WorldService")
-	pbWorldV1.RegisterWorldServiceServer(g, handlers.NewWorldServer(db))
+	pbWorldV1.RegisterWorldServiceServer(g, handlers.NewWorldServer(dbPool))
 
 	logger.Debug("Registering CharacterService")
-	pbCharacterV1.RegisterCharacterServiceServer(g, handlers.NewCharacterServer(db))
+	pbCharacterV1.RegisterCharacterServiceServer(g, handlers.NewCharacterServer(dbPool))
 
 	logger.Debug("Registering ChunkService")
-	pbChunkV1.RegisterChunkServiceServer(g, handlers.NewChunkServer(db))
+	pbChunkV1.RegisterChunkServiceServer(g, handlers.NewChunkServer(dbPool, noiseGen))
 
 	logger.Info("All gRPC services registered successfully")
 
