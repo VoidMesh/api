@@ -129,24 +129,18 @@ func (s *Service) getTerrainType(x, y int32) chunkV1.TerrainType {
 // GetOrCreateChunk retrieves a chunk from database or generates it if it doesn't exist
 func (s *Service) GetOrCreateChunk(ctx context.Context, chunkX, chunkY int32) (*chunkV1.ChunkData, error) {
 	logger := logging.WithChunkCoords(chunkX, chunkY)
-	logger.Debug("Getting or creating chunk")
-
-	start := time.Now()
 
 	// Try to get chunk from database first
-	logger.Debug("Checking database for existing chunk")
 	chunk, err := s.getChunkFromDB(ctx, chunkX, chunkY)
 	if err == nil {
-		logger.Debug("Chunk found in database, attaching resources", "duration", time.Since(start))
 		// Attach resources to existing chunk
 		err = s.resourceNodeIntegration.AttachResourceNodesToChunk(ctx, chunk)
 		if err != nil {
-			logger.Error("Failed to attach resources to existing chunk", "error", err)
 			// Don't fail chunk retrieval if resource attachment fails
+			logger.Error("Failed to attach resources to existing chunk", "error", err)
 		}
 		return chunk, nil
 	}
-	logger.Debug("Chunk not found in database, will generate", "error", err)
 
 	// Chunk doesn't exist, generate it
 	generatedChunk, err := s.GenerateChunk(chunkX, chunkY)
@@ -212,40 +206,32 @@ func (s *Service) saveChunkToDB(ctx context.Context, chunk *chunkV1.ChunkData) e
 
 // GetChunksInRange retrieves multiple chunks in a rectangular area
 func (s *Service) GetChunksInRange(ctx context.Context, minX, maxX, minY, maxY int32) ([]*chunkV1.ChunkData, error) {
-	var chunks []*chunkV1.ChunkData
-
+	// Create a list of coordinates to process
+	var coordinates [][2]int32
 	for x := minX; x <= maxX; x++ {
 		for y := minY; y <= maxY; y++ {
-			chunk, err := s.GetOrCreateChunk(ctx, x, y)
-			if err != nil {
-				return nil, fmt.Errorf("failed to get chunk (%d,%d): %w", x, y, err)
-			}
-			chunks = append(chunks, chunk)
+			coordinates = append(coordinates, [2]int32{x, y})
 		}
 	}
 
-	return chunks, nil
+	return s.getChunksParallel(ctx, coordinates)
 }
 
 // GetChunksInRadius retrieves chunks in a circular area around a center point
 func (s *Service) GetChunksInRadius(ctx context.Context, centerX, centerY, radius int32) ([]*chunkV1.ChunkData, error) {
-	var chunks []*chunkV1.ChunkData
-
+	// Create a list of coordinates to process
+	var coordinates [][2]int32
 	for x := centerX - radius; x <= centerX+radius; x++ {
 		for y := centerY - radius; y <= centerY+radius; y++ {
 			// Check if chunk is within radius (Manhattan distance for simplicity)
 			distance := abs(x-centerX) + abs(y-centerY)
 			if distance <= radius {
-				chunk, err := s.GetOrCreateChunk(ctx, x, y)
-				if err != nil {
-					return nil, fmt.Errorf("failed to get chunk (%d,%d): %w", x, y, err)
-				}
-				chunks = append(chunks, chunk)
+				coordinates = append(coordinates, [2]int32{x, y})
 			}
 		}
 	}
 
-	return chunks, nil
+	return s.getChunksParallel(ctx, coordinates)
 }
 
 func abs(x int32) int32 {
@@ -253,4 +239,99 @@ func abs(x int32) int32 {
 		return -x
 	}
 	return x
+}
+
+// getChunksParallel processes a list of chunk coordinates in parallel
+func (s *Service) getChunksParallel(ctx context.Context, coordinates [][2]int32) ([]*chunkV1.ChunkData, error) {
+	if len(coordinates) == 0 {
+		return []*chunkV1.ChunkData{}, nil
+	}
+
+	// Determine optimal worker count based on number of coordinates
+	workerCount := 4
+	if len(coordinates) < workerCount {
+		workerCount = len(coordinates)
+	}
+
+	// Create channels for work distribution and result collection
+	coordChan := make(chan [2]int32, len(coordinates))
+	resultChan := make(chan *chunkResult, len(coordinates))
+	errChan := make(chan error, workerCount)
+	doneChan := make(chan struct{})
+
+	// Start worker goroutines
+	for i := 0; i < workerCount; i++ {
+		go s.chunkWorker(ctx, coordChan, resultChan, errChan, doneChan)
+	}
+
+	// Send coordinates to workers
+	go func() {
+		defer close(coordChan)
+		for _, coord := range coordinates {
+			coordChan <- coord
+		}
+	}()
+
+	// Collect results
+	var chunks []*chunkV1.ChunkData
+	resultsCount := 0
+	workersDone := 0
+
+	for {
+		select {
+		case result := <-resultChan:
+			if result != nil {
+				chunks = append(chunks, result.chunk)
+				resultsCount++
+			}
+			if resCount := len(coordinates); resultsCount >= resCount {
+				close(doneChan) // Signal workers to stop
+				return chunks, nil
+			}
+		case err := <-errChan:
+			close(doneChan) // Signal all workers to stop on error
+			return nil, err
+		case <-doneChan:
+			workersDone++
+			if workersDone >= workerCount {
+				return chunks, nil
+			}
+		case <-ctx.Done():
+			close(doneChan) // Signal workers to stop on context cancellation
+			return nil, ctx.Err()
+		}
+	}
+}
+
+type chunkResult struct {
+	chunk *chunkV1.ChunkData
+	x, y  int32
+}
+
+// chunkWorker processes chunk coordinates from a channel
+func (s *Service) chunkWorker(ctx context.Context, coordChan <-chan [2]int32, resultChan chan<- *chunkResult, errChan chan<- error, doneChan <-chan struct{}) {
+	for {
+		select {
+		case coord, ok := <-coordChan:
+			if !ok {
+				return // Channel closed, no more work
+			}
+			
+			chunk, err := s.GetOrCreateChunk(ctx, coord[0], coord[1])
+			if err != nil {
+				errChan <- fmt.Errorf("failed to get chunk (%d,%d): %w", coord[0], coord[1], err)
+				return
+			}
+			
+			resultChan <- &chunkResult{
+				chunk: chunk,
+				x:     coord[0],
+				y:     coord[1],
+			}
+		case <-doneChan:
+			return // Worker was signaled to stop
+		case <-ctx.Done():
+			return // Context was canceled
+		}
+	}
 }

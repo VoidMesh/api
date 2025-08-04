@@ -30,19 +30,23 @@ func NewWorldHandler(worldService *world.Service) *WorldHandler {
 
 // GetWorld retrieves a world by ID
 func (h *WorldHandler) GetWorld(ctx context.Context, req *worldV1.GetWorldRequest) (*worldV1.GetWorldResponse, error) {
-	h.logger.Debug("GetWorld called", "world_id", req.WorldId)
+	logger := h.logger.With("operation", "GetWorld", "world_id_request", req.WorldId)
+	logger.Debug("Received GetWorld request")
 
 	var worldID pgtype.UUID
 	err := worldID.Scan(req.WorldId)
 	if err != nil {
+		logger.Warn("Invalid world ID format", "world_id_request", req.WorldId, "error", err)
 		return nil, status.Errorf(codes.InvalidArgument, "Invalid world ID: %v", err)
 	}
 
 	world, err := h.worldService.GetWorldByID(ctx, worldID)
 	if err != nil {
+		logger.Warn("World not found", "world_id", req.WorldId, "error", err)
 		return nil, status.Errorf(codes.NotFound, "World not found: %v", err)
 	}
 
+	logger.Info("World retrieved successfully", "world_id", req.WorldId, "world_name", world.Name)
 	return &worldV1.GetWorldResponse{
 		World: &worldV1.World{
 			Id:        world.ID.Bytes[:],
@@ -55,13 +59,16 @@ func (h *WorldHandler) GetWorld(ctx context.Context, req *worldV1.GetWorldReques
 
 // GetDefaultWorld retrieves the default world
 func (h *WorldHandler) GetDefaultWorld(ctx context.Context, req *worldV1.GetDefaultWorldRequest) (*worldV1.GetDefaultWorldResponse, error) {
-	h.logger.Debug("GetDefaultWorld called")
+	logger := h.logger.With("operation", "GetDefaultWorld")
+	logger.Debug("Received GetDefaultWorld request")
 
 	world, err := h.worldService.GetDefaultWorld(ctx)
 	if err != nil {
+		logger.Error("Failed to get default world", "error", err)
 		return nil, status.Errorf(codes.Internal, "Failed to get default world: %v", err)
 	}
 
+	logger.Info("Default world retrieved successfully", "world_id", world.ID.Bytes[:], "world_name", world.Name)
 	return &worldV1.GetDefaultWorldResponse{
 		World: &worldV1.World{
 			Id:        world.ID.Bytes[:],
@@ -74,10 +81,12 @@ func (h *WorldHandler) GetDefaultWorld(ctx context.Context, req *worldV1.GetDefa
 
 // ListWorlds retrieves all worlds
 func (h *WorldHandler) ListWorlds(ctx context.Context, req *worldV1.ListWorldsRequest) (*worldV1.ListWorldsResponse, error) {
-	h.logger.Debug("ListWorlds called")
+	logger := h.logger.With("operation", "ListWorlds")
+	logger.Debug("Received ListWorlds request")
 
 	worlds, err := h.worldService.ListWorlds(ctx)
 	if err != nil {
+		logger.Error("Failed to list worlds", "error", err)
 		return nil, status.Errorf(codes.Internal, "Failed to list worlds: %v", err)
 	}
 
@@ -91,6 +100,7 @@ func (h *WorldHandler) ListWorlds(ctx context.Context, req *worldV1.ListWorldsRe
 		})
 	}
 
+	logger.Info("Successfully listed worlds", "count", len(protoWorlds))
 	return &worldV1.ListWorldsResponse{
 		Worlds: protoWorlds,
 	}, nil
@@ -98,19 +108,23 @@ func (h *WorldHandler) ListWorlds(ctx context.Context, req *worldV1.ListWorldsRe
 
 // UpdateWorldName updates a world's name
 func (h *WorldHandler) UpdateWorldName(ctx context.Context, req *worldV1.UpdateWorldNameRequest) (*worldV1.UpdateWorldNameResponse, error) {
-	h.logger.Debug("UpdateWorldName called", "world_id", req.WorldId, "new_name", req.Name)
+	logger := h.logger.With("operation", "UpdateWorldName", "world_id_request", req.WorldId, "new_name", req.Name)
+	logger.Debug("Received UpdateWorldName request")
 
 	var worldID pgtype.UUID
 	err := worldID.Scan(req.WorldId)
 	if err != nil {
+		logger.Warn("Invalid world ID format", "world_id_request", req.WorldId, "error", err)
 		return nil, status.Errorf(codes.InvalidArgument, "Invalid world ID: %v", err)
 	}
 
 	world, err := h.worldService.UpdateWorld(ctx, worldID, req.Name)
 	if err != nil {
+		logger.Error("Failed to update world name", "world_id", req.WorldId, "new_name", req.Name, "error", err)
 		return nil, status.Errorf(codes.Internal, "Failed to update world: %v", err)
 	}
 
+	logger.Info("World name updated successfully", "world_id", world.ID.Bytes[:], "old_name", world.Name, "new_name", req.Name)
 	return &worldV1.UpdateWorldNameResponse{
 		World: &worldV1.World{
 			Id:        world.ID.Bytes[:],
@@ -123,18 +137,23 @@ func (h *WorldHandler) UpdateWorldName(ctx context.Context, req *worldV1.UpdateW
 
 // DeleteWorld deletes a world
 func (h *WorldHandler) DeleteWorld(ctx context.Context, req *worldV1.DeleteWorldRequest) (*worldV1.DeleteWorldResponse, error) {
-	h.logger.Debug("DeleteWorld called", "world_id", req.WorldId)
+	logger := h.logger.With("operation", "DeleteWorld", "world_id_request", req.WorldId)
+	logger.Debug("Received DeleteWorld request")
 
 	var worldID pgtype.UUID
 	err := worldID.Scan(req.WorldId)
 	if err != nil {
+		logger.Warn("Invalid world ID format", "world_id_request", req.WorldId, "error", err)
 		return nil, status.Errorf(codes.InvalidArgument, "Invalid world ID: %v", err)
 	}
 
+	logger.Debug("Deleting world from database")
 	err = h.worldService.DeleteWorld(ctx, worldID)
 	if err != nil {
+		logger.Error("Failed to delete world", "world_id", req.WorldId, "error", err)
 		return nil, status.Errorf(codes.Internal, "Failed to delete world: %v", err)
 	}
 
+	logger.Info("World deleted successfully", "world_id", req.WorldId)
 	return &worldV1.DeleteWorldResponse{}, nil
 }

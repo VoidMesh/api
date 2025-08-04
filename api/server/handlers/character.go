@@ -10,16 +10,18 @@ import (
 	"github.com/VoidMesh/api/api/services/chunk"
 	"github.com/VoidMesh/api/api/services/noise"
 	"github.com/VoidMesh/api/api/services/world"
+	"github.com/charmbracelet/log"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type characterServiceServer struct {
 	characterV1.UnimplementedCharacterServiceServer
 	service *character.Service
+	logger  *log.Logger
 }
 
 func NewCharacterServer(db *pgxpool.Pool) characterV1.CharacterServiceServer {
-	logger := logging.GetLogger()
+	logger := logging.WithComponent("character-handler")
 	logger.Debug("Creating new CharacterService server instance")
 
 	// Create world service first
@@ -43,6 +45,7 @@ func NewCharacterServer(db *pgxpool.Pool) characterV1.CharacterServiceServer {
 
 	return &characterServiceServer{
 		service: characterService,
+		logger:  logger,
 	}
 }
 
@@ -84,12 +87,38 @@ func (s *characterServiceServer) GetCharacter(ctx context.Context, req *characte
 
 // GetCharactersByUser gets all characters for a user
 func (s *characterServiceServer) GetCharactersByUser(ctx context.Context, req *characterV1.GetCharactersByUserRequest) (*characterV1.GetCharactersByUserResponse, error) {
-	return s.service.GetCharactersByUser(ctx, req)
+	logger := s.logger.With("operation", "GetCharactersByUser", "user_id", req.UserId)
+	logger.Debug("Received GetCharactersByUser request")
+
+	start := time.Now()
+	resp, err := s.service.GetCharactersByUser(ctx, req)
+	duration := time.Since(start)
+
+	if err != nil {
+		logger.Error("Failed to get characters by user", "error", err, "duration", duration)
+		return nil, err
+	}
+
+	logger.Info("Successfully retrieved characters by user", "count", len(resp.Characters), "duration", duration)
+	return resp, nil
 }
 
 // DeleteCharacter deletes a character
 func (s *characterServiceServer) DeleteCharacter(ctx context.Context, req *characterV1.DeleteCharacterRequest) (*characterV1.DeleteCharacterResponse, error) {
-	return s.service.DeleteCharacter(ctx, req)
+	logger := s.logger.With("operation", "DeleteCharacter", "character_id", req.CharacterId)
+	logger.Debug("Received DeleteCharacter request")
+
+	start := time.Now()
+	resp, err := s.service.DeleteCharacter(ctx, req)
+	duration := time.Since(start)
+
+	if err != nil {
+		logger.Error("Failed to delete character", "error", err, "duration", duration)
+		return nil, err
+	}
+
+	logger.Info("Character deleted successfully", "character_id", req.CharacterId, "duration", duration)
+	return resp, nil
 }
 
 // MoveCharacter moves a character

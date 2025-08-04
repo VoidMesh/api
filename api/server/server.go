@@ -41,7 +41,11 @@ func Serve() {
 	if err != nil {
 		logger.Fatal("Failed to create TCP listener", "error", err, "port", 50051)
 	}
-	defer lis.Close()
+	defer func() {
+		if err := lis.Close(); err != nil {
+			logger.Error("Failed to close listener", "error", err)
+		}
+	}()
 	logger.Info("TCP listener created successfully", "address", lis.Addr().String())
 
 	// Create a new gRPC server

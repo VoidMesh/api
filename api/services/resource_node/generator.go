@@ -81,12 +81,18 @@ var ClusterSizes = map[string]map[int]int{
 
 // NodeService provides resource node generation functionality
 type NodeService struct {
-	db             *pgxpool.Pool
-	noiseGen       *noise.Generator
-	worldService   *world.Service
-	defaultWorldID pgtype.UUID
-	rnd            *rand.Rand
-	logger         *log.Logger
+	db                       *pgxpool.Pool
+	noiseGen                 *noise.Generator
+	worldService             *world.Service
+	defaultWorldID           pgtype.UUID
+	rnd                      *rand.Rand
+	logger                   *log.Logger
+	// Cache of hardcoded resource types to avoid rebuilding on each request
+	resourceTypes            []*resourceNodeV1.ResourceNodeType
+	// Map of resource types by terrain for faster lookups
+	resourceTypesByTerrain   map[string][]*resourceNodeV1.ResourceNodeType
+	// Map of resource types by ID for faster lookups
+	resourceTypesByID        map[int32]*resourceNodeV1.ResourceNodeType
 }
 
 // NewNodeService creates a new resource node service
@@ -107,32 +113,41 @@ func NewNodeService(db *pgxpool.Pool, noiseGen *noise.Generator, worldService *w
 		logger.Error("Failed to get default world, using empty UUID", "error", err)
 	}
 
-	return &NodeService{
-		db:             db,
-		noiseGen:       noiseGen,
-		worldService:   worldService,
-		defaultWorldID: defaultWorld.ID,
-		rnd:            rand.New(source),
-		logger:         logger,
+	// Initialize resource type caches
+	service := &NodeService{
+		db:                     db,
+		noiseGen:               noiseGen,
+		worldService:           worldService,
+		defaultWorldID:         defaultWorld.ID,
+		rnd:                    rand.New(source),
+		logger:                 logger,
+		resourceTypesByTerrain: make(map[string][]*resourceNodeV1.ResourceNodeType),
+		resourceTypesByID:      make(map[int32]*resourceNodeV1.ResourceNodeType),
 	}
+	
+	// Preload resource types
+	service.resourceTypes = service.getHardcodedResourceTypes()
+	
+	// Group resource types by terrain for faster lookup
+	for _, r := range service.resourceTypes {
+		terrainType := r.TerrainType
+		service.resourceTypesByTerrain[terrainType] = append(service.resourceTypesByTerrain[terrainType], r)
+		service.resourceTypesByID[r.Id] = r
+	}
+	
+	return service
 }
 
 // GenerateResourcesForChunk generates resource nodes for a chunk
 func (s *NodeService) GenerateResourcesForChunk(ctx context.Context, chunk *chunkV1.ChunkData) ([]*resourceNodeV1.ResourceNode, error) {
-	s.logger.Info("Generating resource nodes for chunk", "chunk_x", chunk.ChunkX, "chunk_y", chunk.ChunkY)
+	s.logger.Debug("Generating resource nodes for chunk", "chunk_x", chunk.ChunkX, "chunk_y", chunk.ChunkY)
 
-	// Get all resource types from hardcoded proto definitions
-	resourceTypes := s.getHardcodedResourceTypes()
-	s.logger.Info("Retrieved resource types", "count", len(resourceTypes))
+	// Use the pre-grouped resource types by terrain from service initialization
+	s.logger.Debug("Using cached resource types", "count", len(s.resourceTypes))
+	
+	// Using the cached resourceTypesByTerrain instead of building it each time
 
-	// Group resource types by terrain
-	resourcesNodesByTerrain := make(map[string][]*resourceNodeV1.ResourceNodeType)
-	for _, r := range resourceTypes {
-		terrainType := r.TerrainType
-		resourcesNodesByTerrain[terrainType] = append(resourcesNodesByTerrain[terrainType], r)
-	}
-
-	s.logger.Info("Grouped resources by terrain", "terrain_types", len(resourcesNodesByTerrain))
+	s.logger.Debug("Grouped resources by terrain", "terrain_types", len(s.resourceTypesByTerrain))
 
 	// Map to track occupied positions
 	occupiedPositions := make(map[string]bool)
@@ -144,10 +159,9 @@ func (s *NodeService) GenerateResourcesForChunk(ctx context.Context, chunk *chun
 	var resourceNodes []*resourceNodeV1.ResourceNode
 
 	// Process each resource type for this chunk
-	for terrainType, resourceNodeTypes := range resourcesNodesByTerrain {
-		s.logger.Info("Processing terrain type", "terrain_type", terrainType, "resource_types_count", len(resourceNodeTypes))
+	for terrainType, resourceNodeTypes := range s.resourceTypesByTerrain {
+		s.logger.Debug("Processing terrain type", "terrain_type", terrainType, "resource_types_count", len(resourceNodeTypes))
 		for _, resourceNodeType := range resourceNodeTypes {
-			s.logger.Info("Processing resource type", "resource_id", resourceNodeType.Id, "resource_name", resourceNodeType.Name, "terrain_type", terrainType)
 			// Create a separate noise map for this resource type
 			// Use resource ID as additional seed to make different resources spawn in different patterns
 			resourceSeed := s.noiseGen.GetSeed() + int64(resourceNodeType.Id)
@@ -161,7 +175,7 @@ func (s *NodeService) GenerateResourcesForChunk(ctx context.Context, chunk *chun
 				resourceSeed,
 			)
 
-			s.logger.Info("Found spawn points", "resource_name", resourceNodeType.Name, "spawn_points_count", len(spawnPoints))
+			s.logger.Debug("Found spawn points", "resource_name", resourceNodeType.Name, "spawn_points_count", len(spawnPoints))
 
 			// Shuffle spawn points to avoid patterns
 			resourceRng.Shuffle(len(spawnPoints), func(i, j int) {
@@ -477,6 +491,7 @@ func (s *NodeService) determineClusterSize(rarity string) int {
 }
 
 // getHardcodedResourceTypes returns all resource types defined in the proto
+// This is now only called during service initialization
 func (s *NodeService) getHardcodedResourceTypes() []*resourceNodeV1.ResourceNodeType {
 	return []*resourceNodeV1.ResourceNodeType{
 		// Grass Terrain Resources
@@ -733,7 +748,7 @@ func (s *NodeService) StoreResourceNodes(ctx context.Context, chunkX, chunkY int
 
 // GetResourcesForChunk retrieves all resources in a chunk, generating them if they don't exist
 func (s *NodeService) GetResourcesForChunk(ctx context.Context, chunkX, chunkY int32) ([]*resourceNodeV1.ResourceNode, error) {
-	s.logger.Info("RESOURCE SERVICE: GetResourcesForChunk called", "chunk_x", chunkX, "chunk_y", chunkY)
+	// Single debug log instead of both info and debug
 	s.logger.Debug("Getting resource nodes for chunk", "chunk_x", chunkX, "chunk_y", chunkY)
 
 	// First, try to get existing resources from database
@@ -754,30 +769,28 @@ func (s *NodeService) GetResourcesForChunk(ctx context.Context, chunkX, chunkY i
 	}
 
 	// Check if chunk exists in database
-	s.logger.Info("Checking if chunk exists in database", "chunk_x", chunkX, "chunk_y", chunkY)
 	chunkExists, err := db.New(s.db).ChunkExists(ctx, db.ChunkExistsParams{
 		WorldID: s.defaultWorldID,
 		ChunkX:  chunkX,
 		ChunkY:  chunkY,
 	})
 	if err != nil {
-		s.logger.Error("Failed to check if chunk exists", "error", err, "chunk_x", chunkX, "chunk_y", chunkY)
+		s.logger.Error("Failed to check if chunk exists", "error", err)
 		return nil, fmt.Errorf("failed to check if chunk exists: %w", err)
 	}
 
-	s.logger.Info("Chunk exists check result", "chunk_exists", chunkExists, "chunk_x", chunkX, "chunk_y", chunkY)
+	s.logger.Debug("Chunk exists check result", "chunk_exists", chunkExists)
 
 	// If chunk doesn't exist, we can't generate resources without terrain data
 	if !chunkExists {
-		s.logger.Info("Chunk does not exist, cannot generate resources without terrain data", "chunk_x", chunkX, "chunk_y", chunkY)
+		s.logger.Debug("Chunk does not exist, cannot generate resources without terrain data")
 		return []*resourceNodeV1.ResourceNode{}, nil
 	}
 
 	// Chunk exists but has no resources - generate them
-	s.logger.Info("Chunk exists but has no resources, generating them", "chunk_x", chunkX, "chunk_y", chunkY)
+	s.logger.Debug("Generating resources for existing chunk")
 
 	// Get chunk data to generate resources
-	s.logger.Info("Getting chunk data for resource generation", "chunk_x", chunkX, "chunk_y", chunkY)
 	chunkData, err := s.getChunkDataForResourceGeneration(ctx, chunkX, chunkY)
 	if err != nil {
 		s.logger.Error("Failed to get chunk data for resource generation", "error", err)
@@ -785,14 +798,14 @@ func (s *NodeService) GetResourcesForChunk(ctx context.Context, chunkX, chunkY i
 	}
 
 	// Generate resources for this chunk
-	s.logger.Info("Starting resource generation for chunk", "chunk_x", chunkX, "chunk_y", chunkY)
+	// Logging already happens inside GenerateResourcesForChunk
 	resources, err := s.GenerateResourcesForChunk(ctx, chunkData)
 	if err != nil {
 		s.logger.Error("Failed to generate resources for chunk", "error", err)
 		return nil, fmt.Errorf("failed to generate resources: %w", err)
 	}
 
-	s.logger.Info("Resource generation completed", "chunk_x", chunkX, "chunk_y", chunkY, "resource_count", len(resources))
+	s.logger.Debug("Resource generation completed", "resource_count", len(resources))
 
 	// Store the generated resources in database
 	if len(resources) > 0 {
@@ -907,16 +920,11 @@ func (s *NodeService) convertDBResourcesToProtoFromChunkRange(dbResources []db.R
 func (s *NodeService) convertResourceRows(dbResources []db.ResourceNode) []*resourceNodeV1.ResourceNode {
 	result := make([]*resourceNodeV1.ResourceNode, 0, len(dbResources))
 
-	// Get all hardcoded resource types for quick lookup
-	resourceTypes := s.getHardcodedResourceTypes()
-	resourceTypeMap := make(map[int32]*resourceNodeV1.ResourceNodeType)
-	for _, rt := range resourceTypes {
-		resourceTypeMap[rt.Id] = rt
-	}
+	// Use the cached resource types map
 
 	for _, r := range dbResources {
-		// Get the hardcoded resource type from the map
-		resourceNodeType, ok := resourceTypeMap[r.ResourceNodeTypeID]
+		// Get the hardcoded resource type from the cached map
+		resourceNodeType, ok := s.resourceTypesByID[r.ResourceNodeTypeID]
 		if !ok {
 			// If type is not found, create a generic placeholder
 			resourceNodeType = &resourceNodeV1.ResourceNodeType{
