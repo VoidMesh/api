@@ -2,7 +2,6 @@ package handlers
 
 import (
 	characterV1 "github.com/VoidMesh/api/api/proto/character/v1"
-	worldV1 "github.com/VoidMesh/api/api/proto/world/v1"
 	"github.com/VoidMesh/api/web/grpc"
 	viewGameV1 "github.com/VoidMesh/api/web/views/game"
 	"github.com/gofiber/fiber/v2"
@@ -58,19 +57,4 @@ func (h *Game) CreateCharacter(c *fiber.Ctx) error {
 
 	// Redirect back to character select
 	return c.Redirect("/game/characters")
-}
-
-// GetWorldInfo returns world information as JSON
-func (h *Game) GetWorldInfo(c *fiber.Ctx) error {
-	// Get JWT token from locals
-	jwtToken := c.Locals("jwt_token").(string)
-	ctx := grpc.WithAuth(c.Context(), jwtToken)
-
-	req := &worldV1.GetWorldInfoRequest{}
-	resp, err := h.API.WorldService.GetWorldInfo(ctx, req)
-	if err != nil {
-		return c.Status(500).JSON(fiber.Map{"error": "Failed to get world info"})
-	}
-
-	return c.JSON(resp.WorldInfo)
 }
