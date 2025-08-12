@@ -26,7 +26,7 @@ services:
     tty: true
     stop_signal: SIGINT # Graceful shutdown will cleanup the txt files created
     stop_grace_period: 3s
-    restart: always
+    restart: unless-stopped
     environment:
       API_ENDPOINT: "api:50051"
       COOKIE_SECRET_KEY: "5TIyDD81Laz/xdxEw2yJVPKdJYyPqxmyONaSVJHs6jY="
@@ -125,7 +125,7 @@ services:
     image: meower:development-api
     pull_policy: never
     tty: true
-    restart: always
+    restart: unless-stopped
     working_dir: /src/api/db/
     volumes:
       - ./api/db/:/src/api/db/
