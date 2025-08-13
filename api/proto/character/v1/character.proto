@@ -10,7 +10,7 @@ service CharacterService {
   // Character management
   rpc CreateCharacter(CreateCharacterRequest) returns (CreateCharacterResponse) {}
   rpc GetCharacter(GetCharacterRequest) returns (GetCharacterResponse) {}
-  rpc GetCharactersByUser(GetCharactersByUserRequest) returns (GetCharactersByUserResponse) {}
+  rpc GetMyCharacters(GetMyCharactersRequest) returns (GetMyCharactersResponse) {}
   rpc DeleteCharacter(DeleteCharacterRequest) returns (DeleteCharacterResponse) {}
 
   // Character movement
@@ -37,10 +37,9 @@ message Position {
 
 // Create character
 message CreateCharacterRequest {
-  string user_id = 1;
-  string name = 2;
-  int32 spawn_x = 3; // Optional spawn position
-  int32 spawn_y = 4; // Optional spawn position
+  string name = 1;
+  int32 spawn_x = 2; // Optional spawn position
+  int32 spawn_y = 3; // Optional spawn position
 }
 
 message CreateCharacterResponse {
@@ -56,12 +55,12 @@ message GetCharacterResponse {
   Character character = 1;
 }
 
-// Get characters by user
-message GetCharactersByUserRequest {
-  string user_id = 1;
+// Get characters for authenticated user
+message GetMyCharactersRequest {
+  // Empty - user_id extracted from JWT token
 }
 
-message GetCharactersByUserResponse {
+message GetMyCharactersResponse {
   repeated Character characters = 1;
 }
 

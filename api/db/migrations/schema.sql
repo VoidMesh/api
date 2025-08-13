@@ -63,6 +63,18 @@ CREATE TABLE
     UNIQUE (world_id, chunk_x, chunk_y, pos_x, pos_y)
   );
 
+-- Character inventory system
+CREATE TABLE
+  character_inventories (
+    id SERIAL PRIMARY KEY,
+    character_id UUID NOT NULL REFERENCES characters (id) ON DELETE CASCADE,
+    resource_node_type_id integer NOT NULL,
+    quantity integer NOT NULL DEFAULT 1,
+    created_at timestamp NOT NULL DEFAULT NOW(),
+    updated_at timestamp NOT NULL DEFAULT NOW(),
+    UNIQUE (character_id, resource_node_type_id)
+  );
+
 -- Create indexes for performance
 CREATE INDEX idx_characters_user_id ON characters (user_id);
 CREATE INDEX idx_characters_position ON characters (chunk_x, chunk_y);
@@ -72,6 +84,8 @@ CREATE INDEX idx_resource_nodes_world_id ON resource_nodes (world_id);
 CREATE INDEX idx_resource_nodes_chunk ON resource_nodes (world_id, chunk_x, chunk_y);
 CREATE INDEX idx_resource_nodes_type ON resource_nodes (resource_node_type_id);
 CREATE INDEX idx_resource_nodes_cluster ON resource_nodes (cluster_id);
+CREATE INDEX idx_character_inventories_character_id ON character_inventories (character_id);
+CREATE INDEX idx_character_inventories_resource_type ON character_inventories (resource_node_type_id);
 
 
 -- Insert default world

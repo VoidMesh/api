@@ -115,13 +115,13 @@ func (s *Service) isValidSpawnPosition(ctx context.Context, x, y int32) (bool, e
 }
 
 // CreateCharacter creates a new character for a user
-func (s *Service) CreateCharacter(ctx context.Context, req *characterV1.CreateCharacterRequest) (*characterV1.CreateCharacterResponse, error) {
-	logger := logging.WithFields("user_id", req.UserId, "character_name", req.Name, "spawn_x", req.SpawnX, "spawn_y", req.SpawnY)
+func (s *Service) CreateCharacter(ctx context.Context, userID string, req *characterV1.CreateCharacterRequest) (*characterV1.CreateCharacterResponse, error) {
+	logger := logging.WithFields("user_id", userID, "character_name", req.Name, "spawn_x", req.SpawnX, "spawn_y", req.SpawnY)
 	logger.Debug("Starting character creation process")
 
 	start := time.Now()
 
-	userUUID, err := parseUUID(req.UserId)
+	userUUID, err := parseUUID(userID)
 	if err != nil {
 		logger.Error("Invalid user ID format", "error", err)
 		return nil, status.Errorf(codes.InvalidArgument, "invalid user ID: %v", err)
@@ -216,9 +216,9 @@ func (s *Service) GetCharacter(ctx context.Context, req *characterV1.GetCharacte
 	}, nil
 }
 
-// GetCharactersByUser retrieves all characters for a user
-func (s *Service) GetCharactersByUser(ctx context.Context, req *characterV1.GetCharactersByUserRequest) (*characterV1.GetCharactersByUserResponse, error) {
-	userUUID, err := parseUUID(req.UserId)
+// GetUserCharacters retrieves all characters for a user
+func (s *Service) GetUserCharacters(ctx context.Context, userID string) (*characterV1.GetMyCharactersResponse, error) {
+	userUUID, err := parseUUID(userID)
 	if err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, "invalid user ID: %v", err)
 	}
@@ -233,7 +233,7 @@ func (s *Service) GetCharactersByUser(ctx context.Context, req *characterV1.GetC
 		protoCharacters = append(protoCharacters, s.dbCharacterToProto(char))
 	}
 
-	return &characterV1.GetCharactersByUserResponse{
+	return &characterV1.GetMyCharactersResponse{
 		Characters: protoCharacters,
 	}, nil
 }

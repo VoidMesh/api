@@ -486,7 +486,7 @@ func (s *userServiceServer) Login(ctx context.Context, req *userV1.LoginRequest)
 
 	// Generate JWT token
 	loggerWithUser.Debug("Generating JWT token")
-	token, err := generateJWTToken(user.ID.String(), user.Username)
+	token, err := generateJWTToken(userID, user.Username)
 	if err != nil {
 		loggerWithUser.Error("Failed to generate JWT token", "error", err)
 		return nil, status.Errorf(codes.Internal, "failed to generate JWT token: %v", err)

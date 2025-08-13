@@ -1,0 +1,100 @@
+syntax = "proto3";
+
+package inventory.v1;
+
+import "google/protobuf/timestamp.proto";
+import "resource_node/v1/resource_node.proto";
+
+option go_package = "github.com/VoidMesh/api/api/proto/inventory/v1";
+
+service InventoryService {
+  // Inventory management
+  rpc GetCharacterInventory(GetCharacterInventoryRequest) returns (GetCharacterInventoryResponse) {}
+  
+  // Resource harvesting
+  rpc HarvestResourceNode(HarvestResourceNodeRequest) returns (HarvestResourceNodeResponse) {}
+  
+  // Item management
+  rpc AddInventoryItem(AddInventoryItemRequest) returns (AddInventoryItemResponse) {}
+  rpc RemoveInventoryItem(RemoveInventoryItemRequest) returns (RemoveInventoryItemResponse) {}
+  rpc UpdateItemQuantity(UpdateItemQuantityRequest) returns (UpdateItemQuantityResponse) {}
+}
+
+// Inventory item representing a resource in character's inventory
+message InventoryItem {
+  int32 id = 1;
+  string character_id = 2;
+  resource_node.v1.ResourceNodeTypeId resource_node_type_id = 3;
+  resource_node.v1.ResourceNodeType resource_node_type = 4; // Populated for display
+  int32 quantity = 5;
+  google.protobuf.Timestamp created_at = 6;
+  google.protobuf.Timestamp updated_at = 7;
+}
+
+// Get character inventory
+message GetCharacterInventoryRequest {
+  string character_id = 1;
+}
+
+message GetCharacterInventoryResponse {
+  repeated InventoryItem items = 1;
+  int32 total_items = 2;
+}
+
+// Harvest resource node
+message HarvestResourceNodeRequest {
+  string character_id = 1;
+  int32 resource_node_id = 2;
+}
+
+message HarvestResourceNodeResponse {
+  bool success = 1;
+  string error_message = 2;
+  repeated HarvestResult results = 3;
+  InventoryItem updated_item = 4; // Updated inventory item after harvest
+}
+
+message HarvestResult {
+  string item_name = 1;
+  int32 quantity = 2;
+  bool is_secondary_drop = 3;
+}
+
+// Add inventory item
+message AddInventoryItemRequest {
+  string character_id = 1;
+  resource_node.v1.ResourceNodeTypeId resource_node_type_id = 2;
+  int32 quantity = 3;
+}
+
+message AddInventoryItemResponse {
+  InventoryItem item = 1;
+  bool success = 2;
+  string error_message = 3;
+}
+
+// Remove inventory item
+message RemoveInventoryItemRequest {
+  string character_id = 1;
+  resource_node.v1.ResourceNodeTypeId resource_node_type_id = 2;
+  int32 quantity = 3;
+}
+
+message RemoveInventoryItemResponse {
+  InventoryItem item = 1; // Updated item, null if completely removed
+  bool success = 2;
+  string error_message = 3;
+}
+
+// Update item quantity
+message UpdateItemQuantityRequest {
+  string character_id = 1;
+  resource_node.v1.ResourceNodeTypeId resource_node_type_id = 2;
+  int32 new_quantity = 3;
+}
+
+message UpdateItemQuantityResponse {
+  InventoryItem item = 1;
+  bool success = 2;
+  string error_message = 3;
+}

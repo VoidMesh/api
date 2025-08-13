@@ -6,12 +6,15 @@ import (
 
 	"github.com/VoidMesh/api/api/internal/logging"
 	characterV1 "github.com/VoidMesh/api/api/proto/character/v1"
+	"github.com/VoidMesh/api/api/server/middleware"
 	"github.com/VoidMesh/api/api/services/character"
 	"github.com/VoidMesh/api/api/services/chunk"
 	"github.com/VoidMesh/api/api/services/noise"
 	"github.com/VoidMesh/api/api/services/world"
 	"github.com/charmbracelet/log"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 type characterServiceServer struct {
@@ -51,11 +54,17 @@ func NewCharacterServer(db *pgxpool.Pool) characterV1.CharacterServiceServer {
 
 // CreateCharacter creates a new character
 func (s *characterServiceServer) CreateCharacter(ctx context.Context, req *characterV1.CreateCharacterRequest) (*characterV1.CreateCharacterResponse, error) {
-	logger := logging.WithFields("operation", "CreateCharacter", "user_id", req.UserId, "character_name", req.Name, "spawn_x", req.SpawnX, "spawn_y", req.SpawnY)
+	// Extract user ID from context metadata (set by JWT middleware)
+	userID, ok := middleware.GetUserIDFromContext(ctx)
+	if !ok || userID == "" {
+		return nil, status.Errorf(codes.Unauthenticated, "user not authenticated")
+	}
+
+	logger := logging.WithFields("operation", "CreateCharacter", "user_id", userID, "character_name", req.Name, "spawn_x", req.SpawnX, "spawn_y", req.SpawnY)
 	logger.Debug("Creating new character")
 
 	start := time.Now()
-	resp, err := s.service.CreateCharacter(ctx, req)
+	resp, err := s.service.CreateCharacter(ctx, userID, req)
 	duration := time.Since(start)
 
 	if err != nil {
@@ -85,21 +94,27 @@ func (s *characterServiceServer) GetCharacter(ctx context.Context, req *characte
 	return resp, nil
 }
 
-// GetCharactersByUser gets all characters for a user
-func (s *characterServiceServer) GetCharactersByUser(ctx context.Context, req *characterV1.GetCharactersByUserRequest) (*characterV1.GetCharactersByUserResponse, error) {
-	logger := s.logger.With("operation", "GetCharactersByUser", "user_id", req.UserId)
-	logger.Debug("Received GetCharactersByUser request")
+// GetMyCharacters gets all characters for the authenticated user
+func (s *characterServiceServer) GetMyCharacters(ctx context.Context, req *characterV1.GetMyCharactersRequest) (*characterV1.GetMyCharactersResponse, error) {
+	// Extract user ID from context metadata (set by JWT middleware)
+	userID, ok := middleware.GetUserIDFromContext(ctx)
+	if !ok || userID == "" {
+		return nil, status.Errorf(codes.Unauthenticated, "user not authenticated")
+	}
+
+	logger := s.logger.With("operation", "GetMyCharacters", "user_id", userID)
+	logger.Debug("Received GetMyCharacters request")
 
 	start := time.Now()
-	resp, err := s.service.GetCharactersByUser(ctx, req)
+	resp, err := s.service.GetUserCharacters(ctx, userID)
 	duration := time.Since(start)
 
 	if err != nil {
-		logger.Error("Failed to get characters by user", "error", err, "duration", duration)
+		logger.Error("Failed to get characters for user", "error", err, "duration", duration)
 		return nil, err
 	}
 
-	logger.Info("Successfully retrieved characters by user", "count", len(resp.Characters), "duration", duration)
+	logger.Info("Successfully retrieved characters for user", "count", len(resp.Characters), "duration", duration)
 	return resp, nil
 }
 

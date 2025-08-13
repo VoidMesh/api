@@ -19,6 +19,15 @@ type Character struct {
 	CreatedAt pgtype.Timestamp
 }
 
+type CharacterInventory struct {
+	ID                 int32
+	CharacterID        pgtype.UUID
+	ResourceNodeTypeID int32
+	Quantity           int32
+	CreatedAt          pgtype.Timestamp
+	UpdatedAt          pgtype.Timestamp
+}
+
 type Chunk struct {
 	WorldID     pgtype.UUID
 	ChunkX      int32

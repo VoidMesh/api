@@ -19,11 +19,11 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	CharacterService_CreateCharacter_FullMethodName     = "/character.v1.CharacterService/CreateCharacter"
-	CharacterService_GetCharacter_FullMethodName        = "/character.v1.CharacterService/GetCharacter"
-	CharacterService_GetCharactersByUser_FullMethodName = "/character.v1.CharacterService/GetCharactersByUser"
-	CharacterService_DeleteCharacter_FullMethodName     = "/character.v1.CharacterService/DeleteCharacter"
-	CharacterService_MoveCharacter_FullMethodName       = "/character.v1.CharacterService/MoveCharacter"
+	CharacterService_CreateCharacter_FullMethodName = "/character.v1.CharacterService/CreateCharacter"
+	CharacterService_GetCharacter_FullMethodName    = "/character.v1.CharacterService/GetCharacter"
+	CharacterService_GetMyCharacters_FullMethodName = "/character.v1.CharacterService/GetMyCharacters"
+	CharacterService_DeleteCharacter_FullMethodName = "/character.v1.CharacterService/DeleteCharacter"
+	CharacterService_MoveCharacter_FullMethodName   = "/character.v1.CharacterService/MoveCharacter"
 )
 
 // CharacterServiceClient is the client API for CharacterService service.
@@ -33,7 +33,7 @@ type CharacterServiceClient interface {
 	// Character management
 	CreateCharacter(ctx context.Context, in *CreateCharacterRequest, opts ...grpc.CallOption) (*CreateCharacterResponse, error)
 	GetCharacter(ctx context.Context, in *GetCharacterRequest, opts ...grpc.CallOption) (*GetCharacterResponse, error)
-	GetCharactersByUser(ctx context.Context, in *GetCharactersByUserRequest, opts ...grpc.CallOption) (*GetCharactersByUserResponse, error)
+	GetMyCharacters(ctx context.Context, in *GetMyCharactersRequest, opts ...grpc.CallOption) (*GetMyCharactersResponse, error)
 	DeleteCharacter(ctx context.Context, in *DeleteCharacterRequest, opts ...grpc.CallOption) (*DeleteCharacterResponse, error)
 	// Character movement
 	MoveCharacter(ctx context.Context, in *MoveCharacterRequest, opts ...grpc.CallOption) (*MoveCharacterResponse, error)
@@ -67,10 +67,10 @@ func (c *characterServiceClient) GetCharacter(ctx context.Context, in *GetCharac
 	return out, nil
 }
 
-func (c *characterServiceClient) GetCharactersByUser(ctx context.Context, in *GetCharactersByUserRequest, opts ...grpc.CallOption) (*GetCharactersByUserResponse, error) {
+func (c *characterServiceClient) GetMyCharacters(ctx context.Context, in *GetMyCharactersRequest, opts ...grpc.CallOption) (*GetMyCharactersResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(GetCharactersByUserResponse)
-	err := c.cc.Invoke(ctx, CharacterService_GetCharactersByUser_FullMethodName, in, out, cOpts...)
+	out := new(GetMyCharactersResponse)
+	err := c.cc.Invoke(ctx, CharacterService_GetMyCharacters_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -104,7 +104,7 @@ type CharacterServiceServer interface {
 	// Character management
 	CreateCharacter(context.Context, *CreateCharacterRequest) (*CreateCharacterResponse, error)
 	GetCharacter(context.Context, *GetCharacterRequest) (*GetCharacterResponse, error)
-	GetCharactersByUser(context.Context, *GetCharactersByUserRequest) (*GetCharactersByUserResponse, error)
+	GetMyCharacters(context.Context, *GetMyCharactersRequest) (*GetMyCharactersResponse, error)
 	DeleteCharacter(context.Context, *DeleteCharacterRequest) (*DeleteCharacterResponse, error)
 	// Character movement
 	MoveCharacter(context.Context, *MoveCharacterRequest) (*MoveCharacterResponse, error)
@@ -124,8 +124,8 @@ func (UnimplementedCharacterServiceServer) CreateCharacter(context.Context, *Cre
 func (UnimplementedCharacterServiceServer) GetCharacter(context.Context, *GetCharacterRequest) (*GetCharacterResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetCharacter not implemented")
 }
-func (UnimplementedCharacterServiceServer) GetCharactersByUser(context.Context, *GetCharactersByUserRequest) (*GetCharactersByUserResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetCharactersByUser not implemented")
+func (UnimplementedCharacterServiceServer) GetMyCharacters(context.Context, *GetMyCharactersRequest) (*GetMyCharactersResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetMyCharacters not implemented")
 }
 func (UnimplementedCharacterServiceServer) DeleteCharacter(context.Context, *DeleteCharacterRequest) (*DeleteCharacterResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteCharacter not implemented")
@@ -190,20 +190,20 @@ func _CharacterService_GetCharacter_Handler(srv interface{}, ctx context.Context
 	return interceptor(ctx, in, info, handler)
 }
 
-func _CharacterService_GetCharactersByUser_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetCharactersByUserRequest)
+func _CharacterService_GetMyCharacters_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetMyCharactersRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(CharacterServiceServer).GetCharactersByUser(ctx, in)
+		return srv.(CharacterServiceServer).GetMyCharacters(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: CharacterService_GetCharactersByUser_FullMethodName,
+		FullMethod: CharacterService_GetMyCharacters_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CharacterServiceServer).GetCharactersByUser(ctx, req.(*GetCharactersByUserRequest))
+		return srv.(CharacterServiceServer).GetMyCharacters(ctx, req.(*GetMyCharactersRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -260,8 +260,8 @@ var CharacterService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _CharacterService_GetCharacter_Handler,
 		},
 		{
-			MethodName: "GetCharactersByUser",
-			Handler:    _CharacterService_GetCharactersByUser_Handler,
+			MethodName: "GetMyCharacters",
+			Handler:    _CharacterService_GetMyCharacters_Handler,
 		},
 		{
 			MethodName: "DeleteCharacter",

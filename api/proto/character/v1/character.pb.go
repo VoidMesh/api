@@ -193,10 +193,9 @@ func (x *Position) GetChunkY() int32 {
 // Create character
 type CreateCharacterRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	UserId        string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
-	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
-	SpawnX        int32                  `protobuf:"varint,3,opt,name=spawn_x,json=spawnX,proto3" json:"spawn_x,omitempty"` // Optional spawn position
-	SpawnY        int32                  `protobuf:"varint,4,opt,name=spawn_y,json=spawnY,proto3" json:"spawn_y,omitempty"` // Optional spawn position
+	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	SpawnX        int32                  `protobuf:"varint,2,opt,name=spawn_x,json=spawnX,proto3" json:"spawn_x,omitempty"` // Optional spawn position
+	SpawnY        int32                  `protobuf:"varint,3,opt,name=spawn_y,json=spawnY,proto3" json:"spawn_y,omitempty"` // Optional spawn position
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -229,13 +228,6 @@ func (x *CreateCharacterRequest) ProtoReflect() protoreflect.Message {
 // Deprecated: Use CreateCharacterRequest.ProtoReflect.Descriptor instead.
 func (*CreateCharacterRequest) Descriptor() ([]byte, []int) {
 	return file_character_v1_character_proto_rawDescGZIP(), []int{2}
-}
-
-func (x *CreateCharacterRequest) GetUserId() string {
-	if x != nil {
-		return x.UserId
-	}
-	return ""
 }
 
 func (x *CreateCharacterRequest) GetName() string {
@@ -392,28 +384,27 @@ func (x *GetCharacterResponse) GetCharacter() *Character {
 	return nil
 }
 
-// Get characters by user
-type GetCharactersByUserRequest struct {
+// Get characters for authenticated user
+type GetMyCharactersRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	UserId        string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *GetCharactersByUserRequest) Reset() {
-	*x = GetCharactersByUserRequest{}
+func (x *GetMyCharactersRequest) Reset() {
+	*x = GetMyCharactersRequest{}
 	mi := &file_character_v1_character_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *GetCharactersByUserRequest) String() string {
+func (x *GetMyCharactersRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*GetCharactersByUserRequest) ProtoMessage() {}
+func (*GetMyCharactersRequest) ProtoMessage() {}
 
-func (x *GetCharactersByUserRequest) ProtoReflect() protoreflect.Message {
+func (x *GetMyCharactersRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_character_v1_character_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -425,39 +416,32 @@ func (x *GetCharactersByUserRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use GetCharactersByUserRequest.ProtoReflect.Descriptor instead.
-func (*GetCharactersByUserRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use GetMyCharactersRequest.ProtoReflect.Descriptor instead.
+func (*GetMyCharactersRequest) Descriptor() ([]byte, []int) {
 	return file_character_v1_character_proto_rawDescGZIP(), []int{6}
 }
 
-func (x *GetCharactersByUserRequest) GetUserId() string {
-	if x != nil {
-		return x.UserId
-	}
-	return ""
-}
-
-type GetCharactersByUserResponse struct {
+type GetMyCharactersResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Characters    []*Character           `protobuf:"bytes,1,rep,name=characters,proto3" json:"characters,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *GetCharactersByUserResponse) Reset() {
-	*x = GetCharactersByUserResponse{}
+func (x *GetMyCharactersResponse) Reset() {
+	*x = GetMyCharactersResponse{}
 	mi := &file_character_v1_character_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *GetCharactersByUserResponse) String() string {
+func (x *GetMyCharactersResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*GetCharactersByUserResponse) ProtoMessage() {}
+func (*GetMyCharactersResponse) ProtoMessage() {}
 
-func (x *GetCharactersByUserResponse) ProtoReflect() protoreflect.Message {
+func (x *GetMyCharactersResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_character_v1_character_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -469,12 +453,12 @@ func (x *GetCharactersByUserResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use GetCharactersByUserResponse.ProtoReflect.Descriptor instead.
-func (*GetCharactersByUserResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use GetMyCharactersResponse.ProtoReflect.Descriptor instead.
+func (*GetMyCharactersResponse) Descriptor() ([]byte, []int) {
 	return file_character_v1_character_proto_rawDescGZIP(), []int{7}
 }
 
-func (x *GetCharactersByUserResponse) GetCharacters() []*Character {
+func (x *GetMyCharactersResponse) GetCharacters() []*Character {
 	if x != nil {
 		return x.Characters
 	}
@@ -710,21 +694,19 @@ const file_character_v1_character_proto_rawDesc = "" +
 	"\x01x\x18\x01 \x01(\x05R\x01x\x12\f\n" +
 	"\x01y\x18\x02 \x01(\x05R\x01y\x12\x17\n" +
 	"\achunk_x\x18\x03 \x01(\x05R\x06chunkX\x12\x17\n" +
-	"\achunk_y\x18\x04 \x01(\x05R\x06chunkY\"w\n" +
-	"\x16CreateCharacterRequest\x12\x17\n" +
-	"\auser_id\x18\x01 \x01(\tR\x06userId\x12\x12\n" +
-	"\x04name\x18\x02 \x01(\tR\x04name\x12\x17\n" +
-	"\aspawn_x\x18\x03 \x01(\x05R\x06spawnX\x12\x17\n" +
-	"\aspawn_y\x18\x04 \x01(\x05R\x06spawnY\"P\n" +
+	"\achunk_y\x18\x04 \x01(\x05R\x06chunkY\"^\n" +
+	"\x16CreateCharacterRequest\x12\x12\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\x12\x17\n" +
+	"\aspawn_x\x18\x02 \x01(\x05R\x06spawnX\x12\x17\n" +
+	"\aspawn_y\x18\x03 \x01(\x05R\x06spawnY\"P\n" +
 	"\x17CreateCharacterResponse\x125\n" +
 	"\tcharacter\x18\x01 \x01(\v2\x17.character.v1.CharacterR\tcharacter\"8\n" +
 	"\x13GetCharacterRequest\x12!\n" +
 	"\fcharacter_id\x18\x01 \x01(\tR\vcharacterId\"M\n" +
 	"\x14GetCharacterResponse\x125\n" +
-	"\tcharacter\x18\x01 \x01(\v2\x17.character.v1.CharacterR\tcharacter\"5\n" +
-	"\x1aGetCharactersByUserRequest\x12\x17\n" +
-	"\auser_id\x18\x01 \x01(\tR\x06userId\"V\n" +
-	"\x1bGetCharactersByUserResponse\x127\n" +
+	"\tcharacter\x18\x01 \x01(\v2\x17.character.v1.CharacterR\tcharacter\"\x18\n" +
+	"\x16GetMyCharactersRequest\"R\n" +
+	"\x17GetMyCharactersResponse\x127\n" +
 	"\n" +
 	"characters\x18\x01 \x03(\v2\x17.character.v1.CharacterR\n" +
 	"characters\";\n" +
@@ -739,11 +721,11 @@ const file_character_v1_character_proto_rawDesc = "" +
 	"\x15MoveCharacterResponse\x125\n" +
 	"\tcharacter\x18\x01 \x01(\v2\x17.character.v1.CharacterR\tcharacter\x12\x18\n" +
 	"\asuccess\x18\x02 \x01(\bR\asuccess\x12#\n" +
-	"\rerror_message\x18\x03 \x01(\tR\ferrorMessage2\xf9\x03\n" +
+	"\rerror_message\x18\x03 \x01(\tR\ferrorMessage2\xed\x03\n" +
 	"\x10CharacterService\x12`\n" +
 	"\x0fCreateCharacter\x12$.character.v1.CreateCharacterRequest\x1a%.character.v1.CreateCharacterResponse\"\x00\x12W\n" +
-	"\fGetCharacter\x12!.character.v1.GetCharacterRequest\x1a\".character.v1.GetCharacterResponse\"\x00\x12l\n" +
-	"\x13GetCharactersByUser\x12(.character.v1.GetCharactersByUserRequest\x1a).character.v1.GetCharactersByUserResponse\"\x00\x12`\n" +
+	"\fGetCharacter\x12!.character.v1.GetCharacterRequest\x1a\".character.v1.GetCharacterResponse\"\x00\x12`\n" +
+	"\x0fGetMyCharacters\x12$.character.v1.GetMyCharactersRequest\x1a%.character.v1.GetMyCharactersResponse\"\x00\x12`\n" +
 	"\x0fDeleteCharacter\x12$.character.v1.DeleteCharacterRequest\x1a%.character.v1.DeleteCharacterResponse\"\x00\x12Z\n" +
 	"\rMoveCharacter\x12\".character.v1.MoveCharacterRequest\x1a#.character.v1.MoveCharacterResponse\"\x00B0Z.github.com/VoidMesh/api/api/proto/character/v1b\x06proto3"
 
@@ -761,34 +743,34 @@ func file_character_v1_character_proto_rawDescGZIP() []byte {
 
 var file_character_v1_character_proto_msgTypes = make([]protoimpl.MessageInfo, 12)
 var file_character_v1_character_proto_goTypes = []any{
-	(*Character)(nil),                   // 0: character.v1.Character
-	(*Position)(nil),                    // 1: character.v1.Position
-	(*CreateCharacterRequest)(nil),      // 2: character.v1.CreateCharacterRequest
-	(*CreateCharacterResponse)(nil),     // 3: character.v1.CreateCharacterResponse
-	(*GetCharacterRequest)(nil),         // 4: character.v1.GetCharacterRequest
-	(*GetCharacterResponse)(nil),        // 5: character.v1.GetCharacterResponse
-	(*GetCharactersByUserRequest)(nil),  // 6: character.v1.GetCharactersByUserRequest
-	(*GetCharactersByUserResponse)(nil), // 7: character.v1.GetCharactersByUserResponse
-	(*DeleteCharacterRequest)(nil),      // 8: character.v1.DeleteCharacterRequest
-	(*DeleteCharacterResponse)(nil),     // 9: character.v1.DeleteCharacterResponse
-	(*MoveCharacterRequest)(nil),        // 10: character.v1.MoveCharacterRequest
-	(*MoveCharacterResponse)(nil),       // 11: character.v1.MoveCharacterResponse
-	(*timestamppb.Timestamp)(nil),       // 12: google.protobuf.Timestamp
+	(*Character)(nil),               // 0: character.v1.Character
+	(*Position)(nil),                // 1: character.v1.Position
+	(*CreateCharacterRequest)(nil),  // 2: character.v1.CreateCharacterRequest
+	(*CreateCharacterResponse)(nil), // 3: character.v1.CreateCharacterResponse
+	(*GetCharacterRequest)(nil),     // 4: character.v1.GetCharacterRequest
+	(*GetCharacterResponse)(nil),    // 5: character.v1.GetCharacterResponse
+	(*GetMyCharactersRequest)(nil),  // 6: character.v1.GetMyCharactersRequest
+	(*GetMyCharactersResponse)(nil), // 7: character.v1.GetMyCharactersResponse
+	(*DeleteCharacterRequest)(nil),  // 8: character.v1.DeleteCharacterRequest
+	(*DeleteCharacterResponse)(nil), // 9: character.v1.DeleteCharacterResponse
+	(*MoveCharacterRequest)(nil),    // 10: character.v1.MoveCharacterRequest
+	(*MoveCharacterResponse)(nil),   // 11: character.v1.MoveCharacterResponse
+	(*timestamppb.Timestamp)(nil),   // 12: google.protobuf.Timestamp
 }
 var file_character_v1_character_proto_depIdxs = []int32{
 	12, // 0: character.v1.Character.created_at:type_name -> google.protobuf.Timestamp
 	0,  // 1: character.v1.CreateCharacterResponse.character:type_name -> character.v1.Character
 	0,  // 2: character.v1.GetCharacterResponse.character:type_name -> character.v1.Character
-	0,  // 3: character.v1.GetCharactersByUserResponse.characters:type_name -> character.v1.Character
+	0,  // 3: character.v1.GetMyCharactersResponse.characters:type_name -> character.v1.Character
 	0,  // 4: character.v1.MoveCharacterResponse.character:type_name -> character.v1.Character
 	2,  // 5: character.v1.CharacterService.CreateCharacter:input_type -> character.v1.CreateCharacterRequest
 	4,  // 6: character.v1.CharacterService.GetCharacter:input_type -> character.v1.GetCharacterRequest
-	6,  // 7: character.v1.CharacterService.GetCharactersByUser:input_type -> character.v1.GetCharactersByUserRequest
+	6,  // 7: character.v1.CharacterService.GetMyCharacters:input_type -> character.v1.GetMyCharactersRequest
 	8,  // 8: character.v1.CharacterService.DeleteCharacter:input_type -> character.v1.DeleteCharacterRequest
 	10, // 9: character.v1.CharacterService.MoveCharacter:input_type -> character.v1.MoveCharacterRequest
 	3,  // 10: character.v1.CharacterService.CreateCharacter:output_type -> character.v1.CreateCharacterResponse
 	5,  // 11: character.v1.CharacterService.GetCharacter:output_type -> character.v1.GetCharacterResponse
-	7,  // 12: character.v1.CharacterService.GetCharactersByUser:output_type -> character.v1.GetCharactersByUserResponse
+	7,  // 12: character.v1.CharacterService.GetMyCharacters:output_type -> character.v1.GetMyCharactersResponse
 	9,  // 13: character.v1.CharacterService.DeleteCharacter:output_type -> character.v1.DeleteCharacterResponse
 	11, // 14: character.v1.CharacterService.MoveCharacter:output_type -> character.v1.MoveCharacterResponse
 	10, // [10:15] is the sub-list for method output_type

@@ -57,8 +57,10 @@ func JWTAuthInterceptor(jwtSecret []byte) grpc.UnaryServerInterceptor {
 		}
 
 		// Add user info to context
-		ctx = context.WithValue(ctx, userIDKey, claims[fmt.Sprint(userIDKey)])
-		ctx = context.WithValue(ctx, usernameKey, claims[fmt.Sprint(usernameKey)])
+		userIDClaim, _ := claims["user_id"].(string)
+		usernameClaim, _ := claims["username"].(string)
+		ctx = context.WithValue(ctx, userIDKey, userIDClaim)
+		ctx = context.WithValue(ctx, usernameKey, usernameClaim)
 
 		return handler(ctx, req)
 	}
@@ -100,12 +102,12 @@ func validateJWTToken(tokenString string, jwtSecret []byte) (jwt.MapClaims, erro
 
 // GetUserIDFromContext extracts user ID from context
 func GetUserIDFromContext(ctx context.Context) (string, bool) {
-	userID, ok := ctx.Value("user_id").(string)
+	userID, ok := ctx.Value(userIDKey).(string)
 	return userID, ok
 }
 
 // GetUsernameFromContext extracts username from context
 func GetUsernameFromContext(ctx context.Context) (string, bool) {
-	username, ok := ctx.Value("username").(string)
+	username, ok := ctx.Value(usernameKey).(string)
 	return username, ok
 }
