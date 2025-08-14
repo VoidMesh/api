@@ -209,6 +209,7 @@ import (
 
 	"github.com/VoidMesh/api/api/db"
 	characterV1 "github.com/VoidMesh/api/api/proto/character/v1"
+	chunkV1 "github.com/VoidMesh/api/api/proto/chunk/v1"
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
@@ -319,6 +320,38 @@ type WorldService interface {
 
 	// DeleteWorld deletes a world
 	DeleteWorld(ctx context.Context, id pgtype.UUID) error
+}
+
+// ChunkService defines the interface for chunk service operations.
+// This mirrors the interface defined in server/handlers/interfaces.go
+type ChunkService interface {
+	// GetOrCreateChunk retrieves an existing chunk or creates a new one
+	GetOrCreateChunk(ctx context.Context, chunkX, chunkY int32) (*chunkV1.ChunkData, error)
+
+	// GetChunksInRange retrieves multiple chunks in a rectangular area
+	GetChunksInRange(ctx context.Context, minX, maxX, minY, maxY int32) ([]*chunkV1.ChunkData, error)
+
+	// GetChunksInRadius retrieves chunks in a circular area
+	GetChunksInRadius(ctx context.Context, centerX, centerY, radius int32) ([]*chunkV1.ChunkData, error)
+}
+
+// LoggerInterface defines logging operations for dependency injection.
+// This mirrors the interface defined in server/handlers/interfaces.go
+type LoggerInterface interface {
+	// Debug logs a debug level message with optional key-value pairs
+	Debug(msg string, keysAndValues ...interface{})
+
+	// Info logs an info level message with optional key-value pairs
+	Info(msg string, keysAndValues ...interface{})
+
+	// Warn logs a warning level message with optional key-value pairs
+	Warn(msg string, keysAndValues ...interface{})
+
+	// Error logs an error level message with optional key-value pairs
+	Error(msg string, keysAndValues ...interface{})
+
+	// With returns a new logger with the given key-value pairs added to the context
+	With(keysAndValues ...interface{}) LoggerInterface
 }
 EOF
     fi

@@ -36,7 +36,11 @@ func RegisterServices(server *grpc.Server, database *pgxpool.Pool) {
 	noiseGen := noise.NewGenerator(defaultWorld.Seed)
 
 	// Create and register chunk service with shared noise generator using new constructor
-	chunkHandler := handlers.NewChunkServer(database, worldService, noiseGen.(*noise.Generator))
+	chunkHandler, err := handlers.NewChunkServerWithPool(database)
+	if err != nil {
+		logger.Error("Failed to create chunk handler", "error", err)
+		return
+	}
 	chunkV1.RegisterChunkServiceServer(server, chunkHandler)
 
 	// Create and register resource node service with shared noise generator using new constructor

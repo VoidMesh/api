@@ -15,6 +15,7 @@ import (
 
 	db "github.com/VoidMesh/api/api/db"
 	v1 "github.com/VoidMesh/api/api/proto/character/v1"
+	v10 "github.com/VoidMesh/api/api/proto/chunk/v1"
 	pgtype "github.com/jackc/pgx/v5/pgtype"
 	gomock "go.uber.org/mock/gomock"
 )
@@ -563,4 +564,183 @@ func (m *MockWorldService) UpdateWorld(ctx context.Context, id pgtype.UUID, name
 func (mr *MockWorldServiceMockRecorder) UpdateWorld(ctx, id, name any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateWorld", reflect.TypeOf((*MockWorldService)(nil).UpdateWorld), ctx, id, name)
+}
+
+// MockChunkService is a mock of ChunkService interface.
+type MockChunkService struct {
+	ctrl     *gomock.Controller
+	recorder *MockChunkServiceMockRecorder
+	isgomock struct{}
+}
+
+// MockChunkServiceMockRecorder is the mock recorder for MockChunkService.
+type MockChunkServiceMockRecorder struct {
+	mock *MockChunkService
+}
+
+// NewMockChunkService creates a new mock instance.
+func NewMockChunkService(ctrl *gomock.Controller) *MockChunkService {
+	mock := &MockChunkService{ctrl: ctrl}
+	mock.recorder = &MockChunkServiceMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockChunkService) EXPECT() *MockChunkServiceMockRecorder {
+	return m.recorder
+}
+
+// GetChunksInRadius mocks base method.
+func (m *MockChunkService) GetChunksInRadius(ctx context.Context, centerX, centerY, radius int32) ([]*v10.ChunkData, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetChunksInRadius", ctx, centerX, centerY, radius)
+	ret0, _ := ret[0].([]*v10.ChunkData)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetChunksInRadius indicates an expected call of GetChunksInRadius.
+func (mr *MockChunkServiceMockRecorder) GetChunksInRadius(ctx, centerX, centerY, radius any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetChunksInRadius", reflect.TypeOf((*MockChunkService)(nil).GetChunksInRadius), ctx, centerX, centerY, radius)
+}
+
+// GetChunksInRange mocks base method.
+func (m *MockChunkService) GetChunksInRange(ctx context.Context, minX, maxX, minY, maxY int32) ([]*v10.ChunkData, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetChunksInRange", ctx, minX, maxX, minY, maxY)
+	ret0, _ := ret[0].([]*v10.ChunkData)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetChunksInRange indicates an expected call of GetChunksInRange.
+func (mr *MockChunkServiceMockRecorder) GetChunksInRange(ctx, minX, maxX, minY, maxY any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetChunksInRange", reflect.TypeOf((*MockChunkService)(nil).GetChunksInRange), ctx, minX, maxX, minY, maxY)
+}
+
+// GetOrCreateChunk mocks base method.
+func (m *MockChunkService) GetOrCreateChunk(ctx context.Context, chunkX, chunkY int32) (*v10.ChunkData, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetOrCreateChunk", ctx, chunkX, chunkY)
+	ret0, _ := ret[0].(*v10.ChunkData)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetOrCreateChunk indicates an expected call of GetOrCreateChunk.
+func (mr *MockChunkServiceMockRecorder) GetOrCreateChunk(ctx, chunkX, chunkY any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetOrCreateChunk", reflect.TypeOf((*MockChunkService)(nil).GetOrCreateChunk), ctx, chunkX, chunkY)
+}
+
+// MockLoggerInterface is a mock of LoggerInterface interface.
+type MockLoggerInterface struct {
+	ctrl     *gomock.Controller
+	recorder *MockLoggerInterfaceMockRecorder
+	isgomock struct{}
+}
+
+// MockLoggerInterfaceMockRecorder is the mock recorder for MockLoggerInterface.
+type MockLoggerInterfaceMockRecorder struct {
+	mock *MockLoggerInterface
+}
+
+// NewMockLoggerInterface creates a new mock instance.
+func NewMockLoggerInterface(ctrl *gomock.Controller) *MockLoggerInterface {
+	mock := &MockLoggerInterface{ctrl: ctrl}
+	mock.recorder = &MockLoggerInterfaceMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockLoggerInterface) EXPECT() *MockLoggerInterfaceMockRecorder {
+	return m.recorder
+}
+
+// Debug mocks base method.
+func (m *MockLoggerInterface) Debug(msg string, keysAndValues ...any) {
+	m.ctrl.T.Helper()
+	varargs := []any{msg}
+	for _, a := range keysAndValues {
+		varargs = append(varargs, a)
+	}
+	m.ctrl.Call(m, "Debug", varargs...)
+}
+
+// Debug indicates an expected call of Debug.
+func (mr *MockLoggerInterfaceMockRecorder) Debug(msg any, keysAndValues ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{msg}, keysAndValues...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Debug", reflect.TypeOf((*MockLoggerInterface)(nil).Debug), varargs...)
+}
+
+// Error mocks base method.
+func (m *MockLoggerInterface) Error(msg string, keysAndValues ...any) {
+	m.ctrl.T.Helper()
+	varargs := []any{msg}
+	for _, a := range keysAndValues {
+		varargs = append(varargs, a)
+	}
+	m.ctrl.Call(m, "Error", varargs...)
+}
+
+// Error indicates an expected call of Error.
+func (mr *MockLoggerInterfaceMockRecorder) Error(msg any, keysAndValues ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{msg}, keysAndValues...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Error", reflect.TypeOf((*MockLoggerInterface)(nil).Error), varargs...)
+}
+
+// Info mocks base method.
+func (m *MockLoggerInterface) Info(msg string, keysAndValues ...any) {
+	m.ctrl.T.Helper()
+	varargs := []any{msg}
+	for _, a := range keysAndValues {
+		varargs = append(varargs, a)
+	}
+	m.ctrl.Call(m, "Info", varargs...)
+}
+
+// Info indicates an expected call of Info.
+func (mr *MockLoggerInterfaceMockRecorder) Info(msg any, keysAndValues ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{msg}, keysAndValues...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Info", reflect.TypeOf((*MockLoggerInterface)(nil).Info), varargs...)
+}
+
+// Warn mocks base method.
+func (m *MockLoggerInterface) Warn(msg string, keysAndValues ...any) {
+	m.ctrl.T.Helper()
+	varargs := []any{msg}
+	for _, a := range keysAndValues {
+		varargs = append(varargs, a)
+	}
+	m.ctrl.Call(m, "Warn", varargs...)
+}
+
+// Warn indicates an expected call of Warn.
+func (mr *MockLoggerInterfaceMockRecorder) Warn(msg any, keysAndValues ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{msg}, keysAndValues...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Warn", reflect.TypeOf((*MockLoggerInterface)(nil).Warn), varargs...)
+}
+
+// With mocks base method.
+func (m *MockLoggerInterface) With(keysAndValues ...any) LoggerInterface {
+	m.ctrl.T.Helper()
+	varargs := []any{}
+	for _, a := range keysAndValues {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "With", varargs...)
+	ret0, _ := ret[0].(LoggerInterface)
+	return ret0
+}
+
+// With indicates an expected call of With.
+func (mr *MockLoggerInterfaceMockRecorder) With(keysAndValues ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "With", reflect.TypeOf((*MockLoggerInterface)(nil).With), keysAndValues...)
 }

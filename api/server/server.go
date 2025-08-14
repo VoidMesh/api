@@ -137,7 +137,11 @@ func Serve() {
 	pbResourceNodeV1.RegisterResourceNodeServiceServer(g, handlers.NewResourceNodeHandler(resourceNodeService, worldService))
 
 	logger.Debug("Registering ChunkService")
-	pbChunkV1.RegisterChunkServiceServer(g, handlers.NewChunkServer(dbPool, worldService, noiseGen.(*noise.Generator)))
+	chunkServer, err := handlers.NewChunkServerWithPool(dbPool)
+	if err != nil {
+		logger.Fatal("Failed to create chunk server", "error", err)
+	}
+	pbChunkV1.RegisterChunkServiceServer(g, chunkServer)
 
 	logger.Info("All gRPC services registered successfully")
 
