@@ -1,0 +1,556 @@
+
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+		<title>inventory: Go Coverage Report</title>
+		<style>
+			body {
+				background: black;
+				color: rgb(80, 80, 80);
+			}
+			body, pre, #legend span {
+				font-family: Menlo, monospace;
+				font-weight: bold;
+			}
+			#topbar {
+				background: black;
+				position: fixed;
+				top: 0; left: 0; right: 0;
+				height: 42px;
+				border-bottom: 1px solid rgb(80, 80, 80);
+			}
+			#content {
+				margin-top: 50px;
+			}
+			#nav, #legend {
+				float: left;
+				margin-left: 10px;
+			}
+			#legend {
+				margin-top: 12px;
+			}
+			#nav {
+				margin-top: 10px;
+			}
+			#legend span {
+				margin: 0 5px;
+			}
+			.cov0 { color: rgb(192, 0, 0) }
+.cov1 { color: rgb(128, 128, 128) }
+.cov2 { color: rgb(116, 140, 131) }
+.cov3 { color: rgb(104, 152, 134) }
+.cov4 { color: rgb(92, 164, 137) }
+.cov5 { color: rgb(80, 176, 140) }
+.cov6 { color: rgb(68, 188, 143) }
+.cov7 { color: rgb(56, 200, 146) }
+.cov8 { color: rgb(44, 212, 149) }
+.cov9 { color: rgb(32, 224, 152) }
+.cov10 { color: rgb(20, 236, 155) }
+
+		</style>
+	</head>
+	<body>
+		<div id="topbar">
+			<div id="nav">
+				<select id="files">
+				
+				<option value="file0">github.com/VoidMesh/api/api/services/inventory/interfaces.go (0.0%)</option>
+				
+				<option value="file1">github.com/VoidMesh/api/api/services/inventory/inventory.go (88.9%)</option>
+				
+				</select>
+			</div>
+			<div id="legend">
+				<span>not tracked</span>
+			
+				<span class="cov0">not covered</span>
+				<span class="cov8">covered</span>
+			
+			</div>
+		</div>
+		<div id="content">
+		
+		<pre class="file" id="file0" style="display: none">package inventory
+
+import (
+        "context"
+
+        "github.com/VoidMesh/api/api/db"
+        resourceNodeV1 "github.com/VoidMesh/api/api/proto/resource_node/v1"
+        "github.com/VoidMesh/api/api/services/character"
+        "github.com/VoidMesh/api/api/services/resource_node"
+        "github.com/jackc/pgx/v5/pgtype"
+        "github.com/jackc/pgx/v5/pgxpool"
+)
+
+// DatabaseInterface abstracts database operations for the inventory service.
+type DatabaseInterface interface {
+        GetCharacterInventory(ctx context.Context, characterID pgtype.UUID) ([]db.CharacterInventory, error)
+        InventoryItemExists(ctx context.Context, arg db.InventoryItemExistsParams) (bool, error)
+        AddInventoryItemQuantity(ctx context.Context, arg db.AddInventoryItemQuantityParams) (db.CharacterInventory, error)
+        CreateInventoryItem(ctx context.Context, arg db.CreateInventoryItemParams) (db.CharacterInventory, error)
+        RemoveInventoryItemQuantity(ctx context.Context, arg db.RemoveInventoryItemQuantityParams) (db.CharacterInventory, error)
+        DeleteInventoryItem(ctx context.Context, arg db.DeleteInventoryItemParams) error
+        GetResourceNode(ctx context.Context, id int32) (db.ResourceNode, error)
+}
+
+// DatabaseWrapper implements DatabaseInterface using the actual database connection.
+type DatabaseWrapper struct {
+        queries *db.Queries
+}
+
+// NewDatabaseWrapper creates a new database wrapper with the given connection pool.
+func NewDatabaseWrapper(pool *pgxpool.Pool) DatabaseInterface <span class="cov0" title="0">{
+        return &amp;DatabaseWrapper{
+                queries: db.New(pool),
+        }
+}</span>
+
+func (d *DatabaseWrapper) GetCharacterInventory(ctx context.Context, characterID pgtype.UUID) ([]db.CharacterInventory, error) <span class="cov0" title="0">{
+        return d.queries.GetCharacterInventory(ctx, characterID)
+}</span>
+
+func (d *DatabaseWrapper) InventoryItemExists(ctx context.Context, arg db.InventoryItemExistsParams) (bool, error) <span class="cov0" title="0">{
+        return d.queries.InventoryItemExists(ctx, arg)
+}</span>
+
+func (d *DatabaseWrapper) AddInventoryItemQuantity(ctx context.Context, arg db.AddInventoryItemQuantityParams) (db.CharacterInventory, error) <span class="cov0" title="0">{
+        return d.queries.AddInventoryItemQuantity(ctx, arg)
+}</span>
+
+func (d *DatabaseWrapper) CreateInventoryItem(ctx context.Context, arg db.CreateInventoryItemParams) (db.CharacterInventory, error) <span class="cov0" title="0">{
+        return d.queries.CreateInventoryItem(ctx, arg)
+}</span>
+
+func (d *DatabaseWrapper) RemoveInventoryItemQuantity(ctx context.Context, arg db.RemoveInventoryItemQuantityParams) (db.CharacterInventory, error) <span class="cov0" title="0">{
+        return d.queries.RemoveInventoryItemQuantity(ctx, arg)
+}</span>
+
+func (d *DatabaseWrapper) DeleteInventoryItem(ctx context.Context, arg db.DeleteInventoryItemParams) error <span class="cov0" title="0">{
+        return d.queries.DeleteInventoryItem(ctx, arg)
+}</span>
+
+func (d *DatabaseWrapper) GetResourceNode(ctx context.Context, id int32) (db.ResourceNode, error) <span class="cov0" title="0">{
+        return d.queries.GetResourceNode(ctx, id)
+}</span>
+
+// CharacterServiceInterface defines the interface for character service operations.
+type CharacterServiceInterface interface {
+        // Add any character service methods that inventory service needs
+}
+
+// ResourceNodeServiceInterface defines the interface for resource node service operations.
+type ResourceNodeServiceInterface interface {
+        GetResourceNodeTypes(ctx context.Context) ([]*resourceNodeV1.ResourceNodeType, error)
+}
+
+// LoggerInterface abstracts logging operations for dependency injection.
+type LoggerInterface interface {
+        Debug(msg string, keysAndValues ...interface{})
+        Info(msg string, keysAndValues ...interface{})
+        Warn(msg string, keysAndValues ...interface{})
+        Error(msg string, keysAndValues ...interface{})
+        With(keysAndValues ...interface{}) LoggerInterface
+}
+
+// Adapter types to implement interfaces for existing services
+
+// CharacterServiceAdapter adapts a character.Service to our interface.
+type CharacterServiceAdapter struct {
+        service *character.Service
+}
+
+func NewCharacterServiceAdapter(service *character.Service) CharacterServiceInterface <span class="cov0" title="0">{
+        return &amp;CharacterServiceAdapter{service: service}
+}</span>
+
+// ResourceNodeServiceAdapter adapts a resource_node.NodeService to our interface.
+type ResourceNodeServiceAdapter struct {
+        service *resource_node.NodeService
+}
+
+func NewResourceNodeServiceAdapter(service *resource_node.NodeService) ResourceNodeServiceInterface <span class="cov0" title="0">{
+        return &amp;ResourceNodeServiceAdapter{service: service}
+}</span>
+
+func (r *ResourceNodeServiceAdapter) GetResourceNodeTypes(ctx context.Context) ([]*resourceNodeV1.ResourceNodeType, error) <span class="cov0" title="0">{
+        return r.service.GetResourceNodeTypes(ctx)
+}</span>
+
+// DefaultLoggerWrapper wraps the internal logging package.
+type DefaultLoggerWrapper struct{}
+
+func NewDefaultLoggerWrapper() LoggerInterface <span class="cov0" title="0">{
+        return &amp;DefaultLoggerWrapper{}
+}</span>
+
+func (l *DefaultLoggerWrapper) Debug(msg string, keysAndValues ...interface{}) {<span class="cov0" title="0">
+        // Implementation uses internal logging package - will be implemented when needed
+}</span>
+
+func (l *DefaultLoggerWrapper) Info(msg string, keysAndValues ...interface{}) {<span class="cov0" title="0">
+        // Implementation uses internal logging package - will be implemented when needed
+}</span>
+
+func (l *DefaultLoggerWrapper) Warn(msg string, keysAndValues ...interface{}) {<span class="cov0" title="0">
+        // Implementation uses internal logging package - will be implemented when needed
+}</span>
+
+func (l *DefaultLoggerWrapper) Error(msg string, keysAndValues ...interface{}) {<span class="cov0" title="0">
+        // Implementation uses internal logging package - will be implemented when needed
+}</span>
+
+func (l *DefaultLoggerWrapper) With(keysAndValues ...interface{}) LoggerInterface <span class="cov0" title="0">{
+        return l
+}</pre>
+		
+		<pre class="file" id="file1" style="display: none">package inventory
+
+import (
+        "context"
+        "encoding/hex"
+        "math/rand"
+
+        "github.com/VoidMesh/api/api/db"
+        inventoryV1 "github.com/VoidMesh/api/api/proto/inventory/v1"
+        resourceNodeV1 "github.com/VoidMesh/api/api/proto/resource_node/v1"
+        "github.com/VoidMesh/api/api/services/character"
+        "github.com/VoidMesh/api/api/services/resource_node"
+        "github.com/jackc/pgx/v5/pgtype"
+        "github.com/jackc/pgx/v5/pgxpool"
+        "google.golang.org/grpc/codes"
+        "google.golang.org/grpc/status"
+        "google.golang.org/protobuf/types/known/timestamppb"
+)
+
+// Service provides inventory management operations.
+type Service struct {
+        db                  DatabaseInterface
+        characterService    CharacterServiceInterface
+        resourceNodeService ResourceNodeServiceInterface
+        logger              LoggerInterface
+}
+
+// NewService creates a new inventory service with dependency injection.
+func NewService(
+        db DatabaseInterface,
+        characterService CharacterServiceInterface,
+        resourceNodeService ResourceNodeServiceInterface,
+        logger LoggerInterface,
+) *Service <span class="cov8" title="1">{
+        componentLogger := logger.With("component", "inventory-service")
+        componentLogger.Debug("Creating new inventory service")
+        return &amp;Service{
+                db:                  db,
+                characterService:    characterService,
+                resourceNodeService: resourceNodeService,
+                logger:              componentLogger,
+        }
+}</span>
+
+// NewServiceWithPool creates a service with concrete implementations (convenience constructor for production use).
+func NewServiceWithPool(
+        pool *pgxpool.Pool,
+        characterService *character.Service,
+        resourceNodeService *resource_node.NodeService,
+) *Service <span class="cov0" title="0">{
+        logger := NewDefaultLoggerWrapper()
+        return NewService(
+                NewDatabaseWrapper(pool),
+                NewCharacterServiceAdapter(characterService),
+                NewResourceNodeServiceAdapter(resourceNodeService),
+                logger,
+        )
+}</span>
+
+// Helper function to convert DB inventory item to proto
+func (s *Service) dbInventoryItemToProto(ctx context.Context, item db.CharacterInventory, includeResourceType bool) (*inventoryV1.InventoryItem, error) <span class="cov8" title="1">{
+        protoItem := &amp;inventoryV1.InventoryItem{
+                Id:                 item.ID,
+                CharacterId:        hex.EncodeToString(item.CharacterID.Bytes[:]),
+                ResourceNodeTypeId: resourceNodeV1.ResourceNodeTypeId(item.ResourceNodeTypeID),
+                Quantity:           item.Quantity,
+        }
+
+        if item.CreatedAt.Valid </span><span class="cov8" title="1">{
+                protoItem.CreatedAt = timestamppb.New(item.CreatedAt.Time)
+        }</span>
+        <span class="cov8" title="1">if item.UpdatedAt.Valid </span><span class="cov8" title="1">{
+                protoItem.UpdatedAt = timestamppb.New(item.UpdatedAt.Time)
+        }</span>
+
+        // Optionally populate resource node type information
+        <span class="cov8" title="1">if includeResourceType </span><span class="cov8" title="1">{
+                resourceTypes, err := s.resourceNodeService.GetResourceNodeTypes(ctx)
+                if err != nil </span><span class="cov8" title="1">{
+                        s.logger.Warn("Failed to get resource node types", "error", err)
+                }</span> else<span class="cov8" title="1"> {
+                        for _, resourceType := range resourceTypes </span><span class="cov8" title="1">{
+                                if resourceType.Id == int32(item.ResourceNodeTypeID) </span><span class="cov8" title="1">{
+                                        protoItem.ResourceNodeType = resourceType
+                                        break</span>
+                                }
+                        }
+                }
+        }
+
+        <span class="cov8" title="1">return protoItem, nil</span>
+}
+
+// GetCharacterInventory retrieves all inventory items for a character
+func (s *Service) GetCharacterInventory(ctx context.Context, characterID string) ([]*inventoryV1.InventoryItem, error) <span class="cov8" title="1">{
+        s.logger.Debug("Getting character inventory", "character_id", characterID)
+
+        // Parse character ID
+        characterUUID, err := hex.DecodeString(characterID)
+        if err != nil </span><span class="cov8" title="1">{
+                return nil, status.Errorf(codes.InvalidArgument, "invalid character ID format")
+        }</span>
+
+        <span class="cov8" title="1">var characterUUIDBytes [16]byte
+        copy(characterUUIDBytes[:], characterUUID)
+
+        dbItems, err := s.db.GetCharacterInventory(ctx, pgtype.UUID{Bytes: characterUUIDBytes, Valid: true})
+        if err != nil </span><span class="cov8" title="1">{
+                s.logger.Error("Failed to get character inventory", "character_id", characterID, "error", err)
+                return nil, status.Errorf(codes.Internal, "failed to retrieve inventory")
+        }</span>
+
+        <span class="cov8" title="1">var items []*inventoryV1.InventoryItem
+        for _, dbItem := range dbItems </span><span class="cov8" title="1">{
+                protoItem, err := s.dbInventoryItemToProto(ctx, dbItem, true)
+                if err != nil </span><span class="cov0" title="0">{
+                        s.logger.Warn("Failed to convert inventory item to proto", "item_id", dbItem.ID, "error", err)
+                        continue</span>
+                }
+                <span class="cov8" title="1">items = append(items, protoItem)</span>
+        }
+
+        <span class="cov8" title="1">s.logger.Debug("Retrieved character inventory", "character_id", characterID, "item_count", len(items))
+        return items, nil</span>
+}
+
+// AddInventoryItem adds or updates an inventory item
+func (s *Service) AddInventoryItem(ctx context.Context, characterID string, resourceNodeTypeID resourceNodeV1.ResourceNodeTypeId, quantity int32) (*inventoryV1.InventoryItem, error) <span class="cov8" title="1">{
+        s.logger.Debug("Adding inventory item", "character_id", characterID, "resource_type", resourceNodeTypeID, "quantity", quantity)
+
+        if quantity &lt;= 0 </span><span class="cov8" title="1">{
+                return nil, status.Errorf(codes.InvalidArgument, "quantity must be positive")
+        }</span>
+
+        // Parse character ID
+        <span class="cov8" title="1">characterUUID, err := hex.DecodeString(characterID)
+        if err != nil </span><span class="cov8" title="1">{
+                return nil, status.Errorf(codes.InvalidArgument, "invalid character ID format")
+        }</span>
+
+        <span class="cov8" title="1">var characterUUIDBytes [16]byte
+        copy(characterUUIDBytes[:], characterUUID)
+
+        // Check if item already exists
+        exists, err := s.db.InventoryItemExists(ctx, db.InventoryItemExistsParams{
+                CharacterID:        pgtype.UUID{Bytes: characterUUIDBytes, Valid: true},
+                ResourceNodeTypeID: int32(resourceNodeTypeID),
+        })
+        if err != nil </span><span class="cov8" title="1">{
+                s.logger.Error("Failed to check inventory item existence", "error", err)
+                return nil, status.Errorf(codes.Internal, "failed to check inventory")
+        }</span>
+
+        <span class="cov8" title="1">var dbItem db.CharacterInventory
+        if exists </span><span class="cov8" title="1">{
+                // Update existing item
+                dbItem, err = s.db.AddInventoryItemQuantity(ctx, db.AddInventoryItemQuantityParams{
+                        CharacterID:        pgtype.UUID{Bytes: characterUUIDBytes, Valid: true},
+                        ResourceNodeTypeID: int32(resourceNodeTypeID),
+                        Quantity:           quantity,
+                })
+        }</span> else<span class="cov8" title="1"> {
+                // Create new item
+                dbItem, err = s.db.CreateInventoryItem(ctx, db.CreateInventoryItemParams{
+                        CharacterID:        pgtype.UUID{Bytes: characterUUIDBytes, Valid: true},
+                        ResourceNodeTypeID: int32(resourceNodeTypeID),
+                        Quantity:           quantity,
+                })
+        }</span>
+
+        <span class="cov8" title="1">if err != nil </span><span class="cov0" title="0">{
+                s.logger.Error("Failed to add inventory item", "error", err)
+                return nil, status.Errorf(codes.Internal, "failed to add inventory item")
+        }</span>
+
+        <span class="cov8" title="1">protoItem, err := s.dbInventoryItemToProto(ctx, dbItem, true)
+        if err != nil </span><span class="cov0" title="0">{
+                s.logger.Error("Failed to convert inventory item to proto", "error", err)
+                return nil, status.Errorf(codes.Internal, "failed to process inventory item")
+        }</span>
+
+        <span class="cov8" title="1">s.logger.Debug("Added inventory item", "character_id", characterID, "resource_type", resourceNodeTypeID, "new_quantity", dbItem.Quantity)
+        return protoItem, nil</span>
+}
+
+// RemoveInventoryItem removes quantity from an inventory item
+func (s *Service) RemoveInventoryItem(ctx context.Context, characterID string, resourceNodeTypeID resourceNodeV1.ResourceNodeTypeId, quantity int32) (*inventoryV1.InventoryItem, error) <span class="cov8" title="1">{
+        s.logger.Debug("Removing inventory item", "character_id", characterID, "resource_type", resourceNodeTypeID, "quantity", quantity)
+
+        if quantity &lt;= 0 </span><span class="cov8" title="1">{
+                return nil, status.Errorf(codes.InvalidArgument, "quantity must be positive")
+        }</span>
+
+        // Parse character ID
+        <span class="cov8" title="1">characterUUID, err := hex.DecodeString(characterID)
+        if err != nil </span><span class="cov8" title="1">{
+                return nil, status.Errorf(codes.InvalidArgument, "invalid character ID format")
+        }</span>
+
+        <span class="cov8" title="1">var characterUUIDBytes [16]byte
+        copy(characterUUIDBytes[:], characterUUID)
+
+        // Try to remove quantity
+        dbItem, err := s.db.RemoveInventoryItemQuantity(ctx, db.RemoveInventoryItemQuantityParams{
+                CharacterID:        pgtype.UUID{Bytes: characterUUIDBytes, Valid: true},
+                ResourceNodeTypeID: int32(resourceNodeTypeID),
+                Quantity:           quantity,
+        })
+        if err != nil </span><span class="cov8" title="1">{
+                s.logger.Error("Failed to remove inventory item quantity", "error", err)
+                return nil, status.Errorf(codes.Internal, "failed to remove inventory item or insufficient quantity")
+        }</span>
+
+        // If quantity is now 0 or less, delete the item
+        <span class="cov8" title="1">if dbItem.Quantity &lt;= 0 </span><span class="cov8" title="1">{
+                err = s.db.DeleteInventoryItem(ctx, db.DeleteInventoryItemParams{
+                        CharacterID:        pgtype.UUID{Bytes: characterUUIDBytes, Valid: true},
+                        ResourceNodeTypeID: int32(resourceNodeTypeID),
+                })
+                if err != nil </span><span class="cov0" title="0">{
+                        s.logger.Warn("Failed to delete empty inventory item", "error", err)
+                }</span>
+                <span class="cov8" title="1">return nil, nil</span> // Item was completely removed
+        }
+
+        <span class="cov8" title="1">protoItem, err := s.dbInventoryItemToProto(ctx, dbItem, true)
+        if err != nil </span><span class="cov0" title="0">{
+                s.logger.Error("Failed to convert inventory item to proto", "error", err)
+                return nil, status.Errorf(codes.Internal, "failed to process inventory item")
+        }</span>
+
+        <span class="cov8" title="1">s.logger.Debug("Removed inventory item quantity", "character_id", characterID, "resource_type", resourceNodeTypeID, "remaining_quantity", dbItem.Quantity)
+        return protoItem, nil</span>
+}
+
+// HarvestResourceNode processes harvesting from a resource node
+func (s *Service) HarvestResourceNode(ctx context.Context, characterID string, resourceNodeID int32) ([]*inventoryV1.HarvestResult, *inventoryV1.InventoryItem, error) <span class="cov8" title="1">{
+        s.logger.Debug("Harvesting resource node", "character_id", characterID, "resource_node_id", resourceNodeID)
+
+        // TODO: Add validation:
+        // 1. Check if character exists and is owned by the requesting user
+        // 2. Check if resource node exists and is within interaction range
+        // 3. Check harvest cooldowns/timers
+        // 4. Validate character position vs resource node position
+
+        // Get resource node information
+        resourceNode, err := s.db.GetResourceNode(ctx, resourceNodeID)
+        if err != nil </span><span class="cov8" title="1">{
+                s.logger.Error("Failed to get resource node", "resource_node_id", resourceNodeID, "error", err)
+                return nil, nil, status.Errorf(codes.NotFound, "resource node not found")
+        }</span>
+
+        // Get resource node type information
+        <span class="cov8" title="1">resourceTypes, err := s.resourceNodeService.GetResourceNodeTypes(ctx)
+        if err != nil </span><span class="cov8" title="1">{
+                s.logger.Error("Failed to get resource node types", "error", err)
+                return nil, nil, status.Errorf(codes.Internal, "failed to get resource information")
+        }</span>
+
+        <span class="cov8" title="1">var resourceType *resourceNodeV1.ResourceNodeType
+        for _, rt := range resourceTypes </span><span class="cov8" title="1">{
+                if rt.Id == resourceNode.ResourceNodeTypeID </span><span class="cov8" title="1">{
+                        resourceType = rt
+                        break</span>
+                }
+        }
+
+        <span class="cov8" title="1">if resourceType == nil </span><span class="cov8" title="1">{
+                return nil, nil, status.Errorf(codes.Internal, "resource node type not found")
+        }</span>
+
+        // Calculate harvest results
+        <span class="cov8" title="1">var harvestResults []*inventoryV1.HarvestResult
+
+        // Primary yield
+        yieldRange := resourceType.Properties.YieldMax - resourceType.Properties.YieldMin + 1
+        primaryYield := resourceType.Properties.YieldMin + rand.Int31n(yieldRange)
+
+        harvestResults = append(harvestResults, &amp;inventoryV1.HarvestResult{
+                ItemName:        resourceType.Name,
+                Quantity:        primaryYield,
+                IsSecondaryDrop: false,
+        })
+
+        // Add primary resources to inventory
+        updatedItem, err := s.AddInventoryItem(ctx, characterID, resourceNodeV1.ResourceNodeTypeId(resourceType.Id), primaryYield)
+        if err != nil </span><span class="cov0" title="0">{
+                s.logger.Error("Failed to add primary harvest to inventory", "error", err)
+                return nil, nil, status.Errorf(codes.Internal, "failed to add harvested resources")
+        }</span>
+
+        // Process secondary drops
+        <span class="cov8" title="1">for _, secondaryDrop := range resourceType.Properties.SecondaryDrops </span><span class="cov8" title="1">{
+                if rand.Float32() &lt; secondaryDrop.Chance </span><span class="cov8" title="1">{
+                        dropRange := secondaryDrop.MaxAmount - secondaryDrop.MinAmount + 1
+                        dropAmount := secondaryDrop.MinAmount + rand.Int31n(dropRange)
+
+                        harvestResults = append(harvestResults, &amp;inventoryV1.HarvestResult{
+                                ItemName:        secondaryDrop.Name,
+                                Quantity:        dropAmount,
+                                IsSecondaryDrop: true,
+                        })
+
+                        // TODO: Map secondary drop names to resource node type IDs
+                        // For now, we're not adding secondary drops to inventory
+                        // This would require a mapping system or separate item types
+                }</span>
+        }
+
+        <span class="cov8" title="1">s.logger.Debug("Completed resource harvest",
+                "character_id", characterID,
+                "resource_node_id", resourceNodeID,
+                "primary_yield", primaryYield,
+                "total_results", len(harvestResults))
+
+        return harvestResults, updatedItem, nil</span>
+}
+</pre>
+		
+		</div>
+	</body>
+	<script>
+	(function() {
+		var files = document.getElementById('files');
+		var visible;
+		files.addEventListener('change', onChange, false);
+		function select(part) {
+			if (visible)
+				visible.style.display = 'none';
+			visible = document.getElementById(part);
+			if (!visible)
+				return;
+			files.value = part;
+			visible.style.display = 'block';
+			location.hash = part;
+		}
+		function onChange() {
+			select(files.value);
+			window.scrollTo(0, 0);
+		}
+		if (location.hash != "") {
+			select(location.hash.substr(1));
+		}
+		if (!visible) {
+			select("file0");
+		}
+	})();
+	</script>
+</html>

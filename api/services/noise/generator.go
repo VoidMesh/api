@@ -4,12 +4,22 @@ import (
 	"github.com/aquilax/go-perlin"
 )
 
+// GeneratorInterface defines the interface for noise generation operations.
+// This enables dependency injection and makes services easily testable.
+type GeneratorInterface interface {
+	GetNoise(x, y float64) float64
+	GetTerrainNoise(x, y int, scale float64) float64
+	GetSeed() int64
+}
+
+// Generator implements the GeneratorInterface using Perlin noise.
 type Generator struct {
 	noise *perlin.Perlin
 	seed  int64
 }
 
-func NewGenerator(seed int64) *Generator {
+// NewGenerator creates a new noise generator with the given seed.
+func NewGenerator(seed int64) GeneratorInterface {
 	// Create perlin noise with alpha=2, beta=2, n=3
 	// These values give good terrain-like noise
 	return &Generator{

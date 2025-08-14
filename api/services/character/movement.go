@@ -36,7 +36,7 @@ func (s *Service) MoveCharacter(ctx context.Context, req *characterV1.MoveCharac
 		return nil, status.Errorf(codes.InvalidArgument, "invalid character ID: %v", err)
 	}
 
-	character, err := db.New(s.db).GetCharacterById(ctx, charUUID)
+	character, err := s.db.GetCharacterById(ctx, charUUID)
 	if err != nil {
 		logger.Warn("Character not found for movement", "error", err)
 		return nil, status.Errorf(codes.NotFound, "character not found: %v", err)
@@ -99,7 +99,7 @@ func (s *Service) MoveCharacter(ctx context.Context, req *characterV1.MoveCharac
 
 	// Update character position
 	loggerWithChar.Debug("Updating character position in database")
-	updatedCharacter, err := db.New(s.db).UpdateCharacterPosition(ctx, db.UpdateCharacterPositionParams{
+	updatedCharacter, err := s.db.UpdateCharacterPosition(ctx, db.UpdateCharacterPositionParams{
 		ID:     charUUID,
 		X:      req.NewX,
 		Y:      req.NewY,

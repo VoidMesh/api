@@ -25,7 +25,7 @@ type ResourceNodeGeneratorIntegration struct {
 
 // NewResourceNodeGeneratorIntegration creates a new resource generator integration
 func NewResourceNodeGeneratorIntegration(db *pgxpool.Pool, noiseGen *noise.Generator, worldService *world.Service) *ResourceNodeGeneratorIntegration {
-	resourceNodeService := resource_node.NewNodeService(db, noiseGen, worldService)
+	resourceNodeService := resource_node.NewNodeServiceWithPool(db, noiseGen, worldService)
 
 	logger := log.NewWithOptions(os.Stderr, log.Options{
 		ReportCaller:    false,
@@ -109,19 +109,19 @@ func (rgi *ResourceNodeGeneratorIntegration) AttachResourceNodesToChunks(ctx con
 	// Pre-allocate arrays and maps to reduce allocations
 	chunkCount := len(chunks)
 	rgi.logger.Debug("Attaching resource nodes to chunks", "chunk_count", chunkCount)
-	
+
 	// Build chunk map for lookups
 	chunkMap := make(map[string]*chunkV1.ChunkData, chunkCount)
-	
+
 	// Track min/max coordinates to determine if we should use range query
 	var minX, maxX, minY, maxY int32
-	
+
 	// Initialize with first chunk's coordinates
 	if len(chunks) > 0 {
 		minX, maxX = chunks[0].ChunkX, chunks[0].ChunkX
 		minY, maxY = chunks[0].ChunkY, chunks[0].ChunkY
 	}
-	
+
 	// Build chunk map and find min/max coordinates
 	for _, chunk := range chunks {
 		// Update min/max coordinates
@@ -137,7 +137,7 @@ func (rgi *ResourceNodeGeneratorIntegration) AttachResourceNodesToChunks(ctx con
 		if chunk.ChunkY > maxY {
 			maxY = chunk.ChunkY
 		}
-		
+
 		// Use a more efficient key generation
 		key := coordKey(chunk.ChunkX, chunk.ChunkY)
 		chunkMap[key] = chunk
@@ -147,22 +147,22 @@ func (rgi *ResourceNodeGeneratorIntegration) AttachResourceNodesToChunks(ctx con
 	width := maxX - minX + 1
 	height := maxY - minY + 1
 	area := width * height
-	
+
 	// Determine if we should use range query or batch query
 	// Use range query if:
 	// 1. There are more than 10 chunks OR
 	// 2. The chunks form a compact area (more than 75% of the bounding box is filled)
 	useRangeQuery := len(chunks) > 10 || (area > 0 && float32(len(chunks))/float32(area) > 0.75)
-	
+
 	var resources []*resourceNodeV1.ResourceNode
 	var err error
-	
+
 	if useRangeQuery {
 		// Use range query for efficiency with many chunks
-		rgi.logger.Debug("Using range query for resource nodes", 
+		rgi.logger.Debug("Using range query for resource nodes",
 			"chunk_count", len(chunks),
 			"bounds", fmt.Sprintf("%d,%d to %d,%d", minX, minY, maxX, maxY))
-			
+
 		resources, err = rgi.resourceNodeService.GetResourcesInChunkRange(ctx, minX, maxX, minY, maxY)
 		if err != nil {
 			rgi.logger.Error("Failed to get resource nodes in chunk range", "error", err)
@@ -178,10 +178,10 @@ func (rgi *ResourceNodeGeneratorIntegration) AttachResourceNodesToChunks(ctx con
 				ChunkY: chunk.ChunkY,
 			}
 		}
-		
+
 		// Process chunks in batches of 5 (limitation of our SQL query)
 		for i := 0; i < len(coordinates); i += 5 {
-			end := min(i + 5, len(coordinates))
+			end := min(i+5, len(coordinates))
 
 			batch := coordinates[i:end]
 
@@ -191,7 +191,7 @@ func (rgi *ResourceNodeGeneratorIntegration) AttachResourceNodesToChunks(ctx con
 				rgi.logger.Error("Failed to get resource nodes for chunk batch", "error", err)
 				return err
 			}
-			
+
 			// Append batch results to overall resources
 			resources = append(resources, batchResources...)
 		}
@@ -221,15 +221,15 @@ func (rgi *ResourceNodeGeneratorIntegration) AttachResourceNodesToChunks(ctx con
 func coordKey(x, y int32) string {
 	// Use a simple string builder to avoid allocation and formatting overhead
 	var sb strings.Builder
-	
+
 	// Pre-allocate enough space for most coordinate strings
 	sb.Grow(16)
-	
+
 	// Convert and concatenate directly
 	sb.WriteString(strconv.FormatInt(int64(x), 10))
 	sb.WriteByte(':')
 	sb.WriteString(strconv.FormatInt(int64(y), 10))
-	
+
 	return sb.String()
 }
 

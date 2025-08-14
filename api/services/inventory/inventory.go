@@ -6,12 +6,10 @@ import (
 	"math/rand"
 
 	"github.com/VoidMesh/api/api/db"
-	"github.com/VoidMesh/api/api/internal/logging"
 	inventoryV1 "github.com/VoidMesh/api/api/proto/inventory/v1"
 	resourceNodeV1 "github.com/VoidMesh/api/api/proto/resource_node/v1"
 	"github.com/VoidMesh/api/api/services/character"
 	"github.com/VoidMesh/api/api/services/resource_node"
-	"github.com/charmbracelet/log"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"google.golang.org/grpc/codes"
@@ -19,30 +17,52 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
+// Service provides inventory management operations.
 type Service struct {
-	db                  *pgxpool.Pool
-	characterService    *character.Service
-	resourceNodeService *resource_node.NodeService
-	logger              *log.Logger
+	db                  DatabaseInterface
+	characterService    CharacterServiceInterface
+	resourceNodeService ResourceNodeServiceInterface
+	logger              LoggerInterface
 }
 
-func NewService(db *pgxpool.Pool, characterService *character.Service, resourceNodeService *resource_node.NodeService) *Service {
-	logger := logging.GetLogger()
-	logger.Debug("Creating new inventory service")
+// NewService creates a new inventory service with dependency injection.
+func NewService(
+	db DatabaseInterface,
+	characterService CharacterServiceInterface,
+	resourceNodeService ResourceNodeServiceInterface,
+	logger LoggerInterface,
+) *Service {
+	componentLogger := logger.With("component", "inventory-service")
+	componentLogger.Debug("Creating new inventory service")
 	return &Service{
 		db:                  db,
 		characterService:    characterService,
 		resourceNodeService: resourceNodeService,
-		logger:              logger,
+		logger:              componentLogger,
 	}
+}
+
+// NewServiceWithPool creates a service with concrete implementations (convenience constructor for production use).
+func NewServiceWithPool(
+	pool *pgxpool.Pool,
+	characterService *character.Service,
+	resourceNodeService *resource_node.NodeService,
+) *Service {
+	logger := NewDefaultLoggerWrapper()
+	return NewService(
+		NewDatabaseWrapper(pool),
+		NewCharacterServiceAdapter(characterService),
+		NewResourceNodeServiceAdapter(resourceNodeService),
+		logger,
+	)
 }
 
 // Helper function to convert DB inventory item to proto
 func (s *Service) dbInventoryItemToProto(ctx context.Context, item db.CharacterInventory, includeResourceType bool) (*inventoryV1.InventoryItem, error) {
 	protoItem := &inventoryV1.InventoryItem{
-		Id:                  item.ID,
-		CharacterId:         hex.EncodeToString(item.CharacterID.Bytes[:]),
-		ResourceNodeTypeId:  resourceNodeV1.ResourceNodeTypeId(item.ResourceNodeTypeID),
+		Id:                 item.ID,
+		CharacterId:        hex.EncodeToString(item.CharacterID.Bytes[:]),
+		ResourceNodeTypeId: resourceNodeV1.ResourceNodeTypeId(item.ResourceNodeTypeID),
 		Quantity:           item.Quantity,
 	}
 
@@ -84,8 +104,7 @@ func (s *Service) GetCharacterInventory(ctx context.Context, characterID string)
 	var characterUUIDBytes [16]byte
 	copy(characterUUIDBytes[:], characterUUID)
 
-	queries := db.New(s.db)
-	dbItems, err := queries.GetCharacterInventory(ctx, pgtype.UUID{Bytes: characterUUIDBytes, Valid: true})
+	dbItems, err := s.db.GetCharacterInventory(ctx, pgtype.UUID{Bytes: characterUUIDBytes, Valid: true})
 	if err != nil {
 		s.logger.Error("Failed to get character inventory", "character_id", characterID, "error", err)
 		return nil, status.Errorf(codes.Internal, "failed to retrieve inventory")
@@ -122,11 +141,9 @@ func (s *Service) AddInventoryItem(ctx context.Context, characterID string, reso
 	var characterUUIDBytes [16]byte
 	copy(characterUUIDBytes[:], characterUUID)
 
-	queries := db.New(s.db)
-
 	// Check if item already exists
-	exists, err := queries.InventoryItemExists(ctx, db.InventoryItemExistsParams{
-		CharacterID:         pgtype.UUID{Bytes: characterUUIDBytes, Valid: true},
+	exists, err := s.db.InventoryItemExists(ctx, db.InventoryItemExistsParams{
+		CharacterID:        pgtype.UUID{Bytes: characterUUIDBytes, Valid: true},
 		ResourceNodeTypeID: int32(resourceNodeTypeID),
 	})
 	if err != nil {
@@ -137,15 +154,15 @@ func (s *Service) AddInventoryItem(ctx context.Context, characterID string, reso
 	var dbItem db.CharacterInventory
 	if exists {
 		// Update existing item
-		dbItem, err = queries.AddInventoryItemQuantity(ctx, db.AddInventoryItemQuantityParams{
-			CharacterID:         pgtype.UUID{Bytes: characterUUIDBytes, Valid: true},
+		dbItem, err = s.db.AddInventoryItemQuantity(ctx, db.AddInventoryItemQuantityParams{
+			CharacterID:        pgtype.UUID{Bytes: characterUUIDBytes, Valid: true},
 			ResourceNodeTypeID: int32(resourceNodeTypeID),
 			Quantity:           quantity,
 		})
 	} else {
 		// Create new item
-		dbItem, err = queries.CreateInventoryItem(ctx, db.CreateInventoryItemParams{
-			CharacterID:         pgtype.UUID{Bytes: characterUUIDBytes, Valid: true},
+		dbItem, err = s.db.CreateInventoryItem(ctx, db.CreateInventoryItemParams{
+			CharacterID:        pgtype.UUID{Bytes: characterUUIDBytes, Valid: true},
 			ResourceNodeTypeID: int32(resourceNodeTypeID),
 			Quantity:           quantity,
 		})
@@ -183,15 +200,12 @@ func (s *Service) RemoveInventoryItem(ctx context.Context, characterID string, r
 	var characterUUIDBytes [16]byte
 	copy(characterUUIDBytes[:], characterUUID)
 
-	queries := db.New(s.db)
-
 	// Try to remove quantity
-	dbItem, err := queries.RemoveInventoryItemQuantity(ctx, db.RemoveInventoryItemQuantityParams{
-		CharacterID:         pgtype.UUID{Bytes: characterUUIDBytes, Valid: true},
+	dbItem, err := s.db.RemoveInventoryItemQuantity(ctx, db.RemoveInventoryItemQuantityParams{
+		CharacterID:        pgtype.UUID{Bytes: characterUUIDBytes, Valid: true},
 		ResourceNodeTypeID: int32(resourceNodeTypeID),
 		Quantity:           quantity,
 	})
-
 	if err != nil {
 		s.logger.Error("Failed to remove inventory item quantity", "error", err)
 		return nil, status.Errorf(codes.Internal, "failed to remove inventory item or insufficient quantity")
@@ -199,8 +213,8 @@ func (s *Service) RemoveInventoryItem(ctx context.Context, characterID string, r
 
 	// If quantity is now 0 or less, delete the item
 	if dbItem.Quantity <= 0 {
-		err = queries.DeleteInventoryItem(ctx, db.DeleteInventoryItemParams{
-			CharacterID:         pgtype.UUID{Bytes: characterUUIDBytes, Valid: true},
+		err = s.db.DeleteInventoryItem(ctx, db.DeleteInventoryItemParams{
+			CharacterID:        pgtype.UUID{Bytes: characterUUIDBytes, Valid: true},
 			ResourceNodeTypeID: int32(resourceNodeTypeID),
 		})
 		if err != nil {
@@ -229,10 +243,8 @@ func (s *Service) HarvestResourceNode(ctx context.Context, characterID string, r
 	// 3. Check harvest cooldowns/timers
 	// 4. Validate character position vs resource node position
 
-	queries := db.New(s.db)
-	
 	// Get resource node information
-	resourceNode, err := queries.GetResourceNode(ctx, resourceNodeID)
+	resourceNode, err := s.db.GetResourceNode(ctx, resourceNodeID)
 	if err != nil {
 		s.logger.Error("Failed to get resource node", "resource_node_id", resourceNodeID, "error", err)
 		return nil, nil, status.Errorf(codes.NotFound, "resource node not found")
@@ -259,11 +271,11 @@ func (s *Service) HarvestResourceNode(ctx context.Context, characterID string, r
 
 	// Calculate harvest results
 	var harvestResults []*inventoryV1.HarvestResult
-	
+
 	// Primary yield
 	yieldRange := resourceType.Properties.YieldMax - resourceType.Properties.YieldMin + 1
 	primaryYield := resourceType.Properties.YieldMin + rand.Int31n(yieldRange)
-	
+
 	harvestResults = append(harvestResults, &inventoryV1.HarvestResult{
 		ItemName:        resourceType.Name,
 		Quantity:        primaryYield,
@@ -282,7 +294,7 @@ func (s *Service) HarvestResourceNode(ctx context.Context, characterID string, r
 		if rand.Float32() < secondaryDrop.Chance {
 			dropRange := secondaryDrop.MaxAmount - secondaryDrop.MinAmount + 1
 			dropAmount := secondaryDrop.MinAmount + rand.Int31n(dropRange)
-			
+
 			harvestResults = append(harvestResults, &inventoryV1.HarvestResult{
 				ItemName:        secondaryDrop.Name,
 				Quantity:        dropAmount,
@@ -295,9 +307,9 @@ func (s *Service) HarvestResourceNode(ctx context.Context, characterID string, r
 		}
 	}
 
-	s.logger.Debug("Completed resource harvest", 
-		"character_id", characterID, 
-		"resource_node_id", resourceNodeID, 
+	s.logger.Debug("Completed resource harvest",
+		"character_id", characterID,
+		"resource_node_id", resourceNodeID,
 		"primary_yield", primaryYield,
 		"total_results", len(harvestResults))
 

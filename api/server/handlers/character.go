@@ -7,10 +7,6 @@ import (
 	"github.com/VoidMesh/api/api/internal/logging"
 	characterV1 "github.com/VoidMesh/api/api/proto/character/v1"
 	"github.com/VoidMesh/api/api/server/middleware"
-	"github.com/VoidMesh/api/api/services/character"
-	"github.com/VoidMesh/api/api/services/chunk"
-	"github.com/VoidMesh/api/api/services/noise"
-	"github.com/VoidMesh/api/api/services/world"
 	"github.com/charmbracelet/log"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"google.golang.org/grpc/codes"
@@ -19,37 +15,35 @@ import (
 
 type characterServiceServer struct {
 	characterV1.UnimplementedCharacterServiceServer
-	service *character.Service
-	logger  *log.Logger
+	characterService CharacterService
+	logger           *log.Logger
 }
 
-func NewCharacterServer(db *pgxpool.Pool) characterV1.CharacterServiceServer {
+func NewCharacterServer(
+	characterService CharacterService,
+) characterV1.CharacterServiceServer {
 	logger := logging.WithComponent("character-handler")
 	logger.Debug("Creating new CharacterService server instance")
-
-	// Create world service first
-	worldService := world.NewService(db, logger)
-
-	// Get default world or create if it doesn't exist
-	defaultWorld, err := worldService.GetDefaultWorld(context.Background())
-	if err != nil {
-		logger.Error("Failed to get default world", "error", err)
-		return nil
-	}
-
-	// Create chunk service with noise generator
-	logger.Debug("Initializing chunk service", "world_seed", defaultWorld.Seed)
-	noiseGen := noise.NewGenerator(defaultWorld.Seed)
-	chunkService := chunk.NewService(db, worldService, noiseGen)
-
-	// Create character service
-	logger.Debug("Initializing character service")
-	characterService := character.NewService(db, chunkService)
-
 	return &characterServiceServer{
-		service: characterService,
-		logger:  logger,
+		characterService: characterService,
+		logger:           logger,
 	}
+}
+
+// NewCharacterServerWithPool creates a character server with all dependencies wired up
+// This function maintains backward compatibility while providing dependency injection
+func NewCharacterServerWithPool(dbPool *pgxpool.Pool) (characterV1.CharacterServiceServer, error) {
+	logger := logging.WithComponent("character-handler")
+	logger.Debug("Creating CharacterService server with dependency injection")
+
+	// Create character service with all dependencies
+	characterService, err := NewCharacterServiceWithPool(dbPool)
+	if err != nil {
+		logger.Error("Failed to create character service", "error", err)
+		return nil, err
+	}
+
+	return NewCharacterServer(characterService), nil
 }
 
 // CreateCharacter creates a new character
@@ -64,7 +58,7 @@ func (s *characterServiceServer) CreateCharacter(ctx context.Context, req *chara
 	logger.Debug("Creating new character")
 
 	start := time.Now()
-	resp, err := s.service.CreateCharacter(ctx, userID, req)
+	resp, err := s.characterService.CreateCharacter(ctx, userID, req)
 	duration := time.Since(start)
 
 	if err != nil {
@@ -82,7 +76,7 @@ func (s *characterServiceServer) GetCharacter(ctx context.Context, req *characte
 	logger.Debug("Retrieving character")
 
 	start := time.Now()
-	resp, err := s.service.GetCharacter(ctx, req)
+	resp, err := s.characterService.GetCharacter(ctx, req)
 	duration := time.Since(start)
 
 	if err != nil {
@@ -106,7 +100,7 @@ func (s *characterServiceServer) GetMyCharacters(ctx context.Context, req *chara
 	logger.Debug("Received GetMyCharacters request")
 
 	start := time.Now()
-	resp, err := s.service.GetUserCharacters(ctx, userID)
+	resp, err := s.characterService.GetUserCharacters(ctx, userID)
 	duration := time.Since(start)
 
 	if err != nil {
@@ -124,7 +118,7 @@ func (s *characterServiceServer) DeleteCharacter(ctx context.Context, req *chara
 	logger.Debug("Received DeleteCharacter request")
 
 	start := time.Now()
-	resp, err := s.service.DeleteCharacter(ctx, req)
+	resp, err := s.characterService.DeleteCharacter(ctx, req)
 	duration := time.Since(start)
 
 	if err != nil {
@@ -142,7 +136,7 @@ func (s *characterServiceServer) MoveCharacter(ctx context.Context, req *charact
 	logger.Debug("Processing character movement request")
 
 	start := time.Now()
-	resp, err := s.service.MoveCharacter(ctx, req)
+	resp, err := s.characterService.MoveCharacter(ctx, req)
 	duration := time.Since(start)
 
 	if err != nil {

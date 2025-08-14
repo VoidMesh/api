@@ -17,13 +17,18 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
+// ChunkServiceInterface defines the interface for chunk service operations
+type ChunkServiceInterface interface {
+	GetOrCreateChunk(ctx context.Context, chunkX, chunkY int32) (*chunkV1.ChunkData, error)
+}
+
 type Service struct {
-	db           *pgxpool.Pool
-	chunkService *chunk.Service
+	db           DatabaseInterface
+	chunkService ChunkServiceInterface
 	chunkSize    int32
 }
 
-func NewService(db *pgxpool.Pool, chunkService *chunk.Service) *Service {
+func NewService(db DatabaseInterface, chunkService ChunkServiceInterface) *Service {
 	logger := logging.GetLogger()
 	logger.Debug("Creating new character service", "chunk_size", chunk.ChunkSize)
 	return &Service{
@@ -31,6 +36,11 @@ func NewService(db *pgxpool.Pool, chunkService *chunk.Service) *Service {
 		chunkService: chunkService,
 		chunkSize:    chunk.ChunkSize,
 	}
+}
+
+// NewServiceWithPool creates a service with a database pool (convenience constructor for production use)
+func NewServiceWithPool(pool *pgxpool.Pool, chunkService ChunkServiceInterface) *Service {
+	return NewService(NewDatabaseWrapper(pool), chunkService)
 }
 
 // Helper function to convert DB character to proto character
@@ -145,7 +155,7 @@ func (s *Service) CreateCharacter(ctx context.Context, userID string, req *chara
 	chunkX, chunkY := s.worldToChunkCoords(spawnX, spawnY)
 
 	logger.Debug("Creating character record in database")
-	character, err := db.New(s.db).CreateCharacter(ctx, db.CreateCharacterParams{
+	character, err := s.db.CreateCharacter(ctx, db.CreateCharacterParams{
 		UserID: userUUID,
 		Name:   req.Name,
 		X:      spawnX,
@@ -206,7 +216,7 @@ func (s *Service) GetCharacter(ctx context.Context, req *characterV1.GetCharacte
 		return nil, status.Errorf(codes.InvalidArgument, "invalid character ID: %v", err)
 	}
 
-	character, err := db.New(s.db).GetCharacterById(ctx, charUUID)
+	character, err := s.db.GetCharacterById(ctx, charUUID)
 	if err != nil {
 		return nil, status.Errorf(codes.NotFound, "character not found: %v", err)
 	}
@@ -223,7 +233,7 @@ func (s *Service) GetUserCharacters(ctx context.Context, userID string) (*charac
 		return nil, status.Errorf(codes.InvalidArgument, "invalid user ID: %v", err)
 	}
 
-	characters, err := db.New(s.db).GetCharactersByUser(ctx, userUUID)
+	characters, err := s.db.GetCharactersByUser(ctx, userUUID)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to get characters: %v", err)
 	}
@@ -245,7 +255,7 @@ func (s *Service) DeleteCharacter(ctx context.Context, req *characterV1.DeleteCh
 		return nil, status.Errorf(codes.InvalidArgument, "invalid character ID: %v", err)
 	}
 
-	err = db.New(s.db).DeleteCharacter(ctx, charUUID)
+	err = s.db.DeleteCharacter(ctx, charUUID)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to delete character: %v", err)
 	}

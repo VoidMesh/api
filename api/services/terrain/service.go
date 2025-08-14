@@ -2,28 +2,70 @@ package terrain
 
 import (
 	"context"
-	"os"
 
 	terrainV1 "github.com/VoidMesh/api/api/proto/terrain/v1"
-	"github.com/charmbracelet/log"
+	"github.com/VoidMesh/api/api/internal/logging"
 )
+
+// LoggerInterface abstracts logging operations for dependency injection.
+type LoggerInterface interface {
+	Debug(msg string, keysAndValues ...interface{})
+	Info(msg string, keysAndValues ...interface{})
+	Warn(msg string, keysAndValues ...interface{})
+	Error(msg string, keysAndValues ...interface{})
+	With(keysAndValues ...interface{}) LoggerInterface
+}
+
+// DefaultLoggerWrapper wraps the internal logging package.
+type DefaultLoggerWrapper struct{}
+
+// NewDefaultLoggerWrapper creates a new default logger wrapper.
+func NewDefaultLoggerWrapper() LoggerInterface {
+	return &DefaultLoggerWrapper{}
+}
+
+func (l *DefaultLoggerWrapper) Debug(msg string, keysAndValues ...interface{}) {
+	logger := logging.GetLogger()
+	logger.Debug(msg, keysAndValues...)
+}
+
+func (l *DefaultLoggerWrapper) Info(msg string, keysAndValues ...interface{}) {
+	logger := logging.GetLogger()
+	logger.Info(msg, keysAndValues...)
+}
+
+func (l *DefaultLoggerWrapper) Warn(msg string, keysAndValues ...interface{}) {
+	logger := logging.GetLogger()
+	logger.Warn(msg, keysAndValues...)
+}
+
+func (l *DefaultLoggerWrapper) Error(msg string, keysAndValues ...interface{}) {
+	logger := logging.GetLogger()
+	logger.Error(msg, keysAndValues...)
+}
+
+func (l *DefaultLoggerWrapper) With(keysAndValues ...interface{}) LoggerInterface {
+	// For now, return self for simplicity
+	return l
+}
 
 // Service provides terrain information and operations
 type Service struct {
-	logger *log.Logger
+	logger LoggerInterface
 }
 
-// NewService creates a new terrain service
-func NewService() *Service {
-	logger := log.NewWithOptions(os.Stderr, log.Options{
-		ReportCaller:    false,
-		ReportTimestamp: true,
-		Prefix:          "terrain-service",
-	})
-
+// NewService creates a new terrain service with dependency injection.
+func NewService(logger LoggerInterface) *Service {
+	componentLogger := logger.With("component", "terrain-service")
+	componentLogger.Debug("Creating new terrain service")
 	return &Service{
-		logger: logger,
+		logger: componentLogger,
 	}
+}
+
+// NewServiceWithDefaultLogger creates a service with the default logger (convenience constructor for production use).
+func NewServiceWithDefaultLogger() *Service {
+	return NewService(NewDefaultLoggerWrapper())
 }
 
 // GetTerrainTypes returns all available terrain types with their properties

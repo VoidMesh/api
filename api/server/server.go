@@ -92,8 +92,9 @@ func Serve() {
 	}
 	logger.Info("Database connection pool created successfully", "duration", connectionDuration)
 
-	// Create world service
-	worldService := world.NewService(dbPool, logger)
+	// Create world service using new constructor
+	worldLogger := world.NewDefaultLoggerWrapper()
+	worldService := world.NewServiceWithPool(dbPool, worldLogger)
 
 	// Get default world or create if it doesn't exist
 	defaultWorld, err := worldService.GetDefaultWorld(ctx)
@@ -110,23 +111,33 @@ func Serve() {
 	logger.Debug("Registering gRPC service handlers")
 
 	logger.Debug("Registering UserService")
-	pbUserV1.RegisterUserServiceServer(g, handlers.NewUserServer(dbPool))
+	userServer, err := handlers.NewUserServerWithPool(dbPool)
+	if err != nil {
+		logger.Fatal("Failed to create user server", "error", err)
+	}
+	pbUserV1.RegisterUserServiceServer(g, userServer)
 
 	logger.Debug("Registering WorldService")
 	pbWorldV1.RegisterWorldServiceServer(g, handlers.NewWorldHandler(worldService))
 
 	logger.Debug("Registering CharacterService")
-	pbCharacterV1.RegisterCharacterServiceServer(g, handlers.NewCharacterServer(dbPool))
+	characterServer, err := handlers.NewCharacterServerWithPool(dbPool)
+	if err != nil {
+		logger.Fatal("Failed to create character server", "error", err)
+		return
+	}
+	pbCharacterV1.RegisterCharacterServiceServer(g, characterServer)
 
 	logger.Debug("Registering TerrainService")
-	pbTerrainV1.RegisterTerrainServiceServer(g, handlers.NewTerrainHandler(terrain.NewService()))
+	terrainLogger := terrain.NewDefaultLoggerWrapper()
+	pbTerrainV1.RegisterTerrainServiceServer(g, handlers.NewTerrainHandler(terrain.NewService(terrainLogger)))
 
 	logger.Debug("Registering ResourceNodeService")
-	resourceNodeService := resource_node.NewNodeService(dbPool, noiseGen, worldService)
+	resourceNodeService := resource_node.NewNodeServiceWithPool(dbPool, noiseGen.(*noise.Generator), worldService)
 	pbResourceNodeV1.RegisterResourceNodeServiceServer(g, handlers.NewResourceNodeHandler(resourceNodeService, worldService))
 
 	logger.Debug("Registering ChunkService")
-	pbChunkV1.RegisterChunkServiceServer(g, handlers.NewChunkServer(dbPool, worldService, noiseGen))
+	pbChunkV1.RegisterChunkServiceServer(g, handlers.NewChunkServer(dbPool, worldService, noiseGen.(*noise.Generator)))
 
 	logger.Info("All gRPC services registered successfully")
 

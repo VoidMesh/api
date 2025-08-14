@@ -1,0 +1,70 @@
+version: '3.8'
+
+services:
+  test-db:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: meower_test
+      POSTGRES_USER: meower
+      POSTGRES_PASSWORD: meower
+      POSTGRES_HOST_AUTH_METHOD: trust
+    ports:
+      - "5433:5432"  # Use different port to avoid conflicts with dev DB
+    volumes:
+      - test_postgres_data:/var/lib/postgresql/data
+      - ./db/migrations/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql
+    command: >
+      postgres
+      -c shared_preload_libraries=pg_stat_statements
+      -c pg_stat_statements.max=10000
+      -c pg_stat_statements.track=all
+      -c max_connections=100
+      -c shared_buffers=256MB
+      -c effective_cache_size=1GB
+      -c maintenance_work_mem=64MB
+      -c checkpoint_completion_target=0.9
+      -c wal_buffers=16MB
+      -c default_statistics_target=100
+      -c random_page_cost=1.1
+      -c effective_io_concurrency=200
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U meower -d meower_test"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  # Alternative test database for isolated testing
+  test-db-isolated:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: meower_test_isolated
+      POSTGRES_USER: meower
+      POSTGRES_PASSWORD: meower
+      POSTGRES_HOST_AUTH_METHOD: trust
+    ports:
+      - "5434:5432"
+    tmpfs:
+      - /var/lib/postgresql/data:noexec,nosuid,size=256m
+    command: >
+      postgres
+      -c fsync=off
+      -c synchronous_commit=off
+      -c checkpoint_segments=32
+      -c checkpoint_completion_target=0.9
+      -c wal_buffers=16MB
+      -c shared_buffers=256MB
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U meower -d meower_test_isolated"]
+      interval: 5s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+
+volumes:
+  test_postgres_data:
+    driver: local
+
+networks:
+  default:
+    name: voidmesh-test-network

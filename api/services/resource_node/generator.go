@@ -6,7 +6,6 @@ import (
 	"encoding/hex"
 	"fmt"
 	"math/rand"
-	"os"
 	"strings"
 	"time"
 
@@ -15,8 +14,6 @@ import (
 	resourceNodeV1 "github.com/VoidMesh/api/api/proto/resource_node/v1"
 	"github.com/VoidMesh/api/api/services/noise"
 	"github.com/VoidMesh/api/api/services/world"
-	"github.com/charmbracelet/log"
-	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -81,61 +78,71 @@ var ClusterSizes = map[string]map[int]int{
 
 // NodeService provides resource node generation functionality
 type NodeService struct {
-	db                       *pgxpool.Pool
-	noiseGen                 *noise.Generator
-	worldService             *world.Service
-	defaultWorldID           pgtype.UUID
-	rnd                      *rand.Rand
-	logger                   *log.Logger
+	db             DatabaseInterface
+	noiseGen       NoiseGeneratorInterface
+	worldService   WorldServiceInterface
+	rnd            RandomGeneratorInterface
+	logger         LoggerInterface
 	// Cache of hardcoded resource types to avoid rebuilding on each request
-	resourceTypes            []*resourceNodeV1.ResourceNodeType
+	resourceTypes []*resourceNodeV1.ResourceNodeType
 	// Map of resource types by terrain for faster lookups
-	resourceTypesByTerrain   map[string][]*resourceNodeV1.ResourceNodeType
+	resourceTypesByTerrain map[string][]*resourceNodeV1.ResourceNodeType
 	// Map of resource types by ID for faster lookups
-	resourceTypesByID        map[int32]*resourceNodeV1.ResourceNodeType
+	resourceTypesByID map[int32]*resourceNodeV1.ResourceNodeType
 }
 
-// NewNodeService creates a new resource node service
-func NewNodeService(db *pgxpool.Pool, noiseGen *noise.Generator, worldService *world.Service) *NodeService {
-	// Create a deterministic random source based on the noise generator's seed
-	source := rand.NewSource(noiseGen.GetSeed())
-
-	// Create logger
-	logger := log.NewWithOptions(os.Stderr, log.Options{
-		ReportCaller:    false,
-		ReportTimestamp: true,
-		Prefix:          "resource-node-service",
-	})
-
-	// Get default world
-	defaultWorld, err := worldService.GetDefaultWorld(context.Background())
-	if err != nil {
-		logger.Error("Failed to get default world, using empty UUID", "error", err)
-	}
+// NewNodeService creates a new resource node service with dependency injection.
+func NewNodeService(
+	db DatabaseInterface,
+	noiseGen NoiseGeneratorInterface,
+	worldService WorldServiceInterface,
+	rnd RandomGeneratorInterface,
+	logger LoggerInterface,
+) *NodeService {
+	componentLogger := logger.With("component", "resource-node-service")
+	componentLogger.Debug("Creating new resource node service")
 
 	// Initialize resource type caches
 	service := &NodeService{
 		db:                     db,
 		noiseGen:               noiseGen,
 		worldService:           worldService,
-		defaultWorldID:         defaultWorld.ID,
-		rnd:                    rand.New(source),
-		logger:                 logger,
+		rnd:                    rnd,
+		logger:                 componentLogger,
 		resourceTypesByTerrain: make(map[string][]*resourceNodeV1.ResourceNodeType),
 		resourceTypesByID:      make(map[int32]*resourceNodeV1.ResourceNodeType),
 	}
-	
+
 	// Preload resource types
 	service.resourceTypes = service.getHardcodedResourceTypes()
-	
+
 	// Group resource types by terrain for faster lookup
 	for _, r := range service.resourceTypes {
 		terrainType := r.TerrainType
 		service.resourceTypesByTerrain[terrainType] = append(service.resourceTypesByTerrain[terrainType], r)
 		service.resourceTypesByID[r.Id] = r
 	}
-	
+
 	return service
+}
+
+// NewNodeServiceWithPool creates a service with concrete implementations (convenience constructor for production use).
+func NewNodeServiceWithPool(
+	pool *pgxpool.Pool,
+	noiseGen *noise.Generator,
+	worldService *world.Service,
+) *NodeService {
+	// Create a deterministic random source based on the noise generator's seed
+	rnd := NewRandomGenerator(noiseGen.GetSeed())
+	logger := NewDefaultLoggerWrapper()
+
+	return NewNodeService(
+		NewDatabaseWrapper(pool),
+		NewNoiseGeneratorAdapter(noiseGen),
+		NewWorldServiceAdapter(worldService),
+		rnd,
+		logger,
+	)
 }
 
 // GenerateResourcesForChunk generates resource nodes for a chunk
@@ -144,7 +151,7 @@ func (s *NodeService) GenerateResourcesForChunk(ctx context.Context, chunk *chun
 
 	// Use the pre-grouped resource types by terrain from service initialization
 	s.logger.Debug("Using cached resource types", "count", len(s.resourceTypes))
-	
+
 	// Using the cached resourceTypesByTerrain instead of building it each time
 
 	s.logger.Debug("Grouped resources by terrain", "terrain_types", len(s.resourceTypesByTerrain))
@@ -712,13 +719,15 @@ func distance(x1, y1, x2, y2 int32) float64 {
 func (s *NodeService) StoreResourceNodes(ctx context.Context, chunkX, chunkY int32, resources []*resourceNodeV1.ResourceNode) error {
 	s.logger.Debug("Storing resource nodes", "chunk_x", chunkX, "chunk_y", chunkY, "count", len(resources))
 
-	// Note: DBTX interface doesn't have Begin method
-	// We'll work directly with the database connection
-	queries := db.New(s.db)
+	// Get default world to get the WorldID
+	defaultWorld, err := s.worldService.GetDefaultWorld(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to get default world: %w", err)
+	}
 
 	// Delete any existing resources for this chunk
-	err := queries.DeleteResourceNodesInChunk(ctx, db.DeleteResourceNodesInChunkParams{
-		WorldID: s.defaultWorldID,
+	err = s.db.DeleteResourceNodesInChunk(ctx, db.DeleteResourceNodesInChunkParams{
+		WorldID: defaultWorld.ID,
 		ChunkX:  chunkX,
 		ChunkY:  chunkY,
 	})
@@ -728,9 +737,9 @@ func (s *NodeService) StoreResourceNodes(ctx context.Context, chunkX, chunkY int
 
 	// Insert all new resources
 	for _, resource := range resources {
-		_, err := queries.CreateResourceNode(ctx, db.CreateResourceNodeParams{
+		_, err := s.db.CreateResourceNode(ctx, db.CreateResourceNodeParams{
 			ResourceNodeTypeID: int32(resource.ResourceNodeType.Id),
-			WorldID:            s.defaultWorldID,
+			WorldID:            defaultWorld.ID,
 			ChunkX:             resource.ChunkX,
 			ChunkY:             resource.ChunkY,
 			ClusterID:          resource.ClusterId,
@@ -751,9 +760,15 @@ func (s *NodeService) GetResourcesForChunk(ctx context.Context, chunkX, chunkY i
 	// Single debug log instead of both info and debug
 	s.logger.Debug("Getting resource nodes for chunk", "chunk_x", chunkX, "chunk_y", chunkY)
 
+	// Get default world to get the WorldID
+	defaultWorld, err := s.worldService.GetDefaultWorld(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get default world: %w", err)
+	}
+
 	// First, try to get existing resources from database
-	dbResources, err := db.New(s.db).GetResourceNodesInChunk(ctx, db.GetResourceNodesInChunkParams{
-		WorldID: s.defaultWorldID,
+	dbResources, err := s.db.GetResourceNodesInChunk(ctx, db.GetResourceNodesInChunkParams{
+		WorldID: defaultWorld.ID,
 		ChunkX:  chunkX,
 		ChunkY:  chunkY,
 	})
@@ -769,8 +784,8 @@ func (s *NodeService) GetResourcesForChunk(ctx context.Context, chunkX, chunkY i
 	}
 
 	// Check if chunk exists in database
-	chunkExists, err := db.New(s.db).ChunkExists(ctx, db.ChunkExistsParams{
-		WorldID: s.defaultWorldID,
+	chunkExists, err := s.db.ChunkExists(ctx, db.ChunkExistsParams{
+		WorldID: defaultWorld.ID,
 		ChunkX:  chunkX,
 		ChunkY:  chunkY,
 	})
@@ -830,9 +845,15 @@ func (s *NodeService) GetResourcesForChunks(ctx context.Context, chunks []*chunk
 		chunks = chunks[:5]
 	}
 
+	// Get default world to get the WorldID
+	defaultWorld, err := s.worldService.GetDefaultWorld(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get default world: %w", err)
+	}
+
 	// Fill in the parameters
 	params := db.GetResourceNodesInChunksParams{
-		WorldID: s.defaultWorldID,
+		WorldID: defaultWorld.ID,
 	}
 
 	// Add parameters for each chunk
@@ -877,7 +898,7 @@ func (s *NodeService) GetResourcesForChunks(ctx context.Context, chunks []*chunk
 		}
 	}
 
-	dbResources, err := db.New(s.db).GetResourceNodesInChunks(ctx, params)
+	dbResources, err := s.db.GetResourceNodesInChunks(ctx, params)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get resource nodes for chunks: %w", err)
 	}
@@ -887,8 +908,14 @@ func (s *NodeService) GetResourcesForChunks(ctx context.Context, chunks []*chunk
 
 // GetResourcesInChunkRange retrieves all resources in a range of chunks
 func (s *NodeService) GetResourcesInChunkRange(ctx context.Context, minX, maxX, minY, maxY int32) ([]*resourceNodeV1.ResourceNode, error) {
-	dbResources, err := db.New(s.db).GetResourceNodesInChunkRange(ctx, db.GetResourceNodesInChunkRangeParams{
-		WorldID:  s.defaultWorldID,
+	// Get default world to get the WorldID
+	defaultWorld, err := s.worldService.GetDefaultWorld(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get default world: %w", err)
+	}
+
+	dbResources, err := s.db.GetResourceNodesInChunkRange(ctx, db.GetResourceNodesInChunkRangeParams{
+		WorldID:  defaultWorld.ID,
 		ChunkX:   minX,
 		ChunkX_2: maxX,
 		ChunkY:   minY,
@@ -966,9 +993,15 @@ func (s *NodeService) convertResourceRows(dbResources []db.ResourceNode) []*reso
 
 // getChunkDataForResourceGeneration retrieves chunk data from database for resource generation
 func (s *NodeService) getChunkDataForResourceGeneration(ctx context.Context, chunkX, chunkY int32) (*chunkV1.ChunkData, error) {
+	// Get default world to get the WorldID
+	defaultWorld, err := s.worldService.GetDefaultWorld(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get default world: %w", err)
+	}
+
 	// Get chunk from database
-	dbChunk, err := db.New(s.db).GetChunk(ctx, db.GetChunkParams{
-		WorldID: s.defaultWorldID,
+	dbChunk, err := s.db.GetChunk(ctx, db.GetChunkParams{
+		WorldID: defaultWorld.ID,
 		ChunkX:  chunkX,
 		ChunkY:  chunkY,
 	})
@@ -984,4 +1017,10 @@ func (s *NodeService) getChunkDataForResourceGeneration(ctx context.Context, chu
 	}
 
 	return &chunkData, nil
+}
+
+
+// GetResourceNode retrieves a single resource node by ID
+func (s *NodeService) GetResourceNode(ctx context.Context, id int32) (db.ResourceNode, error) {
+	return s.db.GetResourceNode(ctx, id)
 }

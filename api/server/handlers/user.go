@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"context"
-	"crypto/rand"
 	"encoding/hex"
 	"fmt"
 	"os"
@@ -13,10 +12,8 @@ import (
 	"github.com/VoidMesh/api/api/internal/logging"
 	userV1 "github.com/VoidMesh/api/api/proto/user/v1"
 	"github.com/charmbracelet/log"
-	"github.com/golang-jwt/jwt/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"golang.org/x/crypto/bcrypt"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -24,15 +21,66 @@ import (
 
 type userServiceServer struct {
 	userV1.UnimplementedUserServiceServer
-	db     *pgxpool.Pool
-	logger *log.Logger
+	userRepo        UserRepository
+	jwtService      JWTService
+	passwordService PasswordService
+	tokenGenerator  TokenGenerator
+	logger          *log.Logger
 }
 
-func NewUserServer(db *pgxpool.Pool) userV1.UserServiceServer {
+func NewUserServer(
+	userRepo UserRepository,
+	jwtService JWTService,
+	passwordService PasswordService,
+	tokenGenerator TokenGenerator,
+) userV1.UserServiceServer {
 	logger := logging.WithComponent("user-handler")
 	logger.Debug("Creating new UserService server instance")
-	return &userServiceServer{db: db, logger: logger}
+	return &userServiceServer{
+		userRepo:        userRepo,
+		jwtService:      jwtService,
+		passwordService: passwordService,
+		tokenGenerator:  tokenGenerator,
+		logger:          logger,
+	}
 }
+
+// NewUserServerWithPool creates a user server with all dependencies wired up
+// This function maintains backward compatibility while providing dependency injection
+func NewUserServerWithPool(dbPool *pgxpool.Pool) (userV1.UserServiceServer, error) {
+	logger := logging.WithComponent("user-handler")
+	logger.Debug("Creating UserService server with dependency injection")
+
+	// Get JWT secret from environment
+	jwtSecret := os.Getenv("JWT_SECRET")
+	if jwtSecret == "" {
+		// Check if we're in development mode
+		env := os.Getenv("ENVIRONMENT")
+		if env == "" {
+			env = os.Getenv("GO_ENV")
+		}
+		if env == "development" {
+			fmt.Println("WARNING: Using default JWT secret for development. Set JWT_SECRET environment variable for production.")
+			jwtSecret = "dev-jwt-secret-change-for-production-use-minimum-32-chars"
+		} else {
+			return nil, fmt.Errorf("JWT_SECRET environment variable is required")
+		}
+	}
+
+	// Create services
+	userRepo := NewUserRepository(dbPool)
+
+	jwtService, err := NewJWTService(jwtSecret)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create JWT service: %w", err)
+	}
+
+	passwordService := NewPasswordService()
+	tokenGenerator := NewTokenGenerator()
+
+	return NewUserServer(userRepo, jwtService, passwordService, tokenGenerator), nil
+}
+
 
 // Helper function to convert DB user to proto user
 func (s *userServiceServer) dbUserToProto(user db.User) *userV1.User {
@@ -57,124 +105,6 @@ func (s *userServiceServer) dbUserToProto(user db.User) *userV1.User {
 	return protoUser
 }
 
-// Helper function to hash password
-func hashPassword(password string) (string, error) {
-	bytes, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
-	return string(bytes), err
-}
-
-// Helper function to check password
-func checkPasswordHash(password, hash string) bool {
-	err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
-	return err == nil
-}
-
-// Helper function to generate random token
-// JWT secret key - loaded from environment variables with validation
-var jwtSecret = []byte(getJWTSecret())
-
-// getJWTSecret retrieves and validates the JWT secret from environment variables
-func getJWTSecret() string {
-	secret := os.Getenv("JWT_SECRET")
-
-	// In production, JWT_SECRET must be set
-	if secret == "" {
-		// Check if we're in development mode
-		if os.Getenv("ENVIRONMENT") == "development" || os.Getenv("GO_ENV") == "development" {
-			fmt.Println("WARNING: Using default JWT secret for development. Set JWT_SECRET environment variable for production.")
-			return "dev-jwt-secret-change-for-production-use-minimum-32-chars"
-		}
-
-		// In production, fail fast if JWT_SECRET is not set
-		logger := logging.GetLogger()
-		logger.Fatal("SECURITY ERROR: JWT_SECRET environment variable is required in production. " +
-			"Please set a secure secret key with at least 32 characters.")
-	}
-
-	// Validate secret length for security
-	if len(secret) < 32 {
-		logger := logging.GetLogger()
-		logger.Fatal("SECURITY ERROR: JWT_SECRET must be at least 32 characters long for adequate security", "current_length", len(secret), "required_length", 32)
-	}
-
-	// Validate secret complexity (basic check)
-	if !isSecretComplex(secret) {
-		fmt.Println("WARNING: JWT_SECRET should contain a mix of uppercase, lowercase, numbers, and special characters for better security.")
-	}
-
-	return secret
-}
-
-// isSecretComplex performs basic complexity validation on the JWT secret
-func isSecretComplex(secret string) bool {
-	hasUpper := false
-	hasLower := false
-	hasDigit := false
-	hasSpecial := false
-
-	for _, char := range secret {
-		switch {
-		case char >= 'A' && char <= 'Z':
-			hasUpper = true
-		case char >= 'a' && char <= 'z':
-			hasLower = true
-		case char >= '0' && char <= '9':
-			hasDigit = true
-		default:
-			// Consider any non-alphanumeric character as special
-			hasSpecial = true
-		}
-	}
-
-	// Require at least 3 out of 4 character types
-	count := 0
-	if hasUpper {
-		count++
-	}
-	if hasLower {
-		count++
-	}
-	if hasDigit {
-		count++
-	}
-	if hasSpecial {
-		count++
-	}
-
-	return count >= 3
-}
-
-// generateJWTToken creates a JWT token for the given user
-func generateJWTToken(userID string, username string) (string, error) {
-	// Create the claims
-	claims := jwt.MapClaims{
-		"user_id":  userID,
-		"username": username,
-		"exp":      time.Now().Add(time.Hour * 24 * 7).Unix(), // Token expires in 7 days
-		"iat":      time.Now().Unix(),
-		"iss":      "voidmesh-api",
-	}
-
-	// Create token with claims
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-
-	// Generate encoded token
-	tokenString, err := token.SignedString(jwtSecret)
-	if err != nil {
-		return "", err
-	}
-
-	return tokenString, nil
-}
-
-// generateToken generates a random token for password reset (keeping for backward compatibility)
-func generateToken(length int) (string, error) {
-	bytes := make([]byte, length)
-	if _, err := rand.Read(bytes); err != nil {
-		return "", err
-	}
-	return hex.EncodeToString(bytes), nil
-}
 
 // Helper function to parse UUID string to pgtype.UUID
 func parseUUID(uuidStr string) (pgtype.UUID, error) {
@@ -191,7 +121,7 @@ func (s *userServiceServer) CreateUser(ctx context.Context, req *userV1.CreateUs
 	start := time.Now()
 	// Hash the password
 	logger.Debug("Hashing user password")
-	hashedPassword, err := hashPassword(req.Password)
+	hashedPassword, err := s.passwordService.HashPassword(req.Password)
 	if err != nil {
 		logger.Error("Failed to hash password", "error", err)
 		return nil, status.Errorf(codes.Internal, "failed to hash password: %v", err)
@@ -200,7 +130,7 @@ func (s *userServiceServer) CreateUser(ctx context.Context, req *userV1.CreateUs
 
 	// Create user in database
 	logger.Debug("Creating user record in database")
-	user, err := db.New(s.db).CreateUser(ctx, db.CreateUserParams{
+	user, err := s.userRepo.CreateUser(ctx, db.CreateUserParams{
 		Username:     req.Username,
 		DisplayName:  req.DisplayName,
 		Email:        req.Email,
@@ -241,7 +171,7 @@ func (s *userServiceServer) GetUser(ctx context.Context, req *userV1.GetUserRequ
 		return nil, status.Errorf(codes.InvalidArgument, "invalid user ID: %v", err)
 	}
 
-	user, err := db.New(s.db).GetUserById(ctx, uuid)
+	user, err := s.userRepo.GetUserById(ctx, uuid)
 	if err != nil {
 		logger.Warn("User not found", "user_id", req.Id, "error", err)
 		return nil, status.Errorf(codes.NotFound, "user not found: %v", err)
@@ -258,7 +188,7 @@ func (s *userServiceServer) GetUserByEmail(ctx context.Context, req *userV1.GetU
 	logger := s.logger.With("operation", "GetUserByEmail", "email", req.Email)
 	logger.Debug("Received GetUserByEmail request")
 
-	user, err := db.New(s.db).GetUserByEmail(ctx, req.Email)
+	user, err := s.userRepo.GetUserByEmail(ctx, req.Email)
 	if err != nil {
 		logger.Warn("User not found by email", "email", req.Email, "error", err)
 		return nil, status.Errorf(codes.NotFound, "user not found: %v", err)
@@ -275,7 +205,7 @@ func (s *userServiceServer) GetUserByUsername(ctx context.Context, req *userV1.G
 	logger := s.logger.With("operation", "GetUserByUsername", "username", req.Username)
 	logger.Debug("Received GetUserByUsername request")
 
-	user, err := db.New(s.db).GetUserByUsername(ctx, req.Username)
+	user, err := s.userRepo.GetUserByUsername(ctx, req.Username)
 	if err != nil {
 		logger.Warn("User not found by username", "username", req.Username, "error", err)
 		return nil, status.Errorf(codes.NotFound, "user not found: %v", err)
@@ -321,7 +251,7 @@ func (s *userServiceServer) UpdateUser(ctx context.Context, req *userV1.UpdateUs
 
 	if req.Password != nil {
 		logger.Debug("Updating password")
-		hashedPassword, err := hashPassword(req.Password.Value)
+		hashedPassword, err := s.passwordService.HashPassword(req.Password.Value)
 		if err != nil {
 			logger.Error("Failed to hash new password", "error", err)
 			return nil, status.Errorf(codes.Internal, "failed to hash password: %v", err)
@@ -330,7 +260,7 @@ func (s *userServiceServer) UpdateUser(ctx context.Context, req *userV1.UpdateUs
 		logger.Debug("Password hashed successfully")
 	}
 
-	user, err := db.New(s.db).UpdateUser(ctx, updateParams)
+	user, err := s.userRepo.UpdateUser(ctx, updateParams)
 	if err != nil {
 		logger.Error("Failed to update user in database", "error", err)
 		return nil, status.Errorf(codes.Internal, "failed to update user: %v", err)
@@ -354,7 +284,7 @@ func (s *userServiceServer) DeleteUser(ctx context.Context, req *userV1.DeleteUs
 	}
 
 	logger.Debug("Deleting user from database")
-	err = db.New(s.db).DeleteUser(ctx, uuid)
+	err = s.userRepo.DeleteUser(ctx, uuid)
 	if err != nil {
 		logger.Error("Failed to delete user from database", "user_id", req.Id, "error", err)
 		return nil, status.Errorf(codes.Internal, "failed to delete user: %v", err)
@@ -387,7 +317,7 @@ func (s *userServiceServer) ListUsers(ctx context.Context, req *userV1.ListUsers
 	}
 
 	logger.Debug("Fetching users from database", "actual_limit", limit, "actual_offset", offset)
-	users, err := db.New(s.db).IndexUsers(ctx, db.IndexUsersParams{
+	users, err := s.userRepo.IndexUsers(ctx, db.IndexUsersParams{
 		Limit:  limit,
 		Offset: offset,
 	})
@@ -419,10 +349,10 @@ func (s *userServiceServer) Login(ctx context.Context, req *userV1.LoginRequest)
 	// Try to find user by email or username
 	if strings.Contains(req.UsernameOrEmail, "@") {
 		logger.Debug("Looking up user by email")
-		user, err = db.New(s.db).GetUserByEmail(ctx, req.UsernameOrEmail)
+		user, err = s.userRepo.GetUserByEmail(ctx, req.UsernameOrEmail)
 	} else {
 		logger.Debug("Looking up user by username")
-		user, err = db.New(s.db).GetUserByUsername(ctx, req.UsernameOrEmail)
+		user, err = s.userRepo.GetUserByUsername(ctx, req.UsernameOrEmail)
 	}
 
 	if err != nil {
@@ -442,7 +372,7 @@ func (s *userServiceServer) Login(ctx context.Context, req *userV1.LoginRequest)
 
 	// Check password
 	loggerWithUser.Debug("Validating password hash")
-	if !checkPasswordHash(req.Password, user.PasswordHash) {
+	if !s.passwordService.CheckPassword(req.Password, user.PasswordHash) {
 		// Increment failed login attempts
 		attempts := user.FailedLoginAttempts.Int32 + 1
 		locked := attempts >= 5
@@ -450,7 +380,7 @@ func (s *userServiceServer) Login(ctx context.Context, req *userV1.LoginRequest)
 		loggerWithUser.Warn("Authentication failed: invalid password",
 			"attempts", attempts, "will_lock", locked, "duration", time.Since(start))
 
-		_, err = db.New(s.db).UpdateLoginAttempts(ctx, db.UpdateLoginAttemptsParams{
+		_, err = s.userRepo.UpdateLoginAttempts(ctx, db.UpdateLoginAttemptsParams{
 			ID:                  user.ID,
 			FailedLoginAttempts: pgtype.Int4{Int32: attempts, Valid: true},
 			AccountLocked:       pgtype.Bool{Bool: locked, Valid: true},
@@ -464,7 +394,7 @@ func (s *userServiceServer) Login(ctx context.Context, req *userV1.LoginRequest)
 
 	// Reset failed login attempts and update last login
 	loggerWithUser.Debug("Resetting failed login attempts")
-	_, err = db.New(s.db).UpdateLoginAttempts(ctx, db.UpdateLoginAttemptsParams{
+	_, err = s.userRepo.UpdateLoginAttempts(ctx, db.UpdateLoginAttemptsParams{
 		ID:                  user.ID,
 		FailedLoginAttempts: pgtype.Int4{Int32: 0, Valid: true},
 		AccountLocked:       pgtype.Bool{Bool: false, Valid: true},
@@ -476,7 +406,7 @@ func (s *userServiceServer) Login(ctx context.Context, req *userV1.LoginRequest)
 
 	// Update last login time
 	loggerWithUser.Debug("Updating last login timestamp")
-	_, err = db.New(s.db).UpdateLastLoginAt(ctx, db.UpdateLastLoginAtParams{
+	_, err = s.userRepo.UpdateLastLoginAt(ctx, db.UpdateLastLoginAtParams{
 		ID:          user.ID,
 		LastLoginAt: pgtype.Timestamp{Time: time.Now(), Valid: true},
 	})
@@ -486,7 +416,7 @@ func (s *userServiceServer) Login(ctx context.Context, req *userV1.LoginRequest)
 
 	// Generate JWT token
 	loggerWithUser.Debug("Generating JWT token")
-	token, err := generateJWTToken(userID, user.Username)
+	token, err := s.jwtService.GenerateToken(userID, user.Username)
 	if err != nil {
 		loggerWithUser.Error("Failed to generate JWT token", "error", err)
 		return nil, status.Errorf(codes.Internal, "failed to generate JWT token: %v", err)
@@ -519,7 +449,7 @@ func (s *userServiceServer) RequestPasswordReset(ctx context.Context, req *userV
 	logger := s.logger.With("operation", "RequestPasswordReset", "email", req.Email)
 	logger.Debug("Received RequestPasswordReset request")
 
-	user, err := db.New(s.db).GetUserByEmail(ctx, req.Email)
+	user, err := s.userRepo.GetUserByEmail(ctx, req.Email)
 	if err != nil {
 		// Don't reveal if email exists or not for security reasons
 		logger.Warn("Password reset requested for non-existent email or database error", "error", err)
@@ -533,7 +463,7 @@ func (s *userServiceServer) RequestPasswordReset(ctx context.Context, req *userV
 
 	// Generate reset token
 	logger.Debug("Generating password reset token")
-	token, err := generateToken(32)
+	token, err := s.tokenGenerator.GenerateToken(32)
 	if err != nil {
 		logger.Error("Failed to generate reset token", "error", err)
 		return nil, status.Errorf(codes.Internal, "failed to generate reset token: %v", err)
@@ -543,7 +473,7 @@ func (s *userServiceServer) RequestPasswordReset(ctx context.Context, req *userV
 	expires := time.Now().Add(time.Hour)
 
 	logger.Debug("Updating user with reset token and expiration")
-	_, err = db.New(s.db).UpdatePasswordResetToken(ctx, db.UpdatePasswordResetTokenParams{
+	_, err = s.userRepo.UpdatePasswordResetToken(ctx, db.UpdatePasswordResetTokenParams{
 		ID:                   user.ID,
 		ResetPasswordToken:   pgtype.Text{String: token, Valid: true},
 		ResetPasswordExpires: pgtype.Timestamp{Time: expires, Valid: true},
@@ -568,7 +498,7 @@ func (s *userServiceServer) ResetPassword(ctx context.Context, req *userV1.Reset
 	logger.Debug("Received ResetPassword request")
 
 	logger.Debug("Attempting to retrieve user by reset token")
-	user, err := db.New(s.db).GetUserByResetToken(ctx, pgtype.Text{String: req.Token, Valid: true})
+	user, err := s.userRepo.GetUserByResetToken(ctx, pgtype.Text{String: req.Token, Valid: true})
 	if err != nil {
 		logger.Warn("Invalid or expired reset token provided", "error", err)
 		return nil, status.Errorf(codes.InvalidArgument, "invalid or expired reset token")
@@ -579,7 +509,7 @@ func (s *userServiceServer) ResetPassword(ctx context.Context, req *userV1.Reset
 
 	// Hash new password
 	logger.Debug("Hashing new password")
-	hashedPassword, err := hashPassword(req.NewPassword)
+	hashedPassword, err := s.passwordService.HashPassword(req.NewPassword)
 	if err != nil {
 		logger.Error("Failed to hash new password", "error", err)
 		return nil, status.Errorf(codes.Internal, "failed to hash password: %v", err)
@@ -588,7 +518,7 @@ func (s *userServiceServer) ResetPassword(ctx context.Context, req *userV1.Reset
 
 	// Update password and clear reset token
 	logger.Debug("Updating user password and clearing reset token in database")
-	_, err = db.New(s.db).UpdateUser(ctx, db.UpdateUserParams{
+	_, err = s.userRepo.UpdateUser(ctx, db.UpdateUserParams{
 		ID:           user.ID,
 		PasswordHash: hashedPassword,
 	})
@@ -599,7 +529,7 @@ func (s *userServiceServer) ResetPassword(ctx context.Context, req *userV1.Reset
 
 	// Clear reset token
 	logger.Debug("Clearing password reset token")
-	_, err = db.New(s.db).UpdatePasswordResetToken(ctx, db.UpdatePasswordResetTokenParams{
+	_, err = s.userRepo.UpdatePasswordResetToken(ctx, db.UpdatePasswordResetTokenParams{
 		ID:                   user.ID,
 		ResetPasswordToken:   pgtype.Text{Valid: false},
 		ResetPasswordExpires: pgtype.Timestamp{Valid: false},
@@ -626,7 +556,7 @@ func (s *userServiceServer) VerifyEmail(ctx context.Context, req *userV1.VerifyE
 	}
 
 	logger.Debug("Attempting to verify email in database")
-	_, err = db.New(s.db).VerifyEmail(ctx, uuid)
+	_, err = s.userRepo.VerifyEmail(ctx, uuid)
 	if err != nil {
 		logger.Error("Failed to verify email in database", "user_id", req.Id, "error", err)
 		return nil, status.Errorf(codes.Internal, "failed to verify email: %v", err)

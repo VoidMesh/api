@@ -6,11 +6,9 @@ import (
 	"time"
 
 	"github.com/VoidMesh/api/api/db"
-	"github.com/VoidMesh/api/api/internal/logging"
 	chunkV1 "github.com/VoidMesh/api/api/proto/chunk/v1"
 	"github.com/VoidMesh/api/api/services/noise"
 	"github.com/VoidMesh/api/api/services/world"
-	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -20,39 +18,61 @@ const (
 	ChunkSize = 32 // 32x32 cells per chunk
 )
 
+// Service provides chunk generation and management operations.
 type Service struct {
-	db                      *pgxpool.Pool
-	noiseGen                *noise.Generator
-	worldService            *world.Service
-	defaultWorldID          pgtype.UUID
+	db                      DatabaseInterface
+	noiseGen                NoiseGeneratorInterface
+	worldService            WorldServiceInterface
+	resourceNodeIntegration ResourceNodeIntegrationInterface
+	logger                  LoggerInterface
 	chunkSize               int32
-	resourceNodeIntegration *ResourceNodeGeneratorIntegration
 }
 
-func NewService(db *pgxpool.Pool, worldService *world.Service, noiseGen *noise.Generator) *Service {
-	logger := logging.GetLogger()
-	logger.Debug("Creating new chunk service", "chunk_size", ChunkSize)
-	resourceNodeIntegration := NewResourceNodeGeneratorIntegration(db, noiseGen, worldService)
-
-	// Get default world or create if it doesn't exist
-	defaultWorld, err := worldService.GetDefaultWorld(context.Background())
-	if err != nil {
-		logger.Error("Failed to get default world", "error", err)
-	}
-
+// NewService creates a new chunk service with dependency injection.
+func NewService(
+	db DatabaseInterface,
+	noiseGen NoiseGeneratorInterface,
+	worldService WorldServiceInterface,
+	resourceNodeIntegration ResourceNodeIntegrationInterface,
+	logger LoggerInterface,
+) *Service {
+	componentLogger := logger.With("component", "chunk-service")
+	componentLogger.Debug("Creating new chunk service", "chunk_size", ChunkSize)
+	
 	return &Service{
 		db:                      db,
 		noiseGen:                noiseGen,
 		worldService:            worldService,
-		defaultWorldID:          defaultWorld.ID,
-		chunkSize:               ChunkSize,
 		resourceNodeIntegration: resourceNodeIntegration,
+		logger:                  componentLogger,
+		chunkSize:               ChunkSize,
 	}
 }
 
+// NewServiceWithPool creates a service with concrete implementations (convenience constructor for production use).
+func NewServiceWithPool(
+	pool *pgxpool.Pool,
+	worldService *world.Service,
+	noiseGen *noise.Generator,
+) *Service {
+	logger := &DefaultLoggerWrapper{}
+	
+	// Create the resource node integration with the concrete types
+	// This will be refactored when we get to the resource node service
+	resourceNodeIntegration := NewResourceNodeGeneratorIntegration(pool, noiseGen, worldService)
+	
+	return NewService(
+		NewDatabaseWrapper(pool),
+		NewNoiseGeneratorAdapter(noiseGen),
+		NewWorldServiceAdapter(worldService),
+		resourceNodeIntegration,
+		logger,
+	)
+}
+
 // GenerateChunk creates a new chunk using procedural generation
-func (s *Service) GenerateChunk(chunkX, chunkY int32) (*chunkV1.ChunkData, error) {
-	logger := logging.WithChunkCoords(chunkX, chunkY)
+func (s *Service) GenerateChunk(ctx context.Context, chunkX, chunkY int32) (*chunkV1.ChunkData, error) {
+	logger := s.logger.With("chunk_x", chunkX, "chunk_y", chunkY)
 	logger.Debug("Starting chunk generation")
 
 	start := time.Now()
@@ -86,16 +106,16 @@ func (s *Service) GenerateChunk(chunkX, chunkY int32) (*chunkV1.ChunkData, error
 	logger.Info("Chunk generation completed", "duration", duration, "cells_generated", len(cells))
 
 	// Get world seed for the default world
-	world, err := s.worldService.GetWorldByID(context.Background(), s.defaultWorldID)
+	defaultWorld, err := s.worldService.GetDefaultWorld(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get world: %w", err)
+		return nil, fmt.Errorf("failed to get default world: %w", err)
 	}
 
 	chunk := &chunkV1.ChunkData{
 		ChunkX:      chunkX,
 		ChunkY:      chunkY,
 		Cells:       cells,
-		Seed:        world.Seed,
+		Seed:        defaultWorld.Seed,
 		GeneratedAt: timestamppb.New(time.Now()),
 	}
 
@@ -128,7 +148,7 @@ func (s *Service) getTerrainType(x, y int32) chunkV1.TerrainType {
 
 // GetOrCreateChunk retrieves a chunk from database or generates it if it doesn't exist
 func (s *Service) GetOrCreateChunk(ctx context.Context, chunkX, chunkY int32) (*chunkV1.ChunkData, error) {
-	logger := logging.WithChunkCoords(chunkX, chunkY)
+	logger := s.logger.With("chunk_x", chunkX, "chunk_y", chunkY)
 
 	// Try to get chunk from database first
 	chunk, err := s.getChunkFromDB(ctx, chunkX, chunkY)
@@ -143,7 +163,7 @@ func (s *Service) GetOrCreateChunk(ctx context.Context, chunkX, chunkY int32) (*
 	}
 
 	// Chunk doesn't exist, generate it
-	generatedChunk, err := s.GenerateChunk(chunkX, chunkY)
+	generatedChunk, err := s.GenerateChunk(ctx, chunkX, chunkY)
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate chunk: %w", err)
 	}
@@ -167,8 +187,14 @@ func (s *Service) GetOrCreateChunk(ctx context.Context, chunkX, chunkY int32) (*
 
 // getChunkFromDB retrieves a chunk from the database
 func (s *Service) getChunkFromDB(ctx context.Context, chunkX, chunkY int32) (*chunkV1.ChunkData, error) {
-	dbChunk, err := db.New(s.db).GetChunk(ctx, db.GetChunkParams{
-		WorldID: s.defaultWorldID,
+	// Get default world to get the WorldID
+	defaultWorld, err := s.worldService.GetDefaultWorld(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get default world: %w", err)
+	}
+
+	dbChunk, err := s.db.GetChunk(ctx, db.GetChunkParams{
+		WorldID: defaultWorld.ID,
 		ChunkX:  chunkX,
 		ChunkY:  chunkY,
 	})
@@ -188,14 +214,20 @@ func (s *Service) getChunkFromDB(ctx context.Context, chunkX, chunkY int32) (*ch
 
 // saveChunkToDB saves a chunk to the database
 func (s *Service) saveChunkToDB(ctx context.Context, chunk *chunkV1.ChunkData) error {
+	// Get default world to get the WorldID
+	defaultWorld, err := s.worldService.GetDefaultWorld(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to get default world: %w", err)
+	}
+
 	// Serialize protobuf data
 	data, err := proto.Marshal(chunk)
 	if err != nil {
 		return fmt.Errorf("failed to serialize chunk data: %w", err)
 	}
 
-	_, err = db.New(s.db).CreateChunk(ctx, db.CreateChunkParams{
-		WorldID:   s.defaultWorldID,
+	_, err = s.db.CreateChunk(ctx, db.CreateChunkParams{
+		WorldID:   defaultWorld.ID,
 		ChunkX:    chunk.ChunkX,
 		ChunkY:    chunk.ChunkY,
 		ChunkData: data,
@@ -316,13 +348,13 @@ func (s *Service) chunkWorker(ctx context.Context, coordChan <-chan [2]int32, re
 			if !ok {
 				return // Channel closed, no more work
 			}
-			
+
 			chunk, err := s.GetOrCreateChunk(ctx, coord[0], coord[1])
 			if err != nil {
 				errChan <- fmt.Errorf("failed to get chunk (%d,%d): %w", coord[0], coord[1], err)
 				return
 			}
-			
+
 			resultChan <- &chunkResult{
 				chunk: chunk,
 				x:     coord[0],
@@ -334,4 +366,12 @@ func (s *Service) chunkWorker(ctx context.Context, coordChan <-chan [2]int32, re
 			return // Context was canceled
 		}
 	}
+}
+
+// min returns the minimum of two integers
+func min(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
 }

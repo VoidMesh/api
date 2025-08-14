@@ -21,8 +21,9 @@ import (
 func RegisterServices(server *grpc.Server, database *pgxpool.Pool) {
 	logger := logging.GetLogger()
 
-	// Create world service first
-	worldService := world.NewService(database, logger)
+	// Create world service first using the new constructor pattern
+	worldLogger := world.NewDefaultLoggerWrapper()
+	worldService := world.NewServiceWithPool(database, worldLogger)
 
 	// Get default world or create if it doesn't exist
 	defaultWorld, err := worldService.GetDefaultWorld(context.Background())
@@ -34,17 +35,18 @@ func RegisterServices(server *grpc.Server, database *pgxpool.Pool) {
 	// Create shared components
 	noiseGen := noise.NewGenerator(defaultWorld.Seed)
 
-	// Create and register chunk service with shared noise generator
-	chunkHandler := handlers.NewChunkServer(database, worldService, noiseGen)
+	// Create and register chunk service with shared noise generator using new constructor
+	chunkHandler := handlers.NewChunkServer(database, worldService, noiseGen.(*noise.Generator))
 	chunkV1.RegisterChunkServiceServer(server, chunkHandler)
 
-	// Create and register resource node service with shared noise generator
-	resourceNodeService := resource_node.NewNodeService(database, noiseGen, worldService)
+	// Create and register resource node service with shared noise generator using new constructor
+	resourceNodeService := resource_node.NewNodeServiceWithPool(database, noiseGen.(*noise.Generator), worldService)
 	resourceNodeHandler := handlers.NewResourceNodeHandler(resourceNodeService, worldService)
 	resourceNodeV1.RegisterResourceNodeServiceServer(server, resourceNodeHandler)
 
-	// Create and register terrain service
-	terrainService := terrain.NewService()
+	// Create and register terrain service using new constructor
+	terrainLogger := terrain.NewDefaultLoggerWrapper()
+	terrainService := terrain.NewService(terrainLogger)
 	terrainHandler := handlers.NewTerrainHandler(terrainService)
 	terrainV1.RegisterTerrainServiceServer(server, terrainHandler)
 

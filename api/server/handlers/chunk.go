@@ -26,8 +26,8 @@ func NewChunkServer(db *pgxpool.Pool, worldService *world.Service, noiseGen *noi
 	logger := logging.WithComponent("chunk-handler")
 	logger.Debug("Creating new ChunkService server instance")
 
-	// Create chunk service with shared noise generator
-	chunkService := chunk.NewService(db, worldService, noiseGen)
+	// Create chunk service with shared noise generator using new constructor
+	chunkService := chunk.NewServiceWithPool(db, worldService, noiseGen)
 
 	return &chunkServiceServer{
 		service:      chunkService,

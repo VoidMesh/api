@@ -111,3 +111,12 @@ func GetUsernameFromContext(ctx context.Context) (string, bool) {
 	username, ok := ctx.Value(usernameKey).(string)
 	return username, ok
 }
+
+// CreateTestContextWithAuth creates a context with user authentication for testing
+// This helper function allows tests to create properly authenticated contexts
+func CreateTestContextWithAuth(userID, username string) context.Context {
+	ctx := context.Background()
+	ctx = context.WithValue(ctx, userIDKey, userID)
+	ctx = context.WithValue(ctx, usernameKey, username)
+	return ctx
+}
