@@ -7,6 +7,7 @@ import (
 	characterV1 "github.com/VoidMesh/api/api/proto/character/v1"
 	chunkV1 "github.com/VoidMesh/api/api/proto/chunk/v1"
 	resourceNodeV1 "github.com/VoidMesh/api/api/proto/resource_node/v1"
+	terrainV1 "github.com/VoidMesh/api/api/proto/terrain/v1"
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
@@ -141,6 +142,13 @@ type ResourceNodeService interface {
 
 	// GetResourceNodeTypes returns all available resource node types
 	GetResourceNodeTypes(ctx context.Context) ([]*resourceNodeV1.ResourceNodeType, error)
+}
+
+// TerrainService defines the interface for terrain service operations.
+// This abstraction allows for easy testing and dependency injection.
+type TerrainService interface {
+	// GetTerrainTypes returns all available terrain types with their properties
+	GetTerrainTypes(ctx context.Context) ([]*terrainV1.TerrainTypeInfo, error)
 }
 
 // LoggerInterface defines logging operations for dependency injection.

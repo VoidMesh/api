@@ -17,7 +17,6 @@ import (
 	"github.com/VoidMesh/api/api/server/middleware" // Uncomment to enable JWT middleware
 	"github.com/VoidMesh/api/api/services/noise"
 	"github.com/VoidMesh/api/api/services/resource_node"
-	"github.com/VoidMesh/api/api/services/terrain"
 	"github.com/VoidMesh/api/api/services/world"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"google.golang.org/grpc"
@@ -129,8 +128,10 @@ func Serve() {
 	pbCharacterV1.RegisterCharacterServiceServer(g, characterServer)
 
 	logger.Debug("Registering TerrainService")
-	terrainLogger := terrain.NewDefaultLoggerWrapper()
-	pbTerrainV1.RegisterTerrainServiceServer(g, handlers.NewTerrainHandler(terrain.NewService(terrainLogger)))
+	terrainService := handlers.NewTerrainServiceWithDefaultLogger()
+	terrainLogger := &handlers.LoggerWrapper{Logger: logging.WithComponent("terrain-handler")}
+	terrainServer := handlers.NewTerrainServer(terrainService, terrainLogger)
+	pbTerrainV1.RegisterTerrainServiceServer(g, terrainServer)
 
 	logger.Debug("Registering ResourceNodeService")
 	resourceNodeService := resource_node.NewNodeServiceWithPool(dbPool, noiseGen.(*noise.Generator), worldService)

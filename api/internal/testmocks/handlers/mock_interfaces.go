@@ -17,6 +17,7 @@ import (
 	v1 "github.com/VoidMesh/api/api/proto/character/v1"
 	v10 "github.com/VoidMesh/api/api/proto/chunk/v1"
 	v11 "github.com/VoidMesh/api/api/proto/resource_node/v1"
+	terrainV1 "github.com/VoidMesh/api/api/proto/terrain/v1"
 	pgtype "github.com/jackc/pgx/v5/pgtype"
 	gomock "go.uber.org/mock/gomock"
 )
@@ -813,4 +814,43 @@ func (m *MockLoggerInterface) With(keysAndValues ...any) LoggerInterface {
 func (mr *MockLoggerInterfaceMockRecorder) With(keysAndValues ...any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "With", reflect.TypeOf((*MockLoggerInterface)(nil).With), keysAndValues...)
+}
+
+// MockTerrainService is a mock of TerrainService interface.
+type MockTerrainService struct {
+	ctrl     *gomock.Controller
+	recorder *MockTerrainServiceMockRecorder
+	isgomock struct{}
+}
+
+// MockTerrainServiceMockRecorder is the mock recorder for MockTerrainService.
+type MockTerrainServiceMockRecorder struct {
+	mock *MockTerrainService
+}
+
+// NewMockTerrainService creates a new mock instance.
+func NewMockTerrainService(ctrl *gomock.Controller) *MockTerrainService {
+	mock := &MockTerrainService{ctrl: ctrl}
+	mock.recorder = &MockTerrainServiceMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockTerrainService) EXPECT() *MockTerrainServiceMockRecorder {
+	return m.recorder
+}
+
+// GetTerrainTypes mocks base method.
+func (m *MockTerrainService) GetTerrainTypes(ctx context.Context) ([]*terrainV1.TerrainTypeInfo, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetTerrainTypes", ctx)
+	ret0, _ := ret[0].([]*terrainV1.TerrainTypeInfo)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetTerrainTypes indicates an expected call of GetTerrainTypes.
+func (mr *MockTerrainServiceMockRecorder) GetTerrainTypes(ctx any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTerrainTypes", reflect.TypeOf((*MockTerrainService)(nil).GetTerrainTypes), ctx)
 }
