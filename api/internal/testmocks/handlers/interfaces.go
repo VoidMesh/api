@@ -7,6 +7,7 @@ import (
 	"github.com/VoidMesh/api/api/db"
 	characterV1 "github.com/VoidMesh/api/api/proto/character/v1"
 	chunkV1 "github.com/VoidMesh/api/api/proto/chunk/v1"
+	resourceNodeV1 "github.com/VoidMesh/api/api/proto/resource_node/v1"
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
@@ -130,6 +131,19 @@ type ChunkService interface {
 
 	// GetChunksInRadius retrieves chunks in a circular area
 	GetChunksInRadius(ctx context.Context, centerX, centerY, radius int32) ([]*chunkV1.ChunkData, error)
+}
+
+// ResourceNodeService defines the interface for resource node service operations.
+// This mirrors the interface defined in server/handlers/interfaces.go
+type ResourceNodeService interface {
+	// GetResourcesForChunk retrieves all resource nodes in a specific chunk
+	GetResourcesForChunk(ctx context.Context, chunkX, chunkY int32) ([]*resourceNodeV1.ResourceNode, error)
+
+	// GetResourcesForChunks retrieves resource nodes in multiple chunks
+	GetResourcesForChunks(ctx context.Context, chunks []*chunkV1.ChunkCoordinate) ([]*resourceNodeV1.ResourceNode, error)
+
+	// GetResourceNodeTypes returns all available resource node types
+	GetResourceNodeTypes(ctx context.Context) ([]*resourceNodeV1.ResourceNodeType, error)
 }
 
 // LoggerInterface defines logging operations for dependency injection.

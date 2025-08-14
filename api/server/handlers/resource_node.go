@@ -6,10 +6,9 @@ import (
 	"github.com/VoidMesh/api/api/internal/logging"
 	chunkV1 "github.com/VoidMesh/api/api/proto/chunk/v1"
 	resourceNodeV1 "github.com/VoidMesh/api/api/proto/resource_node/v1"
-	"github.com/VoidMesh/api/api/services/resource_node"
-	"github.com/VoidMesh/api/api/services/world"
 	"github.com/charmbracelet/log"
 	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -17,18 +16,46 @@ import (
 // ResourceNodeHandler implements the ResourceNodeService gRPC service
 type ResourceNodeHandler struct {
 	resourceNodeV1.UnimplementedResourceNodeServiceServer
-	resourceNodeService *resource_node.NodeService
-	worldService        *world.Service
+	resourceNodeService ResourceNodeService
+	worldService        WorldService
 	logger              *log.Logger
 }
 
-// NewResourceNodeHandler creates a new resource node handler
-func NewResourceNodeHandler(resourceNodeService *resource_node.NodeService, worldService *world.Service) *ResourceNodeHandler {
+// NewResourceNodeHandler creates a new resource node handler with dependency injection
+func NewResourceNodeHandler(
+	resourceNodeService ResourceNodeService,
+	worldService WorldService,
+) *ResourceNodeHandler {
+	logger := logging.WithComponent("resource-node-handler")
+	logger.Debug("Creating new ResourceNodeHandler with dependency injection")
 	return &ResourceNodeHandler{
 		resourceNodeService: resourceNodeService,
 		worldService:        worldService,
-		logger:              logging.WithComponent("resource-node-handler"),
+		logger:              logger,
 	}
+}
+
+// NewResourceNodeHandlerWithPool creates a resource node handler with all dependencies wired up
+// This function maintains backward compatibility while providing dependency injection
+func NewResourceNodeHandlerWithPool(dbPool *pgxpool.Pool) (*ResourceNodeHandler, error) {
+	logger := logging.WithComponent("resource-node-handler")
+	logger.Debug("Creating ResourceNodeHandler with dependency injection")
+
+	// Create resource node service with all dependencies
+	resourceNodeService, err := NewResourceNodeServiceWithPool(dbPool)
+	if err != nil {
+		logger.Error("Failed to create resource node service", "error", err)
+		return nil, err
+	}
+
+	// Create world service
+	worldService, err := NewWorldServiceWithPool(dbPool)
+	if err != nil {
+		logger.Error("Failed to create world service", "error", err)
+		return nil, err
+	}
+
+	return NewResourceNodeHandler(resourceNodeService, worldService), nil
 }
 
 // GetResourcesInChunk retrieves all resource nodes in a specific chunk
@@ -48,7 +75,7 @@ func (h *ResourceNodeHandler) GetResourcesInChunk(ctx context.Context, req *reso
 		}
 		worldID = defaultWorld.ID
 	} else {
-		err := worldID.Scan(req.WorldId)
+		err := worldID.Scan(string(req.WorldId))
 		if err != nil {
 			logger.Warn("Invalid world ID format", "world_id", req.WorldId, "error", err)
 			return nil, status.Errorf(codes.InvalidArgument, "Invalid world ID: %v", err)
@@ -80,7 +107,7 @@ func (h *ResourceNodeHandler) GetResourcesInChunks(ctx context.Context, req *res
 
 	// Get the worldID from the first coordinate (all should be the same world)
 	if len(req.Coordinates) > 0 && len(req.Coordinates[0].WorldId) > 0 {
-		err := worldID.Scan(req.Coordinates[0].WorldId)
+		err := worldID.Scan(string(req.Coordinates[0].WorldId))
 		if err != nil {
 			logger.Warn("Invalid world ID format", "world_id", req.Coordinates[0].WorldId, "error", err)
 			return nil, status.Errorf(codes.InvalidArgument, "Invalid world ID: %v", err)

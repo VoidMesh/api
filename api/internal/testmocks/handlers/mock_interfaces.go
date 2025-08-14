@@ -16,6 +16,7 @@ import (
 	db "github.com/VoidMesh/api/api/db"
 	v1 "github.com/VoidMesh/api/api/proto/character/v1"
 	v10 "github.com/VoidMesh/api/api/proto/chunk/v1"
+	v11 "github.com/VoidMesh/api/api/proto/resource_node/v1"
 	pgtype "github.com/jackc/pgx/v5/pgtype"
 	gomock "go.uber.org/mock/gomock"
 )
@@ -633,6 +634,75 @@ func (m *MockChunkService) GetOrCreateChunk(ctx context.Context, chunkX, chunkY 
 func (mr *MockChunkServiceMockRecorder) GetOrCreateChunk(ctx, chunkX, chunkY any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetOrCreateChunk", reflect.TypeOf((*MockChunkService)(nil).GetOrCreateChunk), ctx, chunkX, chunkY)
+}
+
+// MockResourceNodeService is a mock of ResourceNodeService interface.
+type MockResourceNodeService struct {
+	ctrl     *gomock.Controller
+	recorder *MockResourceNodeServiceMockRecorder
+	isgomock struct{}
+}
+
+// MockResourceNodeServiceMockRecorder is the mock recorder for MockResourceNodeService.
+type MockResourceNodeServiceMockRecorder struct {
+	mock *MockResourceNodeService
+}
+
+// NewMockResourceNodeService creates a new mock instance.
+func NewMockResourceNodeService(ctrl *gomock.Controller) *MockResourceNodeService {
+	mock := &MockResourceNodeService{ctrl: ctrl}
+	mock.recorder = &MockResourceNodeServiceMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockResourceNodeService) EXPECT() *MockResourceNodeServiceMockRecorder {
+	return m.recorder
+}
+
+// GetResourceNodeTypes mocks base method.
+func (m *MockResourceNodeService) GetResourceNodeTypes(ctx context.Context) ([]*v11.ResourceNodeType, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetResourceNodeTypes", ctx)
+	ret0, _ := ret[0].([]*v11.ResourceNodeType)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetResourceNodeTypes indicates an expected call of GetResourceNodeTypes.
+func (mr *MockResourceNodeServiceMockRecorder) GetResourceNodeTypes(ctx any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetResourceNodeTypes", reflect.TypeOf((*MockResourceNodeService)(nil).GetResourceNodeTypes), ctx)
+}
+
+// GetResourcesForChunk mocks base method.
+func (m *MockResourceNodeService) GetResourcesForChunk(ctx context.Context, chunkX, chunkY int32) ([]*v11.ResourceNode, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetResourcesForChunk", ctx, chunkX, chunkY)
+	ret0, _ := ret[0].([]*v11.ResourceNode)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetResourcesForChunk indicates an expected call of GetResourcesForChunk.
+func (mr *MockResourceNodeServiceMockRecorder) GetResourcesForChunk(ctx, chunkX, chunkY any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetResourcesForChunk", reflect.TypeOf((*MockResourceNodeService)(nil).GetResourcesForChunk), ctx, chunkX, chunkY)
+}
+
+// GetResourcesForChunks mocks base method.
+func (m *MockResourceNodeService) GetResourcesForChunks(ctx context.Context, chunks []*v10.ChunkCoordinate) ([]*v11.ResourceNode, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetResourcesForChunks", ctx, chunks)
+	ret0, _ := ret[0].([]*v11.ResourceNode)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetResourcesForChunks indicates an expected call of GetResourcesForChunks.
+func (mr *MockResourceNodeServiceMockRecorder) GetResourcesForChunks(ctx, chunks any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetResourcesForChunks", reflect.TypeOf((*MockResourceNodeService)(nil).GetResourcesForChunks), ctx, chunks)
 }
 
 // MockLoggerInterface is a mock of LoggerInterface interface.
