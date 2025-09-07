@@ -1,0 +1,31 @@
+syntax = "proto3";
+
+package character_actions.v1;
+
+import "inventory/v1/inventory.proto";
+
+option go_package = "github.com/VoidMesh/api/api/proto/character_actions/v1";
+
+service CharacterActionsService {
+  // Resource harvesting
+  rpc HarvestResource(HarvestResourceRequest) returns (HarvestResourceResponse) {}
+}
+
+// Harvest resource from a resource node
+message HarvestResourceRequest {
+  string character_id = 1;
+  int32 resource_node_id = 2;
+}
+
+message HarvestResourceResponse {
+  bool success = 1;
+  string error_message = 2;
+  repeated HarvestResult results = 3;
+  inventory.v1.InventoryItem updated_item = 4; // Updated inventory item after harvest
+}
+
+message HarvestResult {
+  string item_name = 1;
+  int32 quantity = 2;
+  bool is_secondary_drop = 3;
+}

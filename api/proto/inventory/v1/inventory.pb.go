@@ -213,187 +213,6 @@ func (x *GetCharacterInventoryResponse) GetTotalItems() int32 {
 	return 0
 }
 
-// Harvest resource node
-type HarvestResourceNodeRequest struct {
-	state          protoimpl.MessageState `protogen:"open.v1"`
-	CharacterId    string                 `protobuf:"bytes,1,opt,name=character_id,json=characterId,proto3" json:"character_id,omitempty"`
-	ResourceNodeId int32                  `protobuf:"varint,2,opt,name=resource_node_id,json=resourceNodeId,proto3" json:"resource_node_id,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
-}
-
-func (x *HarvestResourceNodeRequest) Reset() {
-	*x = HarvestResourceNodeRequest{}
-	mi := &file_inventory_v1_inventory_proto_msgTypes[3]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *HarvestResourceNodeRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*HarvestResourceNodeRequest) ProtoMessage() {}
-
-func (x *HarvestResourceNodeRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_inventory_v1_inventory_proto_msgTypes[3]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use HarvestResourceNodeRequest.ProtoReflect.Descriptor instead.
-func (*HarvestResourceNodeRequest) Descriptor() ([]byte, []int) {
-	return file_inventory_v1_inventory_proto_rawDescGZIP(), []int{3}
-}
-
-func (x *HarvestResourceNodeRequest) GetCharacterId() string {
-	if x != nil {
-		return x.CharacterId
-	}
-	return ""
-}
-
-func (x *HarvestResourceNodeRequest) GetResourceNodeId() int32 {
-	if x != nil {
-		return x.ResourceNodeId
-	}
-	return 0
-}
-
-type HarvestResourceNodeResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
-	ErrorMessage  string                 `protobuf:"bytes,2,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
-	Results       []*HarvestResult       `protobuf:"bytes,3,rep,name=results,proto3" json:"results,omitempty"`
-	UpdatedItem   *InventoryItem         `protobuf:"bytes,4,opt,name=updated_item,json=updatedItem,proto3" json:"updated_item,omitempty"` // Updated inventory item after harvest
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *HarvestResourceNodeResponse) Reset() {
-	*x = HarvestResourceNodeResponse{}
-	mi := &file_inventory_v1_inventory_proto_msgTypes[4]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *HarvestResourceNodeResponse) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*HarvestResourceNodeResponse) ProtoMessage() {}
-
-func (x *HarvestResourceNodeResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_inventory_v1_inventory_proto_msgTypes[4]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use HarvestResourceNodeResponse.ProtoReflect.Descriptor instead.
-func (*HarvestResourceNodeResponse) Descriptor() ([]byte, []int) {
-	return file_inventory_v1_inventory_proto_rawDescGZIP(), []int{4}
-}
-
-func (x *HarvestResourceNodeResponse) GetSuccess() bool {
-	if x != nil {
-		return x.Success
-	}
-	return false
-}
-
-func (x *HarvestResourceNodeResponse) GetErrorMessage() string {
-	if x != nil {
-		return x.ErrorMessage
-	}
-	return ""
-}
-
-func (x *HarvestResourceNodeResponse) GetResults() []*HarvestResult {
-	if x != nil {
-		return x.Results
-	}
-	return nil
-}
-
-func (x *HarvestResourceNodeResponse) GetUpdatedItem() *InventoryItem {
-	if x != nil {
-		return x.UpdatedItem
-	}
-	return nil
-}
-
-type HarvestResult struct {
-	state           protoimpl.MessageState `protogen:"open.v1"`
-	ItemName        string                 `protobuf:"bytes,1,opt,name=item_name,json=itemName,proto3" json:"item_name,omitempty"`
-	Quantity        int32                  `protobuf:"varint,2,opt,name=quantity,proto3" json:"quantity,omitempty"`
-	IsSecondaryDrop bool                   `protobuf:"varint,3,opt,name=is_secondary_drop,json=isSecondaryDrop,proto3" json:"is_secondary_drop,omitempty"`
-	unknownFields   protoimpl.UnknownFields
-	sizeCache       protoimpl.SizeCache
-}
-
-func (x *HarvestResult) Reset() {
-	*x = HarvestResult{}
-	mi := &file_inventory_v1_inventory_proto_msgTypes[5]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *HarvestResult) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*HarvestResult) ProtoMessage() {}
-
-func (x *HarvestResult) ProtoReflect() protoreflect.Message {
-	mi := &file_inventory_v1_inventory_proto_msgTypes[5]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use HarvestResult.ProtoReflect.Descriptor instead.
-func (*HarvestResult) Descriptor() ([]byte, []int) {
-	return file_inventory_v1_inventory_proto_rawDescGZIP(), []int{5}
-}
-
-func (x *HarvestResult) GetItemName() string {
-	if x != nil {
-		return x.ItemName
-	}
-	return ""
-}
-
-func (x *HarvestResult) GetQuantity() int32 {
-	if x != nil {
-		return x.Quantity
-	}
-	return 0
-}
-
-func (x *HarvestResult) GetIsSecondaryDrop() bool {
-	if x != nil {
-		return x.IsSecondaryDrop
-	}
-	return false
-}
-
 // Add inventory item
 type AddInventoryItemRequest struct {
 	state              protoimpl.MessageState `protogen:"open.v1"`
@@ -406,7 +225,7 @@ type AddInventoryItemRequest struct {
 
 func (x *AddInventoryItemRequest) Reset() {
 	*x = AddInventoryItemRequest{}
-	mi := &file_inventory_v1_inventory_proto_msgTypes[6]
+	mi := &file_inventory_v1_inventory_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -418,7 +237,7 @@ func (x *AddInventoryItemRequest) String() string {
 func (*AddInventoryItemRequest) ProtoMessage() {}
 
 func (x *AddInventoryItemRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_inventory_v1_inventory_proto_msgTypes[6]
+	mi := &file_inventory_v1_inventory_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -431,7 +250,7 @@ func (x *AddInventoryItemRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AddInventoryItemRequest.ProtoReflect.Descriptor instead.
 func (*AddInventoryItemRequest) Descriptor() ([]byte, []int) {
-	return file_inventory_v1_inventory_proto_rawDescGZIP(), []int{6}
+	return file_inventory_v1_inventory_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *AddInventoryItemRequest) GetCharacterId() string {
@@ -466,7 +285,7 @@ type AddInventoryItemResponse struct {
 
 func (x *AddInventoryItemResponse) Reset() {
 	*x = AddInventoryItemResponse{}
-	mi := &file_inventory_v1_inventory_proto_msgTypes[7]
+	mi := &file_inventory_v1_inventory_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -478,7 +297,7 @@ func (x *AddInventoryItemResponse) String() string {
 func (*AddInventoryItemResponse) ProtoMessage() {}
 
 func (x *AddInventoryItemResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_inventory_v1_inventory_proto_msgTypes[7]
+	mi := &file_inventory_v1_inventory_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -491,7 +310,7 @@ func (x *AddInventoryItemResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AddInventoryItemResponse.ProtoReflect.Descriptor instead.
 func (*AddInventoryItemResponse) Descriptor() ([]byte, []int) {
-	return file_inventory_v1_inventory_proto_rawDescGZIP(), []int{7}
+	return file_inventory_v1_inventory_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *AddInventoryItemResponse) GetItem() *InventoryItem {
@@ -527,7 +346,7 @@ type RemoveInventoryItemRequest struct {
 
 func (x *RemoveInventoryItemRequest) Reset() {
 	*x = RemoveInventoryItemRequest{}
-	mi := &file_inventory_v1_inventory_proto_msgTypes[8]
+	mi := &file_inventory_v1_inventory_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -539,7 +358,7 @@ func (x *RemoveInventoryItemRequest) String() string {
 func (*RemoveInventoryItemRequest) ProtoMessage() {}
 
 func (x *RemoveInventoryItemRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_inventory_v1_inventory_proto_msgTypes[8]
+	mi := &file_inventory_v1_inventory_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -552,7 +371,7 @@ func (x *RemoveInventoryItemRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RemoveInventoryItemRequest.ProtoReflect.Descriptor instead.
 func (*RemoveInventoryItemRequest) Descriptor() ([]byte, []int) {
-	return file_inventory_v1_inventory_proto_rawDescGZIP(), []int{8}
+	return file_inventory_v1_inventory_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *RemoveInventoryItemRequest) GetCharacterId() string {
@@ -587,7 +406,7 @@ type RemoveInventoryItemResponse struct {
 
 func (x *RemoveInventoryItemResponse) Reset() {
 	*x = RemoveInventoryItemResponse{}
-	mi := &file_inventory_v1_inventory_proto_msgTypes[9]
+	mi := &file_inventory_v1_inventory_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -599,7 +418,7 @@ func (x *RemoveInventoryItemResponse) String() string {
 func (*RemoveInventoryItemResponse) ProtoMessage() {}
 
 func (x *RemoveInventoryItemResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_inventory_v1_inventory_proto_msgTypes[9]
+	mi := &file_inventory_v1_inventory_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -612,7 +431,7 @@ func (x *RemoveInventoryItemResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RemoveInventoryItemResponse.ProtoReflect.Descriptor instead.
 func (*RemoveInventoryItemResponse) Descriptor() ([]byte, []int) {
-	return file_inventory_v1_inventory_proto_rawDescGZIP(), []int{9}
+	return file_inventory_v1_inventory_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *RemoveInventoryItemResponse) GetItem() *InventoryItem {
@@ -648,7 +467,7 @@ type UpdateItemQuantityRequest struct {
 
 func (x *UpdateItemQuantityRequest) Reset() {
 	*x = UpdateItemQuantityRequest{}
-	mi := &file_inventory_v1_inventory_proto_msgTypes[10]
+	mi := &file_inventory_v1_inventory_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -660,7 +479,7 @@ func (x *UpdateItemQuantityRequest) String() string {
 func (*UpdateItemQuantityRequest) ProtoMessage() {}
 
 func (x *UpdateItemQuantityRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_inventory_v1_inventory_proto_msgTypes[10]
+	mi := &file_inventory_v1_inventory_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -673,7 +492,7 @@ func (x *UpdateItemQuantityRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateItemQuantityRequest.ProtoReflect.Descriptor instead.
 func (*UpdateItemQuantityRequest) Descriptor() ([]byte, []int) {
-	return file_inventory_v1_inventory_proto_rawDescGZIP(), []int{10}
+	return file_inventory_v1_inventory_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *UpdateItemQuantityRequest) GetCharacterId() string {
@@ -708,7 +527,7 @@ type UpdateItemQuantityResponse struct {
 
 func (x *UpdateItemQuantityResponse) Reset() {
 	*x = UpdateItemQuantityResponse{}
-	mi := &file_inventory_v1_inventory_proto_msgTypes[11]
+	mi := &file_inventory_v1_inventory_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -720,7 +539,7 @@ func (x *UpdateItemQuantityResponse) String() string {
 func (*UpdateItemQuantityResponse) ProtoMessage() {}
 
 func (x *UpdateItemQuantityResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_inventory_v1_inventory_proto_msgTypes[11]
+	mi := &file_inventory_v1_inventory_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -733,7 +552,7 @@ func (x *UpdateItemQuantityResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateItemQuantityResponse.ProtoReflect.Descriptor instead.
 func (*UpdateItemQuantityResponse) Descriptor() ([]byte, []int) {
-	return file_inventory_v1_inventory_proto_rawDescGZIP(), []int{11}
+	return file_inventory_v1_inventory_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *UpdateItemQuantityResponse) GetItem() *InventoryItem {
@@ -777,19 +596,7 @@ const file_inventory_v1_inventory_proto_rawDesc = "" +
 	"\x1dGetCharacterInventoryResponse\x121\n" +
 	"\x05items\x18\x01 \x03(\v2\x1b.inventory.v1.InventoryItemR\x05items\x12\x1f\n" +
 	"\vtotal_items\x18\x02 \x01(\x05R\n" +
-	"totalItems\"i\n" +
-	"\x1aHarvestResourceNodeRequest\x12!\n" +
-	"\fcharacter_id\x18\x01 \x01(\tR\vcharacterId\x12(\n" +
-	"\x10resource_node_id\x18\x02 \x01(\x05R\x0eresourceNodeId\"\xd3\x01\n" +
-	"\x1bHarvestResourceNodeResponse\x12\x18\n" +
-	"\asuccess\x18\x01 \x01(\bR\asuccess\x12#\n" +
-	"\rerror_message\x18\x02 \x01(\tR\ferrorMessage\x125\n" +
-	"\aresults\x18\x03 \x03(\v2\x1b.inventory.v1.HarvestResultR\aresults\x12>\n" +
-	"\fupdated_item\x18\x04 \x01(\v2\x1b.inventory.v1.InventoryItemR\vupdatedItem\"t\n" +
-	"\rHarvestResult\x12\x1b\n" +
-	"\titem_name\x18\x01 \x01(\tR\bitemName\x12\x1a\n" +
-	"\bquantity\x18\x02 \x01(\x05R\bquantity\x12*\n" +
-	"\x11is_secondary_drop\x18\x03 \x01(\bR\x0fisSecondaryDrop\"\xb1\x01\n" +
+	"totalItems\"\xb1\x01\n" +
 	"\x17AddInventoryItemRequest\x12!\n" +
 	"\fcharacter_id\x18\x01 \x01(\tR\vcharacterId\x12W\n" +
 	"\x15resource_node_type_id\x18\x02 \x01(\x0e2$.resource_node.v1.ResourceNodeTypeIdR\x12resourceNodeTypeId\x12\x1a\n" +
@@ -813,10 +620,9 @@ const file_inventory_v1_inventory_proto_rawDesc = "" +
 	"\x1aUpdateItemQuantityResponse\x12/\n" +
 	"\x04item\x18\x01 \x01(\v2\x1b.inventory.v1.InventoryItemR\x04item\x12\x18\n" +
 	"\asuccess\x18\x02 \x01(\bR\asuccess\x12#\n" +
-	"\rerror_message\x18\x03 \x01(\tR\ferrorMessage2\xb2\x04\n" +
+	"\rerror_message\x18\x03 \x01(\tR\ferrorMessage2\xc4\x03\n" +
 	"\x10InventoryService\x12r\n" +
-	"\x15GetCharacterInventory\x12*.inventory.v1.GetCharacterInventoryRequest\x1a+.inventory.v1.GetCharacterInventoryResponse\"\x00\x12l\n" +
-	"\x13HarvestResourceNode\x12(.inventory.v1.HarvestResourceNodeRequest\x1a).inventory.v1.HarvestResourceNodeResponse\"\x00\x12c\n" +
+	"\x15GetCharacterInventory\x12*.inventory.v1.GetCharacterInventoryRequest\x1a+.inventory.v1.GetCharacterInventoryResponse\"\x00\x12c\n" +
 	"\x10AddInventoryItem\x12%.inventory.v1.AddInventoryItemRequest\x1a&.inventory.v1.AddInventoryItemResponse\"\x00\x12l\n" +
 	"\x13RemoveInventoryItem\x12(.inventory.v1.RemoveInventoryItemRequest\x1a).inventory.v1.RemoveInventoryItemResponse\"\x00\x12i\n" +
 	"\x12UpdateItemQuantity\x12'.inventory.v1.UpdateItemQuantityRequest\x1a(.inventory.v1.UpdateItemQuantityResponse\"\x00B0Z.github.com/VoidMesh/api/api/proto/inventory/v1b\x06proto3"
@@ -833,53 +639,46 @@ func file_inventory_v1_inventory_proto_rawDescGZIP() []byte {
 	return file_inventory_v1_inventory_proto_rawDescData
 }
 
-var file_inventory_v1_inventory_proto_msgTypes = make([]protoimpl.MessageInfo, 12)
+var file_inventory_v1_inventory_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
 var file_inventory_v1_inventory_proto_goTypes = []any{
 	(*InventoryItem)(nil),                 // 0: inventory.v1.InventoryItem
 	(*GetCharacterInventoryRequest)(nil),  // 1: inventory.v1.GetCharacterInventoryRequest
 	(*GetCharacterInventoryResponse)(nil), // 2: inventory.v1.GetCharacterInventoryResponse
-	(*HarvestResourceNodeRequest)(nil),    // 3: inventory.v1.HarvestResourceNodeRequest
-	(*HarvestResourceNodeResponse)(nil),   // 4: inventory.v1.HarvestResourceNodeResponse
-	(*HarvestResult)(nil),                 // 5: inventory.v1.HarvestResult
-	(*AddInventoryItemRequest)(nil),       // 6: inventory.v1.AddInventoryItemRequest
-	(*AddInventoryItemResponse)(nil),      // 7: inventory.v1.AddInventoryItemResponse
-	(*RemoveInventoryItemRequest)(nil),    // 8: inventory.v1.RemoveInventoryItemRequest
-	(*RemoveInventoryItemResponse)(nil),   // 9: inventory.v1.RemoveInventoryItemResponse
-	(*UpdateItemQuantityRequest)(nil),     // 10: inventory.v1.UpdateItemQuantityRequest
-	(*UpdateItemQuantityResponse)(nil),    // 11: inventory.v1.UpdateItemQuantityResponse
-	(v1.ResourceNodeTypeId)(0),            // 12: resource_node.v1.ResourceNodeTypeId
-	(*v1.ResourceNodeType)(nil),           // 13: resource_node.v1.ResourceNodeType
-	(*timestamppb.Timestamp)(nil),         // 14: google.protobuf.Timestamp
+	(*AddInventoryItemRequest)(nil),       // 3: inventory.v1.AddInventoryItemRequest
+	(*AddInventoryItemResponse)(nil),      // 4: inventory.v1.AddInventoryItemResponse
+	(*RemoveInventoryItemRequest)(nil),    // 5: inventory.v1.RemoveInventoryItemRequest
+	(*RemoveInventoryItemResponse)(nil),   // 6: inventory.v1.RemoveInventoryItemResponse
+	(*UpdateItemQuantityRequest)(nil),     // 7: inventory.v1.UpdateItemQuantityRequest
+	(*UpdateItemQuantityResponse)(nil),    // 8: inventory.v1.UpdateItemQuantityResponse
+	(v1.ResourceNodeTypeId)(0),            // 9: resource_node.v1.ResourceNodeTypeId
+	(*v1.ResourceNodeType)(nil),           // 10: resource_node.v1.ResourceNodeType
+	(*timestamppb.Timestamp)(nil),         // 11: google.protobuf.Timestamp
 }
 var file_inventory_v1_inventory_proto_depIdxs = []int32{
-	12, // 0: inventory.v1.InventoryItem.resource_node_type_id:type_name -> resource_node.v1.ResourceNodeTypeId
-	13, // 1: inventory.v1.InventoryItem.resource_node_type:type_name -> resource_node.v1.ResourceNodeType
-	14, // 2: inventory.v1.InventoryItem.created_at:type_name -> google.protobuf.Timestamp
-	14, // 3: inventory.v1.InventoryItem.updated_at:type_name -> google.protobuf.Timestamp
+	9,  // 0: inventory.v1.InventoryItem.resource_node_type_id:type_name -> resource_node.v1.ResourceNodeTypeId
+	10, // 1: inventory.v1.InventoryItem.resource_node_type:type_name -> resource_node.v1.ResourceNodeType
+	11, // 2: inventory.v1.InventoryItem.created_at:type_name -> google.protobuf.Timestamp
+	11, // 3: inventory.v1.InventoryItem.updated_at:type_name -> google.protobuf.Timestamp
 	0,  // 4: inventory.v1.GetCharacterInventoryResponse.items:type_name -> inventory.v1.InventoryItem
-	5,  // 5: inventory.v1.HarvestResourceNodeResponse.results:type_name -> inventory.v1.HarvestResult
-	0,  // 6: inventory.v1.HarvestResourceNodeResponse.updated_item:type_name -> inventory.v1.InventoryItem
-	12, // 7: inventory.v1.AddInventoryItemRequest.resource_node_type_id:type_name -> resource_node.v1.ResourceNodeTypeId
-	0,  // 8: inventory.v1.AddInventoryItemResponse.item:type_name -> inventory.v1.InventoryItem
-	12, // 9: inventory.v1.RemoveInventoryItemRequest.resource_node_type_id:type_name -> resource_node.v1.ResourceNodeTypeId
-	0,  // 10: inventory.v1.RemoveInventoryItemResponse.item:type_name -> inventory.v1.InventoryItem
-	12, // 11: inventory.v1.UpdateItemQuantityRequest.resource_node_type_id:type_name -> resource_node.v1.ResourceNodeTypeId
-	0,  // 12: inventory.v1.UpdateItemQuantityResponse.item:type_name -> inventory.v1.InventoryItem
-	1,  // 13: inventory.v1.InventoryService.GetCharacterInventory:input_type -> inventory.v1.GetCharacterInventoryRequest
-	3,  // 14: inventory.v1.InventoryService.HarvestResourceNode:input_type -> inventory.v1.HarvestResourceNodeRequest
-	6,  // 15: inventory.v1.InventoryService.AddInventoryItem:input_type -> inventory.v1.AddInventoryItemRequest
-	8,  // 16: inventory.v1.InventoryService.RemoveInventoryItem:input_type -> inventory.v1.RemoveInventoryItemRequest
-	10, // 17: inventory.v1.InventoryService.UpdateItemQuantity:input_type -> inventory.v1.UpdateItemQuantityRequest
-	2,  // 18: inventory.v1.InventoryService.GetCharacterInventory:output_type -> inventory.v1.GetCharacterInventoryResponse
-	4,  // 19: inventory.v1.InventoryService.HarvestResourceNode:output_type -> inventory.v1.HarvestResourceNodeResponse
-	7,  // 20: inventory.v1.InventoryService.AddInventoryItem:output_type -> inventory.v1.AddInventoryItemResponse
-	9,  // 21: inventory.v1.InventoryService.RemoveInventoryItem:output_type -> inventory.v1.RemoveInventoryItemResponse
-	11, // 22: inventory.v1.InventoryService.UpdateItemQuantity:output_type -> inventory.v1.UpdateItemQuantityResponse
-	18, // [18:23] is the sub-list for method output_type
-	13, // [13:18] is the sub-list for method input_type
-	13, // [13:13] is the sub-list for extension type_name
-	13, // [13:13] is the sub-list for extension extendee
-	0,  // [0:13] is the sub-list for field type_name
+	9,  // 5: inventory.v1.AddInventoryItemRequest.resource_node_type_id:type_name -> resource_node.v1.ResourceNodeTypeId
+	0,  // 6: inventory.v1.AddInventoryItemResponse.item:type_name -> inventory.v1.InventoryItem
+	9,  // 7: inventory.v1.RemoveInventoryItemRequest.resource_node_type_id:type_name -> resource_node.v1.ResourceNodeTypeId
+	0,  // 8: inventory.v1.RemoveInventoryItemResponse.item:type_name -> inventory.v1.InventoryItem
+	9,  // 9: inventory.v1.UpdateItemQuantityRequest.resource_node_type_id:type_name -> resource_node.v1.ResourceNodeTypeId
+	0,  // 10: inventory.v1.UpdateItemQuantityResponse.item:type_name -> inventory.v1.InventoryItem
+	1,  // 11: inventory.v1.InventoryService.GetCharacterInventory:input_type -> inventory.v1.GetCharacterInventoryRequest
+	3,  // 12: inventory.v1.InventoryService.AddInventoryItem:input_type -> inventory.v1.AddInventoryItemRequest
+	5,  // 13: inventory.v1.InventoryService.RemoveInventoryItem:input_type -> inventory.v1.RemoveInventoryItemRequest
+	7,  // 14: inventory.v1.InventoryService.UpdateItemQuantity:input_type -> inventory.v1.UpdateItemQuantityRequest
+	2,  // 15: inventory.v1.InventoryService.GetCharacterInventory:output_type -> inventory.v1.GetCharacterInventoryResponse
+	4,  // 16: inventory.v1.InventoryService.AddInventoryItem:output_type -> inventory.v1.AddInventoryItemResponse
+	6,  // 17: inventory.v1.InventoryService.RemoveInventoryItem:output_type -> inventory.v1.RemoveInventoryItemResponse
+	8,  // 18: inventory.v1.InventoryService.UpdateItemQuantity:output_type -> inventory.v1.UpdateItemQuantityResponse
+	15, // [15:19] is the sub-list for method output_type
+	11, // [11:15] is the sub-list for method input_type
+	11, // [11:11] is the sub-list for extension type_name
+	11, // [11:11] is the sub-list for extension extendee
+	0,  // [0:11] is the sub-list for field type_name
 }
 
 func init() { file_inventory_v1_inventory_proto_init() }
@@ -893,7 +692,7 @@ func file_inventory_v1_inventory_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_inventory_v1_inventory_proto_rawDesc), len(file_inventory_v1_inventory_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   12,
+			NumMessages:   9,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

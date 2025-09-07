@@ -20,7 +20,6 @@ const _ = grpc.SupportPackageIsVersion9
 
 const (
 	InventoryService_GetCharacterInventory_FullMethodName = "/inventory.v1.InventoryService/GetCharacterInventory"
-	InventoryService_HarvestResourceNode_FullMethodName   = "/inventory.v1.InventoryService/HarvestResourceNode"
 	InventoryService_AddInventoryItem_FullMethodName      = "/inventory.v1.InventoryService/AddInventoryItem"
 	InventoryService_RemoveInventoryItem_FullMethodName   = "/inventory.v1.InventoryService/RemoveInventoryItem"
 	InventoryService_UpdateItemQuantity_FullMethodName    = "/inventory.v1.InventoryService/UpdateItemQuantity"
@@ -32,8 +31,6 @@ const (
 type InventoryServiceClient interface {
 	// Inventory management
 	GetCharacterInventory(ctx context.Context, in *GetCharacterInventoryRequest, opts ...grpc.CallOption) (*GetCharacterInventoryResponse, error)
-	// Resource harvesting
-	HarvestResourceNode(ctx context.Context, in *HarvestResourceNodeRequest, opts ...grpc.CallOption) (*HarvestResourceNodeResponse, error)
 	// Item management
 	AddInventoryItem(ctx context.Context, in *AddInventoryItemRequest, opts ...grpc.CallOption) (*AddInventoryItemResponse, error)
 	RemoveInventoryItem(ctx context.Context, in *RemoveInventoryItemRequest, opts ...grpc.CallOption) (*RemoveInventoryItemResponse, error)
@@ -52,16 +49,6 @@ func (c *inventoryServiceClient) GetCharacterInventory(ctx context.Context, in *
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(GetCharacterInventoryResponse)
 	err := c.cc.Invoke(ctx, InventoryService_GetCharacterInventory_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *inventoryServiceClient) HarvestResourceNode(ctx context.Context, in *HarvestResourceNodeRequest, opts ...grpc.CallOption) (*HarvestResourceNodeResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(HarvestResourceNodeResponse)
-	err := c.cc.Invoke(ctx, InventoryService_HarvestResourceNode_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -104,8 +91,6 @@ func (c *inventoryServiceClient) UpdateItemQuantity(ctx context.Context, in *Upd
 type InventoryServiceServer interface {
 	// Inventory management
 	GetCharacterInventory(context.Context, *GetCharacterInventoryRequest) (*GetCharacterInventoryResponse, error)
-	// Resource harvesting
-	HarvestResourceNode(context.Context, *HarvestResourceNodeRequest) (*HarvestResourceNodeResponse, error)
 	// Item management
 	AddInventoryItem(context.Context, *AddInventoryItemRequest) (*AddInventoryItemResponse, error)
 	RemoveInventoryItem(context.Context, *RemoveInventoryItemRequest) (*RemoveInventoryItemResponse, error)
@@ -122,9 +107,6 @@ type UnimplementedInventoryServiceServer struct{}
 
 func (UnimplementedInventoryServiceServer) GetCharacterInventory(context.Context, *GetCharacterInventoryRequest) (*GetCharacterInventoryResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetCharacterInventory not implemented")
-}
-func (UnimplementedInventoryServiceServer) HarvestResourceNode(context.Context, *HarvestResourceNodeRequest) (*HarvestResourceNodeResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method HarvestResourceNode not implemented")
 }
 func (UnimplementedInventoryServiceServer) AddInventoryItem(context.Context, *AddInventoryItemRequest) (*AddInventoryItemResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method AddInventoryItem not implemented")
@@ -170,24 +152,6 @@ func _InventoryService_GetCharacterInventory_Handler(srv interface{}, ctx contex
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(InventoryServiceServer).GetCharacterInventory(ctx, req.(*GetCharacterInventoryRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _InventoryService_HarvestResourceNode_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(HarvestResourceNodeRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(InventoryServiceServer).HarvestResourceNode(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: InventoryService_HarvestResourceNode_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(InventoryServiceServer).HarvestResourceNode(ctx, req.(*HarvestResourceNodeRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -256,10 +220,6 @@ var InventoryService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetCharacterInventory",
 			Handler:    _InventoryService_GetCharacterInventory_Handler,
-		},
-		{
-			MethodName: "HarvestResourceNode",
-			Handler:    _InventoryService_HarvestResourceNode_Handler,
 		},
 		{
 			MethodName: "AddInventoryItem",

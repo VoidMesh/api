@@ -226,6 +226,21 @@ func (s *Service) GetCharacter(ctx context.Context, req *characterV1.GetCharacte
 	}, nil
 }
 
+// GetCharacterByID retrieves a character by ID string (for internal use)
+func (s *Service) GetCharacterByID(ctx context.Context, characterID string) (*db.Character, error) {
+	charUUID, err := parseUUID(characterID)
+	if err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "invalid character ID: %v", err)
+	}
+
+	character, err := s.db.GetCharacterById(ctx, charUUID)
+	if err != nil {
+		return nil, status.Errorf(codes.NotFound, "character not found: %v", err)
+	}
+
+	return &character, nil
+}
+
 // GetUserCharacters retrieves all characters for a user
 func (s *Service) GetUserCharacters(ctx context.Context, userID string) (*characterV1.GetMyCharactersResponse, error) {
 	userUUID, err := parseUUID(userID)

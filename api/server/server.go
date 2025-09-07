@@ -6,15 +6,21 @@ import (
 	"os"
 	"time"
 
+	"github.com/VoidMesh/api/api/db"
 	"github.com/VoidMesh/api/api/internal/logging"
+	pbCharacterActionsV1 "github.com/VoidMesh/api/api/proto/character_actions/v1"
 	pbCharacterV1 "github.com/VoidMesh/api/api/proto/character/v1"
 	pbChunkV1 "github.com/VoidMesh/api/api/proto/chunk/v1"
+	pbInventoryV1 "github.com/VoidMesh/api/api/proto/inventory/v1"
 	pbResourceNodeV1 "github.com/VoidMesh/api/api/proto/resource_node/v1"
 	pbTerrainV1 "github.com/VoidMesh/api/api/proto/terrain/v1"
 	pbUserV1 "github.com/VoidMesh/api/api/proto/user/v1"
 	pbWorldV1 "github.com/VoidMesh/api/api/proto/world/v1"
 	"github.com/VoidMesh/api/api/server/handlers"
 	"github.com/VoidMesh/api/api/server/middleware" // Uncomment to enable JWT middleware
+	"github.com/VoidMesh/api/api/services/character"
+	"github.com/VoidMesh/api/api/services/character_actions"
+	"github.com/VoidMesh/api/api/services/inventory"
 	"github.com/VoidMesh/api/api/services/noise"
 	"github.com/VoidMesh/api/api/services/resource_node"
 	"github.com/VoidMesh/api/api/services/world"
@@ -127,6 +133,14 @@ func Serve() {
 	}
 	pbCharacterV1.RegisterCharacterServiceServer(g, characterServer)
 
+	// Create underlying character service for other services
+	// We need to create the chunk service as well
+	chunkService, err := handlers.NewChunkServiceWithPool(dbPool)
+	if err != nil {
+		logger.Fatal("Failed to create chunk service for character service", "error", err)
+	}
+	characterRealService := character.NewServiceWithPool(dbPool, chunkService)
+
 	logger.Debug("Registering TerrainService")
 	terrainService := handlers.NewTerrainServiceWithDefaultLogger()
 	terrainLogger := &handlers.LoggerWrapper{Logger: logging.WithComponent("terrain-handler")}
@@ -144,12 +158,27 @@ func Serve() {
 	}
 	pbChunkV1.RegisterChunkServiceServer(g, chunkServer)
 
+	logger.Debug("Registering InventoryService")
+	inventoryService := inventory.NewServiceWithPool(dbPool, characterRealService, resourceNodeService)
+	pbInventoryV1.RegisterInventoryServiceServer(g, handlers.NewInventoryHandler(inventoryService))
+
+	logger.Debug("Registering CharacterActionsService")
+	characterActionsService := character_actions.NewService(
+		character_actions.NewDatabaseWrapper(db.New(dbPool)),
+		character_actions.NewInventoryServiceAdapter(inventoryService),
+		character_actions.NewCharacterServiceAdapter(characterRealService),
+		character_actions.NewResourceNodeServiceAdapter(resourceNodeService),
+		character_actions.NewDefaultLoggerWrapper(),
+	)
+	characterActionsHandler := handlers.NewCharacterActionsServiceWithPool(characterActionsService)
+	pbCharacterActionsV1.RegisterCharacterActionsServiceServer(g, handlers.NewCharacterActionsServer(characterActionsHandler))
+
 	logger.Info("All gRPC services registered successfully")
 
 	// Serve the gRPC server
 	logger.Info("🚀 VoidMesh API server ready to accept connections",
 		"address", lis.Addr().String(),
-		"services", []string{"User", "World", "Character", "Chunk", "ResourceNode", "Terrain"},
+		"services", []string{"User", "World", "Character", "Chunk", "ResourceNode", "Terrain", "Inventory", "CharacterActions"},
 		"features", []string{"JWT Auth", "Health Check", "Reflection"})
 
 	logger.Debug("Starting to serve gRPC requests")

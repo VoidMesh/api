@@ -3,7 +3,6 @@ package inventory
 import (
 	"context"
 	"encoding/hex"
-	"math/rand"
 
 	"github.com/VoidMesh/api/api/db"
 	inventoryV1 "github.com/VoidMesh/api/api/proto/inventory/v1"
@@ -233,85 +232,3 @@ func (s *Service) RemoveInventoryItem(ctx context.Context, characterID string, r
 	return protoItem, nil
 }
 
-// HarvestResourceNode processes harvesting from a resource node
-func (s *Service) HarvestResourceNode(ctx context.Context, characterID string, resourceNodeID int32) ([]*inventoryV1.HarvestResult, *inventoryV1.InventoryItem, error) {
-	s.logger.Debug("Harvesting resource node", "character_id", characterID, "resource_node_id", resourceNodeID)
-
-	// TODO: Add validation:
-	// 1. Check if character exists and is owned by the requesting user
-	// 2. Check if resource node exists and is within interaction range
-	// 3. Check harvest cooldowns/timers
-	// 4. Validate character position vs resource node position
-
-	// Get resource node information
-	resourceNode, err := s.db.GetResourceNode(ctx, resourceNodeID)
-	if err != nil {
-		s.logger.Error("Failed to get resource node", "resource_node_id", resourceNodeID, "error", err)
-		return nil, nil, status.Errorf(codes.NotFound, "resource node not found")
-	}
-
-	// Get resource node type information
-	resourceTypes, err := s.resourceNodeService.GetResourceNodeTypes(ctx)
-	if err != nil {
-		s.logger.Error("Failed to get resource node types", "error", err)
-		return nil, nil, status.Errorf(codes.Internal, "failed to get resource information")
-	}
-
-	var resourceType *resourceNodeV1.ResourceNodeType
-	for _, rt := range resourceTypes {
-		if rt.Id == resourceNode.ResourceNodeTypeID {
-			resourceType = rt
-			break
-		}
-	}
-
-	if resourceType == nil {
-		return nil, nil, status.Errorf(codes.Internal, "resource node type not found")
-	}
-
-	// Calculate harvest results
-	var harvestResults []*inventoryV1.HarvestResult
-
-	// Primary yield
-	yieldRange := resourceType.Properties.YieldMax - resourceType.Properties.YieldMin + 1
-	primaryYield := resourceType.Properties.YieldMin + rand.Int31n(yieldRange)
-
-	harvestResults = append(harvestResults, &inventoryV1.HarvestResult{
-		ItemName:        resourceType.Name,
-		Quantity:        primaryYield,
-		IsSecondaryDrop: false,
-	})
-
-	// Add primary resources to inventory
-	updatedItem, err := s.AddInventoryItem(ctx, characterID, resourceNodeV1.ResourceNodeTypeId(resourceType.Id), primaryYield)
-	if err != nil {
-		s.logger.Error("Failed to add primary harvest to inventory", "error", err)
-		return nil, nil, status.Errorf(codes.Internal, "failed to add harvested resources")
-	}
-
-	// Process secondary drops
-	for _, secondaryDrop := range resourceType.Properties.SecondaryDrops {
-		if rand.Float32() < secondaryDrop.Chance {
-			dropRange := secondaryDrop.MaxAmount - secondaryDrop.MinAmount + 1
-			dropAmount := secondaryDrop.MinAmount + rand.Int31n(dropRange)
-
-			harvestResults = append(harvestResults, &inventoryV1.HarvestResult{
-				ItemName:        secondaryDrop.Name,
-				Quantity:        dropAmount,
-				IsSecondaryDrop: true,
-			})
-
-			// TODO: Map secondary drop names to resource node type IDs
-			// For now, we're not adding secondary drops to inventory
-			// This would require a mapping system or separate item types
-		}
-	}
-
-	s.logger.Debug("Completed resource harvest",
-		"character_id", characterID,
-		"resource_node_id", resourceNodeID,
-		"primary_yield", primaryYield,
-		"total_results", len(harvestResults))
-
-	return harvestResults, updatedItem, nil
-}

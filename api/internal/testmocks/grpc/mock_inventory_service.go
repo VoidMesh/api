@@ -82,25 +82,6 @@ func (mr *MockInventoryServiceClientMockRecorder) GetCharacterInventory(ctx, in 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCharacterInventory", reflect.TypeOf((*MockInventoryServiceClient)(nil).GetCharacterInventory), varargs...)
 }
 
-// HarvestResourceNode mocks base method.
-func (m *MockInventoryServiceClient) HarvestResourceNode(ctx context.Context, in *v1.HarvestResourceNodeRequest, opts ...grpc.CallOption) (*v1.HarvestResourceNodeResponse, error) {
-	m.ctrl.T.Helper()
-	varargs := []any{ctx, in}
-	for _, a := range opts {
-		varargs = append(varargs, a)
-	}
-	ret := m.ctrl.Call(m, "HarvestResourceNode", varargs...)
-	ret0, _ := ret[0].(*v1.HarvestResourceNodeResponse)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// HarvestResourceNode indicates an expected call of HarvestResourceNode.
-func (mr *MockInventoryServiceClientMockRecorder) HarvestResourceNode(ctx, in any, opts ...any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	varargs := append([]any{ctx, in}, opts...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HarvestResourceNode", reflect.TypeOf((*MockInventoryServiceClient)(nil).HarvestResourceNode), varargs...)
-}
 
 // RemoveInventoryItem mocks base method.
 func (m *MockInventoryServiceClient) RemoveInventoryItem(ctx context.Context, in *v1.RemoveInventoryItemRequest, opts ...grpc.CallOption) (*v1.RemoveInventoryItemResponse, error) {
@@ -196,20 +177,6 @@ func (mr *MockInventoryServiceServerMockRecorder) GetCharacterInventory(arg0, ar
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCharacterInventory", reflect.TypeOf((*MockInventoryServiceServer)(nil).GetCharacterInventory), arg0, arg1)
 }
 
-// HarvestResourceNode mocks base method.
-func (m *MockInventoryServiceServer) HarvestResourceNode(arg0 context.Context, arg1 *v1.HarvestResourceNodeRequest) (*v1.HarvestResourceNodeResponse, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "HarvestResourceNode", arg0, arg1)
-	ret0, _ := ret[0].(*v1.HarvestResourceNodeResponse)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// HarvestResourceNode indicates an expected call of HarvestResourceNode.
-func (mr *MockInventoryServiceServerMockRecorder) HarvestResourceNode(arg0, arg1 any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HarvestResourceNode", reflect.TypeOf((*MockInventoryServiceServer)(nil).HarvestResourceNode), arg0, arg1)
-}
 
 // RemoveInventoryItem mocks base method.
 func (m *MockInventoryServiceServer) RemoveInventoryItem(arg0 context.Context, arg1 *v1.RemoveInventoryItemRequest) (*v1.RemoveInventoryItemResponse, error) {

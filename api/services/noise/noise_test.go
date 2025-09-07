@@ -68,11 +68,11 @@ func TestGenerator_GetNoise(t *testing.T) {
 	defer cleanup()
 
 	tests := []struct {
-		name         string
-		seed         int64
-		x, y         float64
+		name          string
+		seed          int64
+		x, y          float64
 		expectInRange bool
-		expectValue  *float64 // For exact value checks when deterministic
+		expectValue   *float64 // For exact value checks when deterministic
 	}{
 		{
 			name:          "noise at origin with positive seed",
@@ -143,10 +143,10 @@ func TestGenerator_GetTerrainNoise(t *testing.T) {
 	defer cleanup()
 
 	tests := []struct {
-		name         string
-		seed         int64
-		x, y         int
-		scale        float64
+		name          string
+		seed          int64
+		x, y          int
+		scale         float64
 		expectInRange bool
 	}{
 		{
@@ -267,10 +267,10 @@ func TestNoiseDeterminism(t *testing.T) {
 	defer cleanup()
 
 	tests := []struct {
-		name         string
-		seed         int64
-		coordinates  []struct{ x, y float64 }
-		iterations   int
+		name        string
+		seed        int64
+		coordinates []struct{ x, y float64 }
+		iterations  int
 	}{
 		{
 			name: "deterministic output for same seed and coordinates",
@@ -435,9 +435,9 @@ func TestNoiseEdgeCases(t *testing.T) {
 	defer cleanup()
 
 	tests := []struct {
-		name      string
-		seed      int64
-		operation func(generator GeneratorInterface) float64
+		name          string
+		seed          int64
+		operation     func(generator GeneratorInterface) float64
 		expectInRange bool // Some edge cases may produce values outside [-1, 1]
 	}{
 		{
@@ -505,11 +505,11 @@ func TestNoiseEdgeCases(t *testing.T) {
 
 			// Should not panic and should return valid value
 			result := tt.operation(generator)
-			
+
 			// Always check for NaN and infinity
 			assert.False(t, math.IsNaN(result), "result should not be NaN")
 			assert.False(t, math.IsInf(result, 0), "result should not be infinite")
-			
+
 			// Only check range for cases where we expect it
 			if tt.expectInRange {
 				assert.GreaterOrEqual(t, result, -1.0, "result should be >= -1")
@@ -534,16 +534,16 @@ func TestNoiseContinuity(t *testing.T) {
 
 	// Test small increments
 	increments := []float64{0.01, 0.1, 0.5}
-	
+
 	for _, increment := range increments {
 		// Test X direction
 		nearValueX := generator.GetNoise(baseX+increment, baseY)
 		diffX := math.Abs(nearValueX - baseValue)
-		
-		// Test Y direction  
+
+		// Test Y direction
 		nearValueY := generator.GetNoise(baseX, baseY+increment)
 		diffY := math.Abs(nearValueY - baseValue)
-		
+
 		// For small increments, the difference should be relatively small
 		// This tests the continuity property of Perlin noise
 		if increment <= 0.1 {
@@ -556,7 +556,7 @@ func TestNoiseContinuity(t *testing.T) {
 // Benchmark tests
 func BenchmarkGenerator_GetNoise(b *testing.B) {
 	generator := NewGenerator(12345)
-	
+
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		x := float64(i % 1000)
@@ -567,7 +567,7 @@ func BenchmarkGenerator_GetNoise(b *testing.B) {
 
 func BenchmarkGenerator_GetTerrainNoise(b *testing.B) {
 	generator := NewGenerator(12345)
-	
+
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		x := i % 1000
@@ -585,32 +585,32 @@ func BenchmarkNewGenerator(b *testing.B) {
 
 func TestNoisePerformance(t *testing.T) {
 	testutil.SkipIfShort(t, "skipping performance test in short mode")
-	
+
 	cleanup := testutil.SetupTest(t, testutil.DefaultTestConfig())
 	defer cleanup()
 
 	generator := NewGenerator(12345)
-	
+
 	// Test performance of generating a large noise map
 	start := time.Now()
 	mapSize := 1000
 	noiseCount := 0
-	
+
 	for x := 0; x < mapSize; x++ {
 		for y := 0; y < mapSize; y++ {
 			generator.GetTerrainNoise(x, y, 100.0)
 			noiseCount++
 		}
 	}
-	
+
 	duration := time.Since(start)
-	
+
 	// Log performance metrics
 	t.Logf("Generated %d noise values in %v", noiseCount, duration)
 	t.Logf("Average time per noise value: %v", duration/time.Duration(noiseCount))
-	
+
 	// Basic performance assertion - should be able to generate at least 10k values per second
 	valuesPerSecond := float64(noiseCount) / duration.Seconds()
-	assert.Greater(t, valuesPerSecond, 10000.0, 
+	assert.Greater(t, valuesPerSecond, 10000.0,
 		"should generate at least 10k noise values per second, got %.2f", valuesPerSecond)
 }
