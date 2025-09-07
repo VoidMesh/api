@@ -99,8 +99,8 @@ func TestChunkServiceServer_GetChunk(t *testing.T) {
 				ResourceNodeTypeId:  resourceNodeV1.ResourceNodeTypeId_RESOURCE_NODE_TYPE_ID_HARVESTABLE_TREE,
 				ChunkX:              10,
 				ChunkY:              20,
-				PosX:                15,
-				PosY:                25,
+				X:                15,
+				Y:                25,
 				Size:                5,
 				CreatedAt:           timestamppb.New(time.Now()),
 			},
@@ -159,8 +159,8 @@ func TestChunkServiceServer_GetChunk(t *testing.T) {
 				assert.Equal(t, resourceNodeV1.ResourceNodeTypeId_RESOURCE_NODE_TYPE_ID_HARVESTABLE_TREE, rn.ResourceNodeTypeId)
 				assert.Equal(t, int32(10), rn.ChunkX)
 				assert.Equal(t, int32(20), rn.ChunkY)
-				assert.Equal(t, int32(15), rn.PosX)
-				assert.Equal(t, int32(25), rn.PosY)
+				assert.Equal(t, int32(15), rn.X)
+				assert.Equal(t, int32(25), rn.Y)
 			},
 		},
 		{

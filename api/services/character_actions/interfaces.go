@@ -5,17 +5,17 @@ import (
 
 	"github.com/VoidMesh/api/api/db"
 	inventoryV1 "github.com/VoidMesh/api/api/proto/inventory/v1"
-	resourceNodeV1 "github.com/VoidMesh/api/api/proto/resource_node/v1"
 )
 
 // DatabaseInterface defines the database operations needed by the character actions service.
 type DatabaseInterface interface {
 	GetResourceNode(ctx context.Context, id int32) (db.ResourceNode, error)
+	GetResourceNodeDrops(ctx context.Context, resourceNodeTypeID int32) ([]db.GetResourceNodeDropsRow, error)
 }
 
 // InventoryServiceInterface defines the inventory operations needed.
 type InventoryServiceInterface interface {
-	AddInventoryItem(ctx context.Context, characterID string, resourceNodeTypeID resourceNodeV1.ResourceNodeTypeId, quantity int32) (*inventoryV1.InventoryItem, error)
+	AddInventoryItem(ctx context.Context, characterID string, itemID int32, quantity int32) (*inventoryV1.InventoryItem, error)
 }
 
 // CharacterServiceInterface defines the character operations needed.
@@ -24,10 +24,6 @@ type CharacterServiceInterface interface {
 	// In the future: ValidateCharacterPosition, CheckCharacterPermissions, etc.
 }
 
-// ResourceNodeServiceInterface defines the resource node operations needed.
-type ResourceNodeServiceInterface interface {
-	GetResourceNodeTypes(ctx context.Context) ([]*resourceNodeV1.ResourceNodeType, error)
-}
 
 // LoggerInterface defines the logging operations.
 type LoggerInterface interface {
@@ -51,6 +47,10 @@ func (d *DatabaseWrapper) GetResourceNode(ctx context.Context, id int32) (db.Res
 	return d.queries.GetResourceNode(ctx, id)
 }
 
+func (d *DatabaseWrapper) GetResourceNodeDrops(ctx context.Context, resourceNodeTypeID int32) ([]db.GetResourceNodeDropsRow, error) {
+	return d.queries.GetResourceNodeDrops(ctx, resourceNodeTypeID)
+}
+
 // InventoryServiceAdapter adapts the inventory service to our interface
 type InventoryServiceAdapter struct {
 	service InventoryServiceInterface
@@ -60,8 +60,8 @@ func NewInventoryServiceAdapter(service InventoryServiceInterface) *InventorySer
 	return &InventoryServiceAdapter{service: service}
 }
 
-func (a *InventoryServiceAdapter) AddInventoryItem(ctx context.Context, characterID string, resourceNodeTypeID resourceNodeV1.ResourceNodeTypeId, quantity int32) (*inventoryV1.InventoryItem, error) {
-	return a.service.AddInventoryItem(ctx, characterID, resourceNodeTypeID, quantity)
+func (a *InventoryServiceAdapter) AddInventoryItem(ctx context.Context, characterID string, itemID int32, quantity int32) (*inventoryV1.InventoryItem, error) {
+	return a.service.AddInventoryItem(ctx, characterID, itemID, quantity)
 }
 
 // CharacterServiceAdapter adapts the character service to our interface
@@ -77,18 +77,6 @@ func (a *CharacterServiceAdapter) GetCharacterByID(ctx context.Context, characte
 	return a.service.GetCharacterByID(ctx, characterID)
 }
 
-// ResourceNodeServiceAdapter adapts the resource node service to our interface
-type ResourceNodeServiceAdapter struct {
-	service ResourceNodeServiceInterface
-}
-
-func NewResourceNodeServiceAdapter(service ResourceNodeServiceInterface) *ResourceNodeServiceAdapter {
-	return &ResourceNodeServiceAdapter{service: service}
-}
-
-func (a *ResourceNodeServiceAdapter) GetResourceNodeTypes(ctx context.Context) ([]*resourceNodeV1.ResourceNodeType, error) {
-	return a.service.GetResourceNodeTypes(ctx)
-}
 
 // Default logger wrapper
 type DefaultLoggerWrapper struct{}

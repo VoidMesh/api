@@ -10,19 +10,17 @@ import (
 	"github.com/VoidMesh/api/api/internal/uuid"
 	characterActionsV1 "github.com/VoidMesh/api/api/proto/character_actions/v1"
 	inventoryV1 "github.com/VoidMesh/api/api/proto/inventory/v1"
-	resourceNodeV1 "github.com/VoidMesh/api/api/proto/resource_node/v1"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
 
 // Service provides character action operations.
 type Service struct {
-	db                  DatabaseInterface
-	inventoryService    InventoryServiceInterface
-	characterService    CharacterServiceInterface
-	resourceNodeService ResourceNodeServiceInterface
-	logger              LoggerInterface
-	rng                 *rand.Rand
+	db               DatabaseInterface
+	inventoryService InventoryServiceInterface
+	characterService CharacterServiceInterface
+	logger           LoggerInterface
+	rng              *rand.Rand
 }
 
 // NewService creates a new character actions service with dependency injection.
@@ -30,18 +28,16 @@ func NewService(
 	db DatabaseInterface,
 	inventoryService InventoryServiceInterface,
 	characterService CharacterServiceInterface,
-	resourceNodeService ResourceNodeServiceInterface,
 	logger LoggerInterface,
 ) *Service {
 	componentLogger := logger.With("component", "character-actions-service")
 	componentLogger.Debug("Creating new character actions service")
 	return &Service{
-		db:                  db,
-		inventoryService:    inventoryService,
-		characterService:    characterService,
-		resourceNodeService: resourceNodeService,
-		logger:              componentLogger,
-		rng:                 rand.New(rand.NewSource(time.Now().UnixNano())),
+		db:               db,
+		inventoryService: inventoryService,
+		characterService: characterService,
+		logger:           componentLogger,
+		rng:              rand.New(rand.NewSource(time.Now().UnixNano())),
 	}
 }
 
@@ -79,89 +75,71 @@ func (s *Service) HarvestResource(ctx context.Context, userID, characterID strin
 		s.logger.Warn("Character out of range",
 			"character_id", characterID,
 			"character_pos", map[string]int32{"chunk_x": character.ChunkX, "chunk_y": character.ChunkY, "x": character.X, "y": character.Y},
-			"resource_node_pos", map[string]int32{"chunk_x": resourceNode.ChunkX, "chunk_y": resourceNode.ChunkY, "x": resourceNode.PosX, "y": resourceNode.PosY})
+			"resource_node_pos", map[string]int32{"chunk_x": resourceNode.ChunkX, "chunk_y": resourceNode.ChunkY, "x": resourceNode.X, "y": resourceNode.Y})
 		return nil, nil, status.Errorf(codes.FailedPrecondition, "character is too far from resource node")
 	}
 
-	// Get resource node type information
-	resourceTypes, err := s.resourceNodeService.GetResourceNodeTypes(ctx)
+
+	// Get all possible drops for this resource node type from database
+	drops, err := s.db.GetResourceNodeDrops(ctx, resourceNode.ResourceNodeTypeID)
 	if err != nil {
-		s.logger.Error("Failed to get resource node types", "error", err)
-		return nil, nil, status.Errorf(codes.Internal, "failed to get resource information")
+		s.logger.Error("Failed to get resource node drops", "resource_node_type_id", resourceNode.ResourceNodeTypeID, "error", err)
+		return nil, nil, status.Errorf(codes.Internal, "failed to get drop information")
 	}
 
-	var resourceType *resourceNodeV1.ResourceNodeType
-	for _, rt := range resourceTypes {
-		if rt.Id == resourceNode.ResourceNodeTypeID {
-			resourceType = rt
-			break
-		}
-	}
-
-	if resourceType == nil {
-		s.logger.Error("Resource node type not found", "resource_node_type_id", resourceNode.ResourceNodeTypeID)
-		return nil, nil, status.Errorf(codes.Internal, "resource node type not found")
-	}
-
-	// Calculate harvest results
+	// Process all drops for this resource node
 	var harvestResults []*characterActionsV1.HarvestResult
+	var lastUpdatedItem *inventoryV1.InventoryItem
 
-	// Primary yield
-	yieldRange := resourceType.Properties.YieldMax - resourceType.Properties.YieldMin + 1
-	primaryYield := resourceType.Properties.YieldMin + s.rng.Int31n(yieldRange)
+	for _, drop := range drops {
+		// Convert pgtype.Numeric to float64
+		chanceFloat, err := drop.Chance.Float64Value()
+		if err != nil {
+			s.logger.Warn("Failed to convert chance to float", "drop_id", drop.ID, "item_name", drop.ItemName, "error", err)
+			continue
+		}
 
-	harvestResults = append(harvestResults, &characterActionsV1.HarvestResult{
-		ItemName:        resourceType.Name,
-		Quantity:        primaryYield,
-		IsSecondaryDrop: false,
-	})
+		// Roll for this drop based on chance
+		if s.rng.Float64() < chanceFloat.Float64 {
+			// Calculate quantity within range
+			quantityRange := drop.MaxQuantity - drop.MinQuantity + 1
+			quantity := drop.MinQuantity + s.rng.Int31n(quantityRange)
 
-	// Add primary resources to inventory
-	updatedItem, err := s.inventoryService.AddInventoryItem(ctx, characterID, resourceNodeV1.ResourceNodeTypeId(resourceType.Id), primaryYield)
-	if err != nil {
-		s.logger.Error("Failed to add primary harvest to inventory", "error", err)
-		return nil, nil, status.Errorf(codes.Internal, "failed to add harvested resources")
-	}
-
-	// Process secondary drops
-	for _, secondaryDrop := range resourceType.Properties.SecondaryDrops {
-		if s.rng.Float32() < secondaryDrop.Chance {
-			dropRange := secondaryDrop.MaxAmount - secondaryDrop.MinAmount + 1
-			dropAmount := secondaryDrop.MinAmount + s.rng.Int31n(dropRange)
-
+			// Add to harvest results
 			harvestResults = append(harvestResults, &characterActionsV1.HarvestResult{
-				ItemName:        secondaryDrop.Name,
-				Quantity:        dropAmount,
-				IsSecondaryDrop: true,
+				ItemName: drop.ItemName,
+				Quantity: quantity,
+				IsSecondaryDrop: chanceFloat.Float64 < 1.0, // Items with 100% chance are "primary"
 			})
 
-			// TODO: Map secondary drop names to resource node type IDs
-			// For now, we're not adding secondary drops to inventory
-			// This would require a mapping system or separate item types
+			// Add to inventory using the item_id from database
+			updatedItem, err := s.inventoryService.AddInventoryItem(ctx, characterID, drop.ItemID, quantity)
+			if err != nil {
+				s.logger.Error("Failed to add harvested item to inventory", 
+					"item_id", drop.ItemID, 
+					"item_name", drop.ItemName, 
+					"quantity", quantity, 
+					"error", err)
+				return nil, nil, status.Errorf(codes.Internal, "failed to add harvested item: %s", drop.ItemName)
+			}
+			lastUpdatedItem = updatedItem
 		}
 	}
 
 	s.logger.Debug("Completed resource harvest",
 		"character_id", characterID,
 		"resource_node_id", resourceNodeID,
-		"primary_yield", primaryYield,
-		"total_results", len(harvestResults))
+		"total_drops", len(harvestResults),
+		"total_items_types", len(drops))
 
-	return harvestResults, updatedItem, nil
+	return harvestResults, lastUpdatedItem, nil
 }
 
 // isCharacterInRange checks if character is within harvesting range of the resource node
 func (s *Service) isCharacterInRange(character *db.Character, resourceNode *db.ResourceNode) bool {
-	// Check if in same chunk first
-	if character.ChunkX != resourceNode.ChunkX || character.ChunkY != resourceNode.ChunkY {
-		// For now, only allow harvesting within the same chunk
-		// In the future, we could allow harvesting across chunk boundaries
-		return false
-	}
-
-	// Calculate distance within chunk
-	dx := float64(character.X - resourceNode.PosX)
-	dy := float64(character.Y - resourceNode.PosY)
+	// Calculate distance using global coordinates (much simpler!)
+	dx := float64(character.X - resourceNode.X)
+	dy := float64(character.Y - resourceNode.Y)
 	distance := math.Sqrt(dx*dx + dy*dy)
 
 	// Allow harvesting within 3 units (adjust as needed for game balance)

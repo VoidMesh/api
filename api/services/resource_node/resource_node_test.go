@@ -65,8 +65,8 @@ func (m *MockDatabaseInterface) CreateResourceNode(ctx context.Context, arg db.C
 		ChunkX:             arg.ChunkX,
 		ChunkY:             arg.ChunkY,
 		ClusterID:          arg.ClusterID,
-		PosX:               arg.PosX,
-		PosY:               arg.PosY,
+		X:               arg.X,
+		Y:               arg.Y,
 		Size:               arg.Size,
 		CreatedAt:          pgtype.Timestamp{Valid: true, Time: time.Now()},
 	}
@@ -832,10 +832,15 @@ func TestNodeService_GenerateResourcesForChunk(t *testing.T) {
 				assert.Equal(t, tt.chunk.ChunkX, resource.ChunkX)
 				assert.Equal(t, tt.chunk.ChunkY, resource.ChunkY)
 				assert.Equal(t, tt.expectedTerrain, resource.ResourceNodeType.TerrainType)
-				assert.GreaterOrEqual(t, resource.PosX, int32(0))
-				assert.LessOrEqual(t, resource.PosX, int32(ChunkSize-1))
-				assert.GreaterOrEqual(t, resource.PosY, int32(0))
-				assert.LessOrEqual(t, resource.PosY, int32(ChunkSize-1))
+				// Check global coordinates are within expected chunk bounds
+				expectedMinX := resource.ChunkX * ChunkSize
+				expectedMaxX := expectedMinX + ChunkSize - 1
+				expectedMinY := resource.ChunkY * ChunkSize
+				expectedMaxY := expectedMinY + ChunkSize - 1
+				assert.GreaterOrEqual(t, resource.X, expectedMinX)
+				assert.LessOrEqual(t, resource.X, expectedMaxX)
+				assert.GreaterOrEqual(t, resource.Y, expectedMinY)
+				assert.LessOrEqual(t, resource.Y, expectedMaxY)
 				assert.NotEmpty(t, resource.ClusterId)
 				assert.Equal(t, int32(1), resource.Size)
 				assert.NotNil(t, resource.CreatedAt)
@@ -867,8 +872,8 @@ func TestNodeService_StoreResourceNodes(t *testing.T) {
 					},
 					ChunkX:    0,
 					ChunkY:    0,
-					PosX:      10,
-					PosY:      10,
+					X:      10,
+					Y:      10,
 					ClusterId: "test-cluster-1",
 					Size:      1,
 				},
@@ -889,8 +894,8 @@ func TestNodeService_StoreResourceNodes(t *testing.T) {
 					},
 					ChunkX:    0,
 					ChunkY:    0,
-					PosX:      10,
-					PosY:      10,
+					X:      10,
+					Y:      10,
 					ClusterId: "test-cluster-1",
 					Size:      1,
 				},
@@ -964,8 +969,8 @@ func TestNodeService_GetResourcesForChunk(t *testing.T) {
 					WorldID:            createTestUUID("550e8400-e29b-41d4-a716-446655440001"),
 					ChunkX:             0,
 					ChunkY:             0,
-					PosX:               10,
-					PosY:               10,
+					X:               10,
+					Y:               10,
 					ClusterID:          "test-cluster-1",
 					Size:               1,
 					CreatedAt:          pgtype.Timestamp{Valid: true, Time: time.Now()},
@@ -1103,13 +1108,13 @@ func TestNodeService_GetResourcesForChunks(t *testing.T) {
 				node1 := db.ResourceNode{
 					ID: 1, WorldID: worldID, ChunkX: 0, ChunkY: 0,
 					ResourceNodeTypeID: int32(resourceNodeV1.ResourceNodeTypeId_RESOURCE_NODE_TYPE_ID_HERB_PATCH),
-					PosX: 10, PosY: 10, ClusterID: "cluster-1", Size: 1,
+					X: 10, Y: 10, ClusterID: "cluster-1", Size: 1,
 					CreatedAt: pgtype.Timestamp{Valid: true, Time: time.Now()},
 				}
 				node2 := db.ResourceNode{
 					ID: 2, WorldID: worldID, ChunkX: 1, ChunkY: 0,
 					ResourceNodeTypeID: int32(resourceNodeV1.ResourceNodeTypeId_RESOURCE_NODE_TYPE_ID_BERRY_BUSH),
-					PosX: 15, PosY: 15, ClusterID: "cluster-2", Size: 1,
+					X: 15, Y: 15, ClusterID: "cluster-2", Size: 1,
 					CreatedAt: pgtype.Timestamp{Valid: true, Time: time.Now()},
 				}
 				mockDB.resourceNodes["1"] = node1
@@ -1262,8 +1267,8 @@ func TestNodeService_convertResourceRows(t *testing.T) {
 					WorldID:            createTestUUID("550e8400-e29b-41d4-a716-446655440001"),
 					ChunkX:             0,
 					ChunkY:             0,
-					PosX:               10,
-					PosY:               10,
+					X:               10,
+					Y:               10,
 					ClusterID:          "test-cluster",
 					Size:               1,
 					CreatedAt:          pgtype.Timestamp{Valid: true, Time: time.Now()},
@@ -1280,8 +1285,8 @@ func TestNodeService_convertResourceRows(t *testing.T) {
 					WorldID:            createTestUUID("550e8400-e29b-41d4-a716-446655440001"),
 					ChunkX:             0,
 					ChunkY:             0,
-					PosX:               15,
-					PosY:               15,
+					X:               15,
+					Y:               15,
 					ClusterID:          "unknown-cluster",
 					Size:               1,
 					CreatedAt:          pgtype.Timestamp{Valid: false}, // Invalid timestamp
@@ -1307,8 +1312,8 @@ func TestNodeService_convertResourceRows(t *testing.T) {
 				assert.Equal(t, dbResource.ID, resource.Id)
 				assert.Equal(t, dbResource.ChunkX, resource.ChunkX)
 				assert.Equal(t, dbResource.ChunkY, resource.ChunkY)
-				assert.Equal(t, dbResource.PosX, resource.PosX)
-				assert.Equal(t, dbResource.PosY, resource.PosY)
+				assert.Equal(t, dbResource.X, resource.X)
+				assert.Equal(t, dbResource.Y, resource.Y)
 				assert.Equal(t, dbResource.ClusterID, resource.ClusterId)
 				assert.Equal(t, dbResource.Size, resource.Size)
 				assert.NotNil(t, resource.ResourceNodeType)
@@ -1345,8 +1350,8 @@ func TestNodeService_GetResourceNode(t *testing.T) {
 					WorldID:            createTestUUID("550e8400-e29b-41d4-a716-446655440001"),
 					ChunkX:             0,
 					ChunkY:             0,
-					PosX:               10,
-					PosY:               10,
+					X:               10,
+					Y:               10,
 					ClusterID:          "test-cluster",
 					Size:               1,
 					CreatedAt:          pgtype.Timestamp{Valid: true, Time: time.Now()},

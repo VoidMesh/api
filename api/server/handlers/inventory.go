@@ -78,7 +78,7 @@ func (s *inventoryServiceServer) AddInventoryItem(ctx context.Context, req *inve
 	s.logger.Debug("Processing add inventory item request",
 		"user_id", userID,
 		"character_id", req.CharacterId,
-		"resource_type", req.ResourceNodeTypeId,
+		"item_id", req.ItemId,
 		"quantity", req.Quantity)
 
 	// Validate request
@@ -90,12 +90,12 @@ func (s *inventoryServiceServer) AddInventoryItem(ctx context.Context, req *inve
 	}
 
 	// Call the inventory service
-	item, err := s.inventoryService.AddInventoryItem(ctx, req.CharacterId, req.ResourceNodeTypeId, req.Quantity)
+	item, err := s.inventoryService.AddInventoryItem(ctx, req.CharacterId, req.ItemId, req.Quantity)
 	if err != nil {
 		s.logger.Error("Failed to add inventory item",
 			"user_id", userID,
 			"character_id", req.CharacterId,
-			"resource_type", req.ResourceNodeTypeId,
+			"item_id", req.ItemId,
 			"quantity", req.Quantity,
 			"error", err)
 		return nil, err // Let the service layer handle error codes
@@ -104,7 +104,7 @@ func (s *inventoryServiceServer) AddInventoryItem(ctx context.Context, req *inve
 	s.logger.Debug("Successfully added inventory item",
 		"user_id", userID,
 		"character_id", req.CharacterId,
-		"resource_type", req.ResourceNodeTypeId,
+		"item_id", req.ItemId,
 		"quantity", req.Quantity)
 
 	return &inventoryV1.AddInventoryItemResponse{
@@ -125,7 +125,7 @@ func (s *inventoryServiceServer) RemoveInventoryItem(ctx context.Context, req *i
 	s.logger.Debug("Processing remove inventory item request",
 		"user_id", userID,
 		"character_id", req.CharacterId,
-		"resource_type", req.ResourceNodeTypeId,
+		"item_id", req.ItemId,
 		"quantity", req.Quantity)
 
 	// Validate request
@@ -137,12 +137,12 @@ func (s *inventoryServiceServer) RemoveInventoryItem(ctx context.Context, req *i
 	}
 
 	// Call the inventory service
-	item, err := s.inventoryService.RemoveInventoryItem(ctx, req.CharacterId, req.ResourceNodeTypeId, req.Quantity)
+	item, err := s.inventoryService.RemoveInventoryItem(ctx, req.CharacterId, req.ItemId, req.Quantity)
 	if err != nil {
 		s.logger.Error("Failed to remove inventory item",
 			"user_id", userID,
 			"character_id", req.CharacterId,
-			"resource_type", req.ResourceNodeTypeId,
+			"item_id", req.ItemId,
 			"quantity", req.Quantity,
 			"error", err)
 		return nil, err // Let the service layer handle error codes
@@ -151,7 +151,7 @@ func (s *inventoryServiceServer) RemoveInventoryItem(ctx context.Context, req *i
 	s.logger.Debug("Successfully removed inventory item",
 		"user_id", userID,
 		"character_id", req.CharacterId,
-		"resource_type", req.ResourceNodeTypeId,
+		"item_id", req.ItemId,
 		"quantity", req.Quantity)
 
 	return &inventoryV1.RemoveInventoryItemResponse{
@@ -172,7 +172,7 @@ func (s *inventoryServiceServer) UpdateItemQuantity(ctx context.Context, req *in
 	s.logger.Debug("Processing update item quantity request",
 		"user_id", userID,
 		"character_id", req.CharacterId,
-		"resource_type", req.ResourceNodeTypeId,
+		"item_id", req.ItemId,
 		"new_quantity", req.NewQuantity)
 
 	// Validate request

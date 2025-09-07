@@ -61,12 +61,12 @@ INSERT INTO resource_nodes (
   chunk_x,
   chunk_y,
   cluster_id,
-  pos_x,
-  pos_y,
+  x,
+  y,
   size
 )
 VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-RETURNING id, resource_node_type_id, world_id, chunk_x, chunk_y, cluster_id, pos_x, pos_y, size, created_at
+RETURNING id, resource_node_type_id, world_id, chunk_x, chunk_y, cluster_id, x, y, size, created_at
 `
 
 type CreateResourceNodeParams struct {
@@ -75,8 +75,8 @@ type CreateResourceNodeParams struct {
 	ChunkX             int32
 	ChunkY             int32
 	ClusterID          string
-	PosX               int32
-	PosY               int32
+	X                  int32
+	Y                  int32
 	Size               int32
 }
 
@@ -88,8 +88,8 @@ func (q *Queries) CreateResourceNode(ctx context.Context, arg CreateResourceNode
 		arg.ChunkX,
 		arg.ChunkY,
 		arg.ClusterID,
-		arg.PosX,
-		arg.PosY,
+		arg.X,
+		arg.Y,
 		arg.Size,
 	)
 	var i ResourceNode
@@ -100,8 +100,8 @@ func (q *Queries) CreateResourceNode(ctx context.Context, arg CreateResourceNode
 		&i.ChunkX,
 		&i.ChunkY,
 		&i.ClusterID,
-		&i.PosX,
-		&i.PosY,
+		&i.X,
+		&i.Y,
 		&i.Size,
 		&i.CreatedAt,
 	)
@@ -126,7 +126,7 @@ func (q *Queries) DeleteResourceNodesInChunk(ctx context.Context, arg DeleteReso
 
 const getResourceNode = `-- name: GetResourceNode :one
 SELECT
-  rn.id, rn.resource_node_type_id, rn.world_id, rn.chunk_x, rn.chunk_y, rn.cluster_id, rn.pos_x, rn.pos_y, rn.size, rn.created_at
+  rn.id, rn.resource_node_type_id, rn.world_id, rn.chunk_x, rn.chunk_y, rn.cluster_id, rn.x, rn.y, rn.size, rn.created_at
 FROM resource_nodes rn
 WHERE rn.id = $1
 `
@@ -141,8 +141,8 @@ func (q *Queries) GetResourceNode(ctx context.Context, id int32) (ResourceNode, 
 		&i.ChunkX,
 		&i.ChunkY,
 		&i.ClusterID,
-		&i.PosX,
-		&i.PosY,
+		&i.X,
+		&i.Y,
 		&i.Size,
 		&i.CreatedAt,
 	)
@@ -151,7 +151,7 @@ func (q *Queries) GetResourceNode(ctx context.Context, id int32) (ResourceNode, 
 
 const getResourceNodesInChunk = `-- name: GetResourceNodesInChunk :many
 SELECT
-  rn.id, rn.resource_node_type_id, rn.world_id, rn.chunk_x, rn.chunk_y, rn.cluster_id, rn.pos_x, rn.pos_y, rn.size, rn.created_at
+  rn.id, rn.resource_node_type_id, rn.world_id, rn.chunk_x, rn.chunk_y, rn.cluster_id, rn.x, rn.y, rn.size, rn.created_at
 FROM resource_nodes rn
 WHERE rn.world_id = $1 AND rn.chunk_x = $2 AND rn.chunk_y = $3
 `
@@ -178,8 +178,8 @@ func (q *Queries) GetResourceNodesInChunk(ctx context.Context, arg GetResourceNo
 			&i.ChunkX,
 			&i.ChunkY,
 			&i.ClusterID,
-			&i.PosX,
-			&i.PosY,
+			&i.X,
+			&i.Y,
 			&i.Size,
 			&i.CreatedAt,
 		); err != nil {
@@ -195,7 +195,7 @@ func (q *Queries) GetResourceNodesInChunk(ctx context.Context, arg GetResourceNo
 
 const getResourceNodesInChunkRange = `-- name: GetResourceNodesInChunkRange :many
 SELECT
-  rn.id, rn.resource_node_type_id, rn.world_id, rn.chunk_x, rn.chunk_y, rn.cluster_id, rn.pos_x, rn.pos_y, rn.size, rn.created_at
+  rn.id, rn.resource_node_type_id, rn.world_id, rn.chunk_x, rn.chunk_y, rn.cluster_id, rn.x, rn.y, rn.size, rn.created_at
 FROM resource_nodes rn
 WHERE rn.world_id = $1 AND
       rn.chunk_x >= $2 AND rn.chunk_x <= $3 AND
@@ -232,8 +232,8 @@ func (q *Queries) GetResourceNodesInChunkRange(ctx context.Context, arg GetResou
 			&i.ChunkX,
 			&i.ChunkY,
 			&i.ClusterID,
-			&i.PosX,
-			&i.PosY,
+			&i.X,
+			&i.Y,
 			&i.Size,
 			&i.CreatedAt,
 		); err != nil {
@@ -249,7 +249,7 @@ func (q *Queries) GetResourceNodesInChunkRange(ctx context.Context, arg GetResou
 
 const getResourceNodesInChunks = `-- name: GetResourceNodesInChunks :many
 SELECT
-  rn.id, rn.resource_node_type_id, rn.world_id, rn.chunk_x, rn.chunk_y, rn.cluster_id, rn.pos_x, rn.pos_y, rn.size, rn.created_at
+  rn.id, rn.resource_node_type_id, rn.world_id, rn.chunk_x, rn.chunk_y, rn.cluster_id, rn.x, rn.y, rn.size, rn.created_at
 FROM resource_nodes rn
 WHERE rn.world_id = $1 AND (
       (rn.chunk_x = $2 AND rn.chunk_y = $3) OR
@@ -302,8 +302,8 @@ func (q *Queries) GetResourceNodesInChunks(ctx context.Context, arg GetResourceN
 			&i.ChunkX,
 			&i.ChunkY,
 			&i.ClusterID,
-			&i.PosX,
-			&i.PosY,
+			&i.X,
+			&i.Y,
 			&i.Size,
 			&i.CreatedAt,
 		); err != nil {
@@ -319,7 +319,7 @@ func (q *Queries) GetResourceNodesInChunks(ctx context.Context, arg GetResourceN
 
 const getResourceNodesInCluster = `-- name: GetResourceNodesInCluster :many
 SELECT
-  rn.id, rn.resource_node_type_id, rn.world_id, rn.chunk_x, rn.chunk_y, rn.cluster_id, rn.pos_x, rn.pos_y, rn.size, rn.created_at
+  rn.id, rn.resource_node_type_id, rn.world_id, rn.chunk_x, rn.chunk_y, rn.cluster_id, rn.x, rn.y, rn.size, rn.created_at
 FROM resource_nodes rn
 WHERE rn.cluster_id = $1
 `
@@ -340,8 +340,8 @@ func (q *Queries) GetResourceNodesInCluster(ctx context.Context, clusterID strin
 			&i.ChunkX,
 			&i.ChunkY,
 			&i.ClusterID,
-			&i.PosX,
-			&i.PosY,
+			&i.X,
+			&i.Y,
 			&i.Size,
 			&i.CreatedAt,
 		); err != nil {
@@ -358,26 +358,18 @@ func (q *Queries) GetResourceNodesInCluster(ctx context.Context, clusterID strin
 const resourceNodeExistsAtPosition = `-- name: ResourceNodeExistsAtPosition :one
 SELECT EXISTS(
   SELECT 1 FROM resource_nodes
-  WHERE world_id = $1 AND chunk_x = $2 AND chunk_y = $3 AND pos_x = $4 AND pos_y = $5
+  WHERE world_id = $1 AND x = $2 AND y = $3
 )
 `
 
 type ResourceNodeExistsAtPositionParams struct {
 	WorldID pgtype.UUID
-	ChunkX  int32
-	ChunkY  int32
-	PosX    int32
-	PosY    int32
+	X       int32
+	Y       int32
 }
 
 func (q *Queries) ResourceNodeExistsAtPosition(ctx context.Context, arg ResourceNodeExistsAtPositionParams) (bool, error) {
-	row := q.db.QueryRow(ctx, resourceNodeExistsAtPosition,
-		arg.WorldID,
-		arg.ChunkX,
-		arg.ChunkY,
-		arg.PosX,
-		arg.PosY,
-	)
+	row := q.db.QueryRow(ctx, resourceNodeExistsAtPosition, arg.WorldID, arg.X, arg.Y)
 	var exists bool
 	err := row.Scan(&exists)
 	return exists, err

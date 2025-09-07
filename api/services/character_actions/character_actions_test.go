@@ -2,11 +2,11 @@ package character_actions
 
 import (
 	"context"
+	"math/big"
 	"testing"
 
 	"github.com/VoidMesh/api/api/db"
 	inventoryV1 "github.com/VoidMesh/api/api/proto/inventory/v1"
-	resourceNodeV1 "github.com/VoidMesh/api/api/proto/resource_node/v1"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -25,12 +25,17 @@ func (m *MockDatabase) GetResourceNode(ctx context.Context, id int32) (db.Resour
 	return args.Get(0).(db.ResourceNode), args.Error(1)
 }
 
+func (m *MockDatabase) GetResourceNodeDrops(ctx context.Context, resourceNodeTypeID int32) ([]db.GetResourceNodeDropsRow, error) {
+	args := m.Called(ctx, resourceNodeTypeID)
+	return args.Get(0).([]db.GetResourceNodeDropsRow), args.Error(1)
+}
+
 type MockInventoryService struct {
 	mock.Mock
 }
 
-func (m *MockInventoryService) AddInventoryItem(ctx context.Context, characterID string, resourceNodeTypeID resourceNodeV1.ResourceNodeTypeId, quantity int32) (*inventoryV1.InventoryItem, error) {
-	args := m.Called(ctx, characterID, resourceNodeTypeID, quantity)
+func (m *MockInventoryService) AddInventoryItem(ctx context.Context, characterID string, itemID int32, quantity int32) (*inventoryV1.InventoryItem, error) {
+	args := m.Called(ctx, characterID, itemID, quantity)
 	return args.Get(0).(*inventoryV1.InventoryItem), args.Error(1)
 }
 
@@ -46,14 +51,6 @@ func (m *MockCharacterService) GetCharacterByID(ctx context.Context, characterID
 	return args.Get(0).(*db.Character), args.Error(1)
 }
 
-type MockResourceNodeService struct {
-	mock.Mock
-}
-
-func (m *MockResourceNodeService) GetResourceNodeTypes(ctx context.Context) ([]*resourceNodeV1.ResourceNodeType, error) {
-	args := m.Called(ctx)
-	return args.Get(0).([]*resourceNodeV1.ResourceNodeType), args.Error(1)
-}
 
 type MockLogger struct {
 	mock.Mock
@@ -85,14 +82,13 @@ func TestService_HarvestResource_Success(t *testing.T) {
 	mockDB := &MockDatabase{}
 	mockInventory := &MockInventoryService{}
 	mockCharacter := &MockCharacterService{}
-	mockResourceNode := &MockResourceNodeService{}
 	mockLogger := &MockLogger{}
 
 	// Setup logger chain
 	mockLogger.On("With", "component", "character-actions-service").Return(mockLogger)
 	mockLogger.On("Debug", mock.AnythingOfType("string"), mock.Anything).Return()
 
-	service := NewService(mockDB, mockInventory, mockCharacter, mockResourceNode, mockLogger)
+	service := NewService(mockDB, mockInventory, mockCharacter, mockLogger)
 
 	ctx := context.Background()
 	characterID := "0123456789abcdef0123456789abcdef" // 32 hex chars
@@ -118,40 +114,64 @@ func TestService_HarvestResource_Success(t *testing.T) {
 		WorldID:            pgtype.UUID{Bytes: [16]byte{1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1}, Valid: true},
 		ChunkX:             0,
 		ChunkY:             0,
-		PosX:               12, // Within range (distance = 2.828)
-		PosY:               12,
+		X:               12, // Within range (distance = 2.828)
+		Y:               12,
 		Size:               1,
 	}
 
-	resourceType := &resourceNodeV1.ResourceNodeType{
-		Id:   1,
-		Name: "Tree",
-		Properties: &resourceNodeV1.ResourceProperties{
-			YieldMin: 1,
-			YieldMax: 3,
-			SecondaryDrops: []*resourceNodeV1.SecondaryDrop{
-				{
-					Name:      "Stick",
-					Chance:    0.3,
-					MinAmount: 1,
-					MaxAmount: 2,
-				},
-			},
+	// Setup resource node drops data from database
+	drops := []db.GetResourceNodeDropsRow{
+		{
+			ID:                 1,
+			ResourceNodeTypeID: 1,
+			ItemID:            101, // Tree item ID
+			Chance:            pgtype.Numeric{Int: big.NewInt(10), Exp: -1, NaN: false, InfinityModifier: 0, Valid: true}, // 1.0
+			MinQuantity:       1,
+			MaxQuantity:       3,
+			ItemName:          "Tree",
+			ItemDescription:   "Wood from a tree",
+			ItemType:          "material",
+			Rarity:            "common",
+			StackSize:         64,
+			VisualData:        []byte(`{"sprite": "tree", "color": "#8B4513"}`),
+		},
+		{
+			ID:                 2,
+			ResourceNodeTypeID: 1,
+			ItemID:            102, // Stick item ID  
+			Chance:            pgtype.Numeric{Int: big.NewInt(3), Exp: -1, NaN: false, InfinityModifier: 0, Valid: true}, // 0.3
+			MinQuantity:       1,
+			MaxQuantity:       2,
+			ItemName:          "Stick",
+			ItemDescription:   "A small stick",
+			ItemType:          "material",
+			Rarity:            "common",
+			StackSize:         64,
+			VisualData:        []byte(`{"sprite": "stick", "color": "#8B4513"}`),
 		},
 	}
 
 	inventoryItem := &inventoryV1.InventoryItem{
-		Id:                 1,
-		CharacterId:        characterID,
-		ResourceNodeTypeId: resourceNodeV1.ResourceNodeTypeId(1),
-		Quantity:           2,
+		Id:          1,
+		CharacterId: characterID,
+		ItemId:      101,
+		Quantity:    2,
+		ItemName:    "Tree",
+		Description: "Wood from a tree",
+		ItemType:    "material",
+		Rarity:      "common",
+		StackSize:   64,
+		VisualData:  []byte(`{"sprite": "tree", "color": "#8B4513"}`),
 	}
 
 	// Setup expectations
 	mockCharacter.On("GetCharacterByID", ctx, characterID).Return(character, nil)
 	mockDB.On("GetResourceNode", ctx, resourceNodeID).Return(resourceNode, nil)
-	mockResourceNode.On("GetResourceNodeTypes", ctx).Return([]*resourceNodeV1.ResourceNodeType{resourceType}, nil)
-	mockInventory.On("AddInventoryItem", ctx, characterID, resourceNodeV1.ResourceNodeTypeId(1), mock.AnythingOfType("int32")).Return(inventoryItem, nil)
+	mockDB.On("GetResourceNodeDrops", ctx, int32(1)).Return(drops, nil)
+	// Mock expects either item ID from the drops (101 or 102)
+	mockInventory.On("AddInventoryItem", ctx, characterID, mock.MatchedBy(func(itemID int32) bool {
+		return itemID == 101 || itemID == 102
+	}), mock.AnythingOfType("int32")).Return(inventoryItem, nil)
 
 	// Execute
 	results, updatedItem, err := service.HarvestResource(ctx, userID, characterID, resourceNodeID)
@@ -160,7 +180,10 @@ func TestService_HarvestResource_Success(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, results)
 	require.NotNil(t, updatedItem)
-	assert.Len(t, results, 1) // Primary yield only (secondary is random)
+	// Should get 1-2 drops depending on random selection (Tree is guaranteed, Stick is 30% chance)
+	assert.GreaterOrEqual(t, len(results), 1)
+	assert.LessOrEqual(t, len(results), 2)
+	// First result should be the guaranteed Tree drop
 	assert.Equal(t, "Tree", results[0].ItemName)
 	assert.False(t, results[0].IsSecondaryDrop)
 	assert.True(t, results[0].Quantity >= 1 && results[0].Quantity <= 3)
@@ -169,7 +192,6 @@ func TestService_HarvestResource_Success(t *testing.T) {
 	// Verify all mocks were called
 	mockCharacter.AssertExpectations(t)
 	mockDB.AssertExpectations(t)
-	mockResourceNode.AssertExpectations(t)
 	mockInventory.AssertExpectations(t)
 }
 
@@ -178,7 +200,6 @@ func TestService_HarvestResource_InvalidCharacterID(t *testing.T) {
 	mockDB := &MockDatabase{}
 	mockInventory := &MockInventoryService{}
 	mockCharacter := &MockCharacterService{}
-	mockResourceNode := &MockResourceNodeService{}
 	mockLogger := &MockLogger{}
 
 	// Setup logger chain
@@ -186,7 +207,7 @@ func TestService_HarvestResource_InvalidCharacterID(t *testing.T) {
 	mockLogger.On("Debug", mock.AnythingOfType("string"), mock.Anything).Return()
 	mockLogger.On("Warn", mock.AnythingOfType("string"), mock.Anything).Return()
 
-	service := NewService(mockDB, mockInventory, mockCharacter, mockResourceNode, mockLogger)
+	service := NewService(mockDB, mockInventory, mockCharacter, mockLogger)
 
 	ctx := context.Background()
 	invalidCharacterID := "invalid-hex"
@@ -210,7 +231,6 @@ func TestService_HarvestResource_CharacterNotFound(t *testing.T) {
 	mockDB := &MockDatabase{}
 	mockInventory := &MockInventoryService{}
 	mockCharacter := &MockCharacterService{}
-	mockResourceNode := &MockResourceNodeService{}
 	mockLogger := &MockLogger{}
 
 	// Setup logger chain
@@ -218,7 +238,7 @@ func TestService_HarvestResource_CharacterNotFound(t *testing.T) {
 	mockLogger.On("Debug", mock.AnythingOfType("string"), mock.Anything).Return()
 	mockLogger.On("Error", mock.AnythingOfType("string"), mock.Anything).Return()
 
-	service := NewService(mockDB, mockInventory, mockCharacter, mockResourceNode, mockLogger)
+	service := NewService(mockDB, mockInventory, mockCharacter, mockLogger)
 
 	ctx := context.Background()
 	characterID := "0123456789abcdef0123456789abcdef"
@@ -247,7 +267,6 @@ func TestService_HarvestResource_OutOfRange(t *testing.T) {
 	mockDB := &MockDatabase{}
 	mockInventory := &MockInventoryService{}
 	mockCharacter := &MockCharacterService{}
-	mockResourceNode := &MockResourceNodeService{}
 	mockLogger := &MockLogger{}
 
 	// Setup logger chain
@@ -255,7 +274,7 @@ func TestService_HarvestResource_OutOfRange(t *testing.T) {
 	mockLogger.On("Debug", mock.AnythingOfType("string"), mock.Anything).Return()
 	mockLogger.On("Warn", mock.AnythingOfType("string"), mock.Anything).Return()
 
-	service := NewService(mockDB, mockInventory, mockCharacter, mockResourceNode, mockLogger)
+	service := NewService(mockDB, mockInventory, mockCharacter, mockLogger)
 
 	ctx := context.Background()
 	characterID := "0123456789abcdef0123456789abcdef"
@@ -280,8 +299,8 @@ func TestService_HarvestResource_OutOfRange(t *testing.T) {
 		WorldID:            pgtype.UUID{Bytes: [16]byte{1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1}, Valid: true},
 		ChunkX:             0,
 		ChunkY:             0,
-		PosX:               10, // Distance = 14.14, > maxHarvestDistance (3)
-		PosY:               10,
+		X:               10, // Distance = 14.14, > maxHarvestDistance (3)
+		Y:               10,
 		Size:               1,
 	}
 
@@ -320,7 +339,7 @@ func TestService_isCharacterInRange(t *testing.T) {
 				X: 10, Y: 10, ChunkX: 0, ChunkY: 0,
 			},
 			resourceNode: &db.ResourceNode{
-				PosX: 10, PosY: 10, ChunkX: 0, ChunkY: 0,
+				X: 10, Y: 10, ChunkX: 0, ChunkY: 0,
 			},
 			expected: true,
 		},
@@ -330,7 +349,7 @@ func TestService_isCharacterInRange(t *testing.T) {
 				X: 10, Y: 10, ChunkX: 0, ChunkY: 0,
 			},
 			resourceNode: &db.ResourceNode{
-				PosX: 12, PosY: 10, ChunkX: 0, ChunkY: 0,
+				X: 12, Y: 10, ChunkX: 0, ChunkY: 0,
 			},
 			expected: true,
 		},
@@ -340,7 +359,7 @@ func TestService_isCharacterInRange(t *testing.T) {
 				X: 10, Y: 10, ChunkX: 0, ChunkY: 0,
 			},
 			resourceNode: &db.ResourceNode{
-				PosX: 15, PosY: 10, ChunkX: 0, ChunkY: 0,
+				X: 15, Y: 10, ChunkX: 0, ChunkY: 0,
 			},
 			expected: false,
 		},
@@ -350,7 +369,7 @@ func TestService_isCharacterInRange(t *testing.T) {
 				X: 10, Y: 10, ChunkX: 0, ChunkY: 0,
 			},
 			resourceNode: &db.ResourceNode{
-				PosX: 10, PosY: 10, ChunkX: 1, ChunkY: 0,
+				X: 42, Y: 10, ChunkX: 1, ChunkY: 0, // Global coord: 1*32 + 10 = 42
 			},
 			expected: false,
 		},
@@ -369,7 +388,6 @@ func TestService_HarvestResource_CharacterOwnershipValidation(t *testing.T) {
 	mockDB := &MockDatabase{}
 	mockInventory := &MockInventoryService{}
 	mockCharacter := &MockCharacterService{}
-	mockResourceNode := &MockResourceNodeService{}
 	mockLogger := &MockLogger{}
 
 	// Setup logger chain
@@ -377,7 +395,7 @@ func TestService_HarvestResource_CharacterOwnershipValidation(t *testing.T) {
 	mockLogger.On("Debug", mock.AnythingOfType("string"), mock.Anything).Return()
 	mockLogger.On("Warn", mock.AnythingOfType("string"), mock.Anything).Return()
 
-	service := NewService(mockDB, mockInventory, mockCharacter, mockResourceNode, mockLogger)
+	service := NewService(mockDB, mockInventory, mockCharacter, mockLogger)
 
 	ctx := context.Background()
 	characterID := "0123456789abcdef0123456789abcdef"

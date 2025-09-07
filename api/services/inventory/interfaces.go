@@ -13,7 +13,7 @@ import (
 
 // DatabaseInterface abstracts database operations for the inventory service.
 type DatabaseInterface interface {
-	GetCharacterInventory(ctx context.Context, characterID pgtype.UUID) ([]db.CharacterInventory, error)
+	GetCharacterInventory(ctx context.Context, characterID pgtype.UUID) ([]db.GetCharacterInventoryRow, error)
 	InventoryItemExists(ctx context.Context, arg db.InventoryItemExistsParams) (bool, error)
 	AddInventoryItemQuantity(ctx context.Context, arg db.AddInventoryItemQuantityParams) (db.CharacterInventory, error)
 	CreateInventoryItem(ctx context.Context, arg db.CreateInventoryItemParams) (db.CharacterInventory, error)
@@ -34,7 +34,7 @@ func NewDatabaseWrapper(pool *pgxpool.Pool) DatabaseInterface {
 	}
 }
 
-func (d *DatabaseWrapper) GetCharacterInventory(ctx context.Context, characterID pgtype.UUID) ([]db.CharacterInventory, error) {
+func (d *DatabaseWrapper) GetCharacterInventory(ctx context.Context, characterID pgtype.UUID) ([]db.GetCharacterInventoryRow, error) {
 	return d.queries.GetCharacterInventory(ctx, characterID)
 }
 

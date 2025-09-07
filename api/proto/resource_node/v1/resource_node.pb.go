@@ -471,8 +471,8 @@ type ResourceNode struct {
 	ResourceNodeType   *ResourceNodeType      `protobuf:"bytes,3,opt,name=resource_node_type,json=resourceNodeType,proto3" json:"resource_node_type,omitempty"`
 	ChunkX             int32                  `protobuf:"varint,4,opt,name=chunk_x,json=chunkX,proto3" json:"chunk_x,omitempty"`
 	ChunkY             int32                  `protobuf:"varint,5,opt,name=chunk_y,json=chunkY,proto3" json:"chunk_y,omitempty"`
-	PosX               int32                  `protobuf:"varint,6,opt,name=pos_x,json=posX,proto3" json:"pos_x,omitempty"`
-	PosY               int32                  `protobuf:"varint,7,opt,name=pos_y,json=posY,proto3" json:"pos_y,omitempty"`
+	X                  int32                  `protobuf:"varint,6,opt,name=x,proto3" json:"x,omitempty"` // Global X coordinate
+	Y                  int32                  `protobuf:"varint,7,opt,name=y,proto3" json:"y,omitempty"` // Global Y coordinate
 	ClusterId          string                 `protobuf:"bytes,8,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`
 	Size               int32                  `protobuf:"varint,9,opt,name=size,proto3" json:"size,omitempty"`
 	CreatedAt          *timestamppb.Timestamp `protobuf:"bytes,10,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
@@ -545,16 +545,16 @@ func (x *ResourceNode) GetChunkY() int32 {
 	return 0
 }
 
-func (x *ResourceNode) GetPosX() int32 {
+func (x *ResourceNode) GetX() int32 {
 	if x != nil {
-		return x.PosX
+		return x.X
 	}
 	return 0
 }
 
-func (x *ResourceNode) GetPosY() int32 {
+func (x *ResourceNode) GetY() int32 {
 	if x != nil {
-		return x.PosY
+		return x.Y
 	}
 	return 0
 }
@@ -950,15 +950,15 @@ const file_resource_node_v1_resource_node_proto_rawDesc = "" +
 	"visualData\x12D\n" +
 	"\n" +
 	"properties\x18\a \x01(\v2$.resource_node.v1.ResourcePropertiesR\n" +
-	"properties\"\x93\x03\n" +
+	"properties\"\x85\x03\n" +
 	"\fResourceNode\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x05R\x02id\x12W\n" +
 	"\x15resource_node_type_id\x18\x02 \x01(\x0e2$.resource_node.v1.ResourceNodeTypeIdR\x12resourceNodeTypeId\x12P\n" +
 	"\x12resource_node_type\x18\x03 \x01(\v2\".resource_node.v1.ResourceNodeTypeR\x10resourceNodeType\x12\x17\n" +
 	"\achunk_x\x18\x04 \x01(\x05R\x06chunkX\x12\x17\n" +
-	"\achunk_y\x18\x05 \x01(\x05R\x06chunkY\x12\x13\n" +
-	"\x05pos_x\x18\x06 \x01(\x05R\x04posX\x12\x13\n" +
-	"\x05pos_y\x18\a \x01(\x05R\x04posY\x12\x1d\n" +
+	"\achunk_y\x18\x05 \x01(\x05R\x06chunkY\x12\f\n" +
+	"\x01x\x18\x06 \x01(\x05R\x01x\x12\f\n" +
+	"\x01y\x18\a \x01(\x05R\x01y\x12\x1d\n" +
 	"\n" +
 	"cluster_id\x18\b \x01(\tR\tclusterId\x12\x12\n" +
 	"\x04size\x18\t \x01(\x05R\x04size\x129\n" +

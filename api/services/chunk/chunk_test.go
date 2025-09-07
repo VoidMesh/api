@@ -547,8 +547,8 @@ func TestService_GetOrCreateChunk(t *testing.T) {
 						Id:      1,
 						ChunkX:  0,
 						ChunkY:  0,
-						PosX:    10,
-						PosY:    15,
+						X:    10,
+						Y:    15,
 						Size:    2,
 						ResourceNodeTypeId: resourceNodeV1.ResourceNodeTypeId_RESOURCE_NODE_TYPE_ID_METAL_ORE,
 						ResourceNodeType: &resourceNodeV1.ResourceNodeType{
@@ -586,8 +586,8 @@ func TestService_GetOrCreateChunk(t *testing.T) {
 						Id:      2,
 						ChunkX:  1,
 						ChunkY:  1,
-						PosX:    5,
-						PosY:    25,
+						X:    5,
+						Y:    25,
 						Size:    3,
 						ResourceNodeTypeId: resourceNodeV1.ResourceNodeTypeId_RESOURCE_NODE_TYPE_ID_STONE_VEIN,
 						ResourceNodeType: &resourceNodeV1.ResourceNodeType{

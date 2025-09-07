@@ -94,8 +94,8 @@ message ResourceNode {
   ResourceNodeType resource_node_type = 3;
   int32 chunk_x = 4;
   int32 chunk_y = 5;
-  int32 pos_x = 6;
-  int32 pos_y = 7;
+  int32 x = 6; // Global X coordinate
+  int32 y = 7; // Global Y coordinate
   string cluster_id = 8;
   int32 size = 9;
   google.protobuf.Timestamp created_at = 10;

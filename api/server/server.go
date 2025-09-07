@@ -159,7 +159,7 @@ func Serve() {
 	pbChunkV1.RegisterChunkServiceServer(g, chunkServer)
 
 	logger.Debug("Registering InventoryService")
-	inventoryService := inventory.NewServiceWithPool(dbPool, characterRealService, resourceNodeService)
+	inventoryService := inventory.NewServiceWithPool(dbPool, characterRealService)
 	pbInventoryV1.RegisterInventoryServiceServer(g, handlers.NewInventoryHandler(inventoryService))
 
 	logger.Debug("Registering CharacterActionsService")
@@ -167,7 +167,6 @@ func Serve() {
 		character_actions.NewDatabaseWrapper(db.New(dbPool)),
 		character_actions.NewInventoryServiceAdapter(inventoryService),
 		character_actions.NewCharacterServiceAdapter(characterRealService),
-		character_actions.NewResourceNodeServiceAdapter(resourceNodeService),
 		character_actions.NewDefaultLoggerWrapper(),
 	)
 	characterActionsHandler := handlers.NewCharacterActionsServiceWithPool(characterActionsService)

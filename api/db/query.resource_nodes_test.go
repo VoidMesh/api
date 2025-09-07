@@ -29,14 +29,14 @@ func TestCreateResourceNode(t *testing.T) {
 				ChunkX:             10,
 				ChunkY:             20,
 				ClusterID:          "cluster_wood_001",
-				PosX:               512,
-				PosY:               768,
+				X:               512,
+				Y:               768,
 				Size:               3,
 			},
 			setupMock: func(mock pgxmock.PgxPoolIface) {
 				now := time.Now()
 				rows := pgxmock.NewRows([]string{
-					"id", "resource_node_type_id", "world_id", "chunk_x", "chunk_y", "cluster_id", "pos_x", "pos_y", "size", "created_at",
+					"id", "resource_node_type_id", "world_id", "chunk_x", "chunk_y", "cluster_id", "x", "y", "size", "created_at",
 				}).AddRow(
 					int32(1), int32(1), "550e8400-e29b-41d4-a716-446655440000", int32(10), int32(20), "cluster_wood_001", int32(512), int32(768), int32(3), pgtype.Timestamp{Time: now, Valid: true},
 				)
@@ -51,8 +51,8 @@ func TestCreateResourceNode(t *testing.T) {
 				assert.Equal(t, int32(10), node.ChunkX)
 				assert.Equal(t, int32(20), node.ChunkY)
 				assert.Equal(t, "cluster_wood_001", node.ClusterID)
-				assert.Equal(t, int32(512), node.PosX)
-				assert.Equal(t, int32(768), node.PosY)
+				assert.Equal(t, int32(512), node.X)
+				assert.Equal(t, int32(768), node.Y)
 				assert.Equal(t, int32(3), node.Size)
 				assert.True(t, node.CreatedAt.Valid)
 			},
@@ -65,14 +65,14 @@ func TestCreateResourceNode(t *testing.T) {
 				ChunkX:             0,
 				ChunkY:             0,
 				ClusterID:          "cluster_stone_001",
-				PosX:               0,
-				PosY:               0,
+				X:               0,
+				Y:               0,
 				Size:               1,
 			},
 			setupMock: func(mock pgxmock.PgxPoolIface) {
 				now := time.Now()
 				rows := pgxmock.NewRows([]string{
-					"id", "resource_node_type_id", "world_id", "chunk_x", "chunk_y", "cluster_id", "pos_x", "pos_y", "size", "created_at",
+					"id", "resource_node_type_id", "world_id", "chunk_x", "chunk_y", "cluster_id", "x", "y", "size", "created_at",
 				}).AddRow(
 					int32(2), int32(2), "550e8400-e29b-41d4-a716-446655440000", int32(0), int32(0), "cluster_stone_001", int32(0), int32(0), int32(1), pgtype.Timestamp{Time: now, Valid: true},
 				)
@@ -84,8 +84,8 @@ func TestCreateResourceNode(t *testing.T) {
 			checkResult: func(t *testing.T, node ResourceNode) {
 				assert.Equal(t, int32(2), node.ResourceNodeTypeID)
 				assert.Equal(t, int32(1), node.Size)
-				assert.Equal(t, int32(0), node.PosX)
-				assert.Equal(t, int32(0), node.PosY)
+				assert.Equal(t, int32(0), node.X)
+				assert.Equal(t, int32(0), node.Y)
 			},
 		},
 		{
@@ -96,14 +96,14 @@ func TestCreateResourceNode(t *testing.T) {
 				ChunkX:             5,
 				ChunkY:             5,
 				ClusterID:          "cluster_iron_mega",
-				PosX:               256,
-				PosY:               384,
+				X:               256,
+				Y:               384,
 				Size:               50,
 			},
 			setupMock: func(mock pgxmock.PgxPoolIface) {
 				now := time.Now()
 				rows := pgxmock.NewRows([]string{
-					"id", "resource_node_type_id", "world_id", "chunk_x", "chunk_y", "cluster_id", "pos_x", "pos_y", "size", "created_at",
+					"id", "resource_node_type_id", "world_id", "chunk_x", "chunk_y", "cluster_id", "x", "y", "size", "created_at",
 				}).AddRow(
 					int32(3), int32(3), "550e8400-e29b-41d4-a716-446655440000", int32(5), int32(5), "cluster_iron_mega", int32(256), int32(384), int32(50), pgtype.Timestamp{Time: now, Valid: true},
 				)
@@ -126,14 +126,14 @@ func TestCreateResourceNode(t *testing.T) {
 				ChunkX:             -5,
 				ChunkY:             -10,
 				ClusterID:          "cluster_neg_coords",
-				PosX:               -100,
-				PosY:               -200,
+				X:               -100,
+				Y:               -200,
 				Size:               2,
 			},
 			setupMock: func(mock pgxmock.PgxPoolIface) {
 				now := time.Now()
 				rows := pgxmock.NewRows([]string{
-					"id", "resource_node_type_id", "world_id", "chunk_x", "chunk_y", "cluster_id", "pos_x", "pos_y", "size", "created_at",
+					"id", "resource_node_type_id", "world_id", "chunk_x", "chunk_y", "cluster_id", "x", "y", "size", "created_at",
 				}).AddRow(
 					int32(4), int32(1), "550e8400-e29b-41d4-a716-446655440000", int32(-5), int32(-10), "cluster_neg_coords", int32(-100), int32(-200), int32(2), pgtype.Timestamp{Time: now, Valid: true},
 				)
@@ -145,8 +145,8 @@ func TestCreateResourceNode(t *testing.T) {
 			checkResult: func(t *testing.T, node ResourceNode) {
 				assert.Equal(t, int32(-5), node.ChunkX)
 				assert.Equal(t, int32(-10), node.ChunkY)
-				assert.Equal(t, int32(-100), node.PosX)
-				assert.Equal(t, int32(-200), node.PosY)
+				assert.Equal(t, int32(-100), node.X)
+				assert.Equal(t, int32(-200), node.Y)
 			},
 		},
 		{
@@ -157,8 +157,8 @@ func TestCreateResourceNode(t *testing.T) {
 				ChunkX:             1,
 				ChunkY:             1,
 				ClusterID:          "cluster_duplicate",
-				PosX:               100, // Same position as existing node
-				PosY:               100,
+				X:               100, // Same position as existing node
+				Y:               100,
 				Size:               1,
 			},
 			setupMock: func(mock pgxmock.PgxPoolIface) {
@@ -176,8 +176,8 @@ func TestCreateResourceNode(t *testing.T) {
 				ChunkX:             1,
 				ChunkY:             1,
 				ClusterID:          "cluster_invalid_world",
-				PosX:               50,
-				PosY:               50,
+				X:               50,
+				Y:               50,
 				Size:               1,
 			},
 			setupMock: func(mock pgxmock.PgxPoolIface) {
@@ -195,8 +195,8 @@ func TestCreateResourceNode(t *testing.T) {
 				ChunkX:             999, // Non-existent chunk
 				ChunkY:             999,
 				ClusterID:          "cluster_invalid_chunk",
-				PosX:               50,
-				PosY:               50,
+				X:               50,
+				Y:               50,
 				Size:               1,
 			},
 			setupMock: func(mock pgxmock.PgxPoolIface) {
@@ -245,7 +245,7 @@ func TestGetResourceNode(t *testing.T) {
 			setupMock: func(mock pgxmock.PgxPoolIface) {
 				now := time.Now()
 				rows := pgxmock.NewRows([]string{
-					"id", "resource_node_type_id", "world_id", "chunk_x", "chunk_y", "cluster_id", "pos_x", "pos_y", "size", "created_at",
+					"id", "resource_node_type_id", "world_id", "chunk_x", "chunk_y", "cluster_id", "x", "y", "size", "created_at",
 				}).AddRow(
 					int32(1), int32(1), "550e8400-e29b-41d4-a716-446655440000", int32(10), int32(20), "cluster_wood_001", int32(512), int32(768), int32(3), pgtype.Timestamp{Time: now, Valid: true},
 				)
@@ -259,8 +259,8 @@ func TestGetResourceNode(t *testing.T) {
 				assert.Equal(t, int32(1), node.ResourceNodeTypeID)
 				assert.Equal(t, mustParseUUID("550e8400-e29b-41d4-a716-446655440000"), node.WorldID)
 				assert.Equal(t, "cluster_wood_001", node.ClusterID)
-				assert.Equal(t, int32(512), node.PosX)
-				assert.Equal(t, int32(768), node.PosY)
+				assert.Equal(t, int32(512), node.X)
+				assert.Equal(t, int32(768), node.Y)
 				assert.Equal(t, int32(3), node.Size)
 			},
 		},
@@ -317,7 +317,7 @@ func TestGetResourceNodesInChunk(t *testing.T) {
 			setupMock: func(mock pgxmock.PgxPoolIface) {
 				now := time.Now()
 				rows := pgxmock.NewRows([]string{
-					"id", "resource_node_type_id", "world_id", "chunk_x", "chunk_y", "cluster_id", "pos_x", "pos_y", "size", "created_at",
+					"id", "resource_node_type_id", "world_id", "chunk_x", "chunk_y", "cluster_id", "x", "y", "size", "created_at",
 				}).
 					AddRow(
 						int32(1), int32(1), "550e8400-e29b-41d4-a716-446655440000", int32(10), int32(20), "cluster_wood_001", int32(100), int32(200), int32(2), pgtype.Timestamp{Time: now, Valid: true},
@@ -358,7 +358,7 @@ func TestGetResourceNodesInChunk(t *testing.T) {
 			},
 			setupMock: func(mock pgxmock.PgxPoolIface) {
 				rows := pgxmock.NewRows([]string{
-					"id", "resource_node_type_id", "world_id", "chunk_x", "chunk_y", "cluster_id", "pos_x", "pos_y", "size", "created_at",
+					"id", "resource_node_type_id", "world_id", "chunk_x", "chunk_y", "cluster_id", "x", "y", "size", "created_at",
 				})
 				mock.ExpectQuery("SELECT (.+) FROM resource_nodes rn WHERE rn.world_id = \\$1 AND rn.chunk_x = \\$2 AND rn.chunk_y = \\$3").
 					WithArgs(mustParseUUID("550e8400-e29b-41d4-a716-446655440000"), int32(999), int32(999)).
@@ -379,7 +379,7 @@ func TestGetResourceNodesInChunk(t *testing.T) {
 			setupMock: func(mock pgxmock.PgxPoolIface) {
 				now := time.Now()
 				rows := pgxmock.NewRows([]string{
-					"id", "resource_node_type_id", "world_id", "chunk_x", "chunk_y", "cluster_id", "pos_x", "pos_y", "size", "created_at",
+					"id", "resource_node_type_id", "world_id", "chunk_x", "chunk_y", "cluster_id", "x", "y", "size", "created_at",
 				}).AddRow(
 					int32(10), int32(3), "550e8400-e29b-41d4-a716-446655440000", int32(5), int32(5), "cluster_iron_001", int32(250), int32(250), int32(5), pgtype.Timestamp{Time: now, Valid: true},
 				)
@@ -440,7 +440,7 @@ func TestGetResourceNodesInChunkRange(t *testing.T) {
 			setupMock: func(mock pgxmock.PgxPoolIface) {
 				now := time.Now()
 				rows := pgxmock.NewRows([]string{
-					"id", "resource_node_type_id", "world_id", "chunk_x", "chunk_y", "cluster_id", "pos_x", "pos_y", "size", "created_at",
+					"id", "resource_node_type_id", "world_id", "chunk_x", "chunk_y", "cluster_id", "x", "y", "size", "created_at",
 				}).
 					AddRow(
 						int32(1), int32(1), "550e8400-e29b-41d4-a716-446655440000", int32(0), int32(0), "cluster_1", int32(50), int32(50), int32(1), pgtype.Timestamp{Time: now, Valid: true},
@@ -491,7 +491,7 @@ func TestGetResourceNodesInChunkRange(t *testing.T) {
 			},
 			setupMock: func(mock pgxmock.PgxPoolIface) {
 				rows := pgxmock.NewRows([]string{
-					"id", "resource_node_type_id", "world_id", "chunk_x", "chunk_y", "cluster_id", "pos_x", "pos_y", "size", "created_at",
+					"id", "resource_node_type_id", "world_id", "chunk_x", "chunk_y", "cluster_id", "x", "y", "size", "created_at",
 				})
 				mock.ExpectQuery("SELECT (.+) FROM resource_nodes rn WHERE rn.world_id = \\$1 AND rn.chunk_x >= \\$2 AND rn.chunk_x <= \\$3 AND rn.chunk_y >= \\$4 AND rn.chunk_y <= \\$5").
 					WithArgs(mustParseUUID("550e8400-e29b-41d4-a716-446655440000"), int32(100), int32(102), int32(100), int32(102)).
@@ -541,7 +541,7 @@ func TestGetResourceNodesInCluster(t *testing.T) {
 			setupMock: func(mock pgxmock.PgxPoolIface) {
 				now := time.Now()
 				rows := pgxmock.NewRows([]string{
-					"id", "resource_node_type_id", "world_id", "chunk_x", "chunk_y", "cluster_id", "pos_x", "pos_y", "size", "created_at",
+					"id", "resource_node_type_id", "world_id", "chunk_x", "chunk_y", "cluster_id", "x", "y", "size", "created_at",
 				}).
 					AddRow(
 						int32(1), int32(1), "550e8400-e29b-41d4-a716-446655440000", int32(10), int32(20), "cluster_wood_001", int32(100), int32(100), int32(2), pgtype.Timestamp{Time: now, Valid: true},
@@ -567,7 +567,7 @@ func TestGetResourceNodesInCluster(t *testing.T) {
 				// Verify different positions and sizes
 				positions := make(map[string]bool)
 				for _, node := range nodes {
-					key := fmt.Sprintf("%d,%d", node.PosX, node.PosY)
+					key := fmt.Sprintf("%d,%d", node.X, node.Y)
 					positions[key] = true
 				}
 				assert.Len(t, positions, 3) // All different positions
@@ -578,7 +578,7 @@ func TestGetResourceNodesInCluster(t *testing.T) {
 			clusterID: "non_existent_cluster",
 			setupMock: func(mock pgxmock.PgxPoolIface) {
 				rows := pgxmock.NewRows([]string{
-					"id", "resource_node_type_id", "world_id", "chunk_x", "chunk_y", "cluster_id", "pos_x", "pos_y", "size", "created_at",
+					"id", "resource_node_type_id", "world_id", "chunk_x", "chunk_y", "cluster_id", "x", "y", "size", "created_at",
 				})
 				mock.ExpectQuery("SELECT (.+) FROM resource_nodes rn WHERE rn.cluster_id = \\$1").
 					WithArgs("non_existent_cluster").
@@ -595,7 +595,7 @@ func TestGetResourceNodesInCluster(t *testing.T) {
 			setupMock: func(mock pgxmock.PgxPoolIface) {
 				now := time.Now()
 				rows := pgxmock.NewRows([]string{
-					"id", "resource_node_type_id", "world_id", "chunk_x", "chunk_y", "cluster_id", "pos_x", "pos_y", "size", "created_at",
+					"id", "resource_node_type_id", "world_id", "chunk_x", "chunk_y", "cluster_id", "x", "y", "size", "created_at",
 				}).AddRow(
 					int32(10), int32(3), "550e8400-e29b-41d4-a716-446655440000", int32(5), int32(5), "cluster_iron_solo", int32(256), int32(256), int32(10), pgtype.Timestamp{Time: now, Valid: true},
 				)
@@ -648,15 +648,13 @@ func TestResourceNodeExistsAtPosition(t *testing.T) {
 			name: "resource node exists at position",
 			params: ResourceNodeExistsAtPositionParams{
 				WorldID: mustParseUUID("550e8400-e29b-41d4-a716-446655440000"),
-				ChunkX:  10,
-				ChunkY:  20,
-				PosX:    512,
-				PosY:    768,
+				X:       512,
+				Y:       768,
 			},
 			setupMock: func(mock pgxmock.PgxPoolIface) {
 				rows := pgxmock.NewRows([]string{"exists"}).AddRow(true)
 				mock.ExpectQuery("SELECT EXISTS").
-					WithArgs(mustParseUUID("550e8400-e29b-41d4-a716-446655440000"), int32(10), int32(20), int32(512), int32(768)).
+					WithArgs(mustParseUUID("550e8400-e29b-41d4-a716-446655440000"), int32(512), int32(768)).
 					WillReturnRows(rows)
 			},
 			wantErr:  false,
@@ -666,15 +664,13 @@ func TestResourceNodeExistsAtPosition(t *testing.T) {
 			name: "no resource node at position",
 			params: ResourceNodeExistsAtPositionParams{
 				WorldID: mustParseUUID("550e8400-e29b-41d4-a716-446655440000"),
-				ChunkX:  10,
-				ChunkY:  20,
-				PosX:    999,
-				PosY:    999,
+				X:       999,
+				Y:       999,
 			},
 			setupMock: func(mock pgxmock.PgxPoolIface) {
 				rows := pgxmock.NewRows([]string{"exists"}).AddRow(false)
 				mock.ExpectQuery("SELECT EXISTS").
-					WithArgs(mustParseUUID("550e8400-e29b-41d4-a716-446655440000"), int32(10), int32(20), int32(999), int32(999)).
+					WithArgs(mustParseUUID("550e8400-e29b-41d4-a716-446655440000"), int32(999), int32(999)).
 					WillReturnRows(rows)
 			},
 			wantErr:  false,
@@ -684,15 +680,13 @@ func TestResourceNodeExistsAtPosition(t *testing.T) {
 			name: "negative coordinates check",
 			params: ResourceNodeExistsAtPositionParams{
 				WorldID: mustParseUUID("550e8400-e29b-41d4-a716-446655440000"),
-				ChunkX:  -5,
-				ChunkY:  -10,
-				PosX:    -100,
-				PosY:    -200,
+				X:       -100,
+				Y:       -200,
 			},
 			setupMock: func(mock pgxmock.PgxPoolIface) {
 				rows := pgxmock.NewRows([]string{"exists"}).AddRow(true)
 				mock.ExpectQuery("SELECT EXISTS").
-					WithArgs(mustParseUUID("550e8400-e29b-41d4-a716-446655440000"), int32(-5), int32(-10), int32(-100), int32(-200)).
+					WithArgs(mustParseUUID("550e8400-e29b-41d4-a716-446655440000"), int32(-100), int32(-200)).
 					WillReturnRows(rows)
 			},
 			wantErr:  false,
@@ -944,14 +938,14 @@ func TestResourceNodeBusinessLogic(t *testing.T) {
 			ChunkX:             2147483647,  // Max int32
 			ChunkY:             -2147483648, // Min int32
 			ClusterID:          "cluster_extreme",
-			PosX:               2147483647,  // Max int32
-			PosY:               -2147483648, // Min int32
+			X:               2147483647,  // Max int32
+			Y:               -2147483648, // Min int32
 			Size:               2147483647,  // Max int32
 		}
 
 		now := time.Now()
 		rows := pgxmock.NewRows([]string{
-			"id", "resource_node_type_id", "world_id", "chunk_x", "chunk_y", "cluster_id", "pos_x", "pos_y", "size", "created_at",
+			"id", "resource_node_type_id", "world_id", "chunk_x", "chunk_y", "cluster_id", "x", "y", "size", "created_at",
 		}).AddRow(
 			int32(1), int32(1), "550e8400-e29b-41d4-a716-446655440000", int32(2147483647), int32(-2147483648), "cluster_extreme", int32(2147483647), int32(-2147483648), int32(2147483647), pgtype.Timestamp{Time: now, Valid: true},
 		)
@@ -964,8 +958,8 @@ func TestResourceNodeBusinessLogic(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, int32(2147483647), node.ChunkX)
 		assert.Equal(t, int32(-2147483648), node.ChunkY)
-		assert.Equal(t, int32(2147483647), node.PosX)
-		assert.Equal(t, int32(-2147483648), node.PosY)
+		assert.Equal(t, int32(2147483647), node.X)
+		assert.Equal(t, int32(-2147483648), node.Y)
 		assert.Equal(t, int32(2147483647), node.Size)
 
 		assert.NoError(t, mockPool.ExpectationsWereMet())
@@ -997,14 +991,14 @@ func TestResourceNodeBusinessLogic(t *testing.T) {
 					ChunkX:             0,
 					ChunkY:             0,
 					ClusterID:          tc.clusterID,
-					PosX:               0,
-					PosY:               0,
+					X:               0,
+					Y:               0,
 					Size:               1,
 				}
 
 				now := time.Now()
 				rows := pgxmock.NewRows([]string{
-					"id", "resource_node_type_id", "world_id", "chunk_x", "chunk_y", "cluster_id", "pos_x", "pos_y", "size", "created_at",
+					"id", "resource_node_type_id", "world_id", "chunk_x", "chunk_y", "cluster_id", "x", "y", "size", "created_at",
 				}).AddRow(
 					int32(1), int32(1), "550e8400-e29b-41d4-a716-446655440000", int32(0), int32(0), tc.clusterID, int32(0), int32(0), int32(1), pgtype.Timestamp{Time: now, Valid: true},
 				)
@@ -1036,14 +1030,14 @@ func TestResourceNodeBusinessLogic(t *testing.T) {
 			ChunkX:             0,
 			ChunkY:             0,
 			ClusterID:          "cluster_negative_type",
-			PosX:               0,
-			PosY:               0,
+			X:               0,
+			Y:               0,
 			Size:               1,
 		}
 
 		now := time.Now()
 		rows := pgxmock.NewRows([]string{
-			"id", "resource_node_type_id", "world_id", "chunk_x", "chunk_y", "cluster_id", "pos_x", "pos_y", "size", "created_at",
+			"id", "resource_node_type_id", "world_id", "chunk_x", "chunk_y", "cluster_id", "x", "y", "size", "created_at",
 		}).AddRow(
 			int32(1), int32(-1), "550e8400-e29b-41d4-a716-446655440000", int32(0), int32(0), "cluster_negative_type", int32(0), int32(0), int32(1), pgtype.Timestamp{Time: now, Valid: true},
 		)

@@ -55,12 +55,38 @@ CREATE TABLE
     chunk_x integer NOT NULL,
     chunk_y integer NOT NULL,
     cluster_id text NOT NULL,
-    pos_x integer NOT NULL,
-    pos_y integer NOT NULL,
+    x integer NOT NULL, -- Global X coordinate
+    y integer NOT NULL, -- Global Y coordinate
     size integer NOT NULL DEFAULT 1,
     created_at timestamp NOT NULL DEFAULT NOW(),
     FOREIGN KEY (world_id, chunk_x, chunk_y) REFERENCES chunks (world_id, chunk_x, chunk_y) ON DELETE CASCADE,
-    UNIQUE (world_id, chunk_x, chunk_y, pos_x, pos_y)
+    UNIQUE (world_id, x, y)
+  );
+
+-- Items system - all harvestable items
+CREATE TABLE
+  items (
+    id SERIAL PRIMARY KEY,
+    name text NOT NULL UNIQUE,
+    description text NOT NULL,
+    item_type text NOT NULL DEFAULT 'material', -- 'material', 'resource_node', 'tool', etc.
+    rarity text NOT NULL DEFAULT 'common', -- 'common', 'uncommon', 'rare', 'very_rare'
+    stack_size integer NOT NULL DEFAULT 64,
+    visual_data jsonb, -- Contains sprite, color, etc.
+    created_at timestamp NOT NULL DEFAULT NOW()
+  );
+
+-- Resource node drop system
+CREATE TABLE
+  resource_node_drops (
+    id SERIAL PRIMARY KEY,
+    resource_node_type_id integer NOT NULL,
+    item_id integer NOT NULL REFERENCES items (id) ON DELETE CASCADE,
+    chance decimal(4,3) NOT NULL CHECK (chance >= 0.0 AND chance <= 1.0),
+    min_quantity integer NOT NULL DEFAULT 1 CHECK (min_quantity > 0),
+    max_quantity integer NOT NULL DEFAULT 1 CHECK (max_quantity >= min_quantity),
+    created_at timestamp NOT NULL DEFAULT NOW(),
+    UNIQUE (resource_node_type_id, item_id)
   );
 
 -- Character inventory system
@@ -68,11 +94,11 @@ CREATE TABLE
   character_inventories (
     id SERIAL PRIMARY KEY,
     character_id UUID NOT NULL REFERENCES characters (id) ON DELETE CASCADE,
-    resource_node_type_id integer NOT NULL,
-    quantity integer NOT NULL DEFAULT 1,
+    item_id integer NOT NULL REFERENCES items (id) ON DELETE CASCADE,
+    quantity integer NOT NULL DEFAULT 1 CHECK (quantity > 0),
     created_at timestamp NOT NULL DEFAULT NOW(),
     updated_at timestamp NOT NULL DEFAULT NOW(),
-    UNIQUE (character_id, resource_node_type_id)
+    UNIQUE (character_id, item_id)
   );
 
 -- Create indexes for performance
@@ -84,8 +110,14 @@ CREATE INDEX idx_resource_nodes_world_id ON resource_nodes (world_id);
 CREATE INDEX idx_resource_nodes_chunk ON resource_nodes (world_id, chunk_x, chunk_y);
 CREATE INDEX idx_resource_nodes_type ON resource_nodes (resource_node_type_id);
 CREATE INDEX idx_resource_nodes_cluster ON resource_nodes (cluster_id);
+CREATE INDEX idx_resource_nodes_global_position ON resource_nodes (world_id, x, y);
+CREATE INDEX idx_items_name ON items (name);
+CREATE INDEX idx_items_type ON items (item_type);
+CREATE INDEX idx_items_rarity ON items (rarity);
+CREATE INDEX idx_resource_node_drops_resource_type ON resource_node_drops (resource_node_type_id);
+CREATE INDEX idx_resource_node_drops_item ON resource_node_drops (item_id);
 CREATE INDEX idx_character_inventories_character_id ON character_inventories (character_id);
-CREATE INDEX idx_character_inventories_resource_type ON character_inventories (resource_node_type_id);
+CREATE INDEX idx_character_inventories_item_id ON character_inventories (item_id);
 
 
 -- Insert default world

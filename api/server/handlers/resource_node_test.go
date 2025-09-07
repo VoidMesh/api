@@ -82,8 +82,8 @@ func TestResourceNodeHandler_GetResourcesInChunk(t *testing.T) {
 							ResourceNodeTypeId: resourceNodeV1.ResourceNodeTypeId_RESOURCE_NODE_TYPE_ID_HERB_PATCH,
 							ChunkX:             10,
 							ChunkY:             20,
-							PosX:               150,
-							PosY:               250,
+							X:               150,
+							Y:               250,
 							Size:               1,
 							CreatedAt:          timestamppb.New(time.Now()),
 						},
@@ -92,8 +92,8 @@ func TestResourceNodeHandler_GetResourcesInChunk(t *testing.T) {
 							ResourceNodeTypeId: resourceNodeV1.ResourceNodeTypeId_RESOURCE_NODE_TYPE_ID_BERRY_BUSH,
 							ChunkX:             10,
 							ChunkY:             20,
-							PosX:               300,
-							PosY:               400,
+							X:               300,
+							Y:               400,
 							Size:               2,
 							CreatedAt:          timestamppb.New(time.Now()),
 						},
@@ -109,15 +109,15 @@ func TestResourceNodeHandler_GetResourcesInChunk(t *testing.T) {
 				assert.Equal(t, resourceNodeV1.ResourceNodeTypeId_RESOURCE_NODE_TYPE_ID_HERB_PATCH, resp.Resources[0].ResourceNodeTypeId)
 				assert.Equal(t, int32(10), resp.Resources[0].ChunkX)
 				assert.Equal(t, int32(20), resp.Resources[0].ChunkY)
-				assert.Equal(t, int32(150), resp.Resources[0].PosX)
-				assert.Equal(t, int32(250), resp.Resources[0].PosY)
+				assert.Equal(t, int32(150), resp.Resources[0].X)
+				assert.Equal(t, int32(250), resp.Resources[0].Y)
 				assert.Equal(t, int32(1), resp.Resources[0].Size)
 				
 				// Validate second resource
 				assert.Equal(t, int32(2), resp.Resources[1].Id)
 				assert.Equal(t, resourceNodeV1.ResourceNodeTypeId_RESOURCE_NODE_TYPE_ID_BERRY_BUSH, resp.Resources[1].ResourceNodeTypeId)
-				assert.Equal(t, int32(300), resp.Resources[1].PosX)
-				assert.Equal(t, int32(400), resp.Resources[1].PosY)
+				assert.Equal(t, int32(300), resp.Resources[1].X)
+				assert.Equal(t, int32(400), resp.Resources[1].Y)
 				assert.Equal(t, int32(2), resp.Resources[1].Size)
 			},
 		},
@@ -140,8 +140,8 @@ func TestResourceNodeHandler_GetResourcesInChunk(t *testing.T) {
 							ResourceNodeTypeId: resourceNodeV1.ResourceNodeTypeId_RESOURCE_NODE_TYPE_ID_MINERAL_OUTCROPPING,
 							ChunkX:             5,
 							ChunkY:             8,
-							PosX:               100,
-							PosY:               200,
+							X:               100,
+							Y:               200,
 							Size:               3,
 							CreatedAt:          timestamppb.New(time.Now()),
 						},
@@ -325,8 +325,8 @@ func TestResourceNodeHandler_GetResourcesInChunk(t *testing.T) {
 							ResourceNodeTypeId: resourceNodeV1.ResourceNodeTypeId_RESOURCE_NODE_TYPE_ID_FISHING_SPOT,
 							ChunkX:             0,
 							ChunkY:             0,
-							PosX:               0,
-							PosY:               0,
+							X:               0,
+							Y:               0,
 							Size:               1,
 							CreatedAt:          timestamppb.New(time.Now()),
 						},
@@ -427,8 +427,8 @@ func TestResourceNodeHandler_GetResourcesInChunks(t *testing.T) {
 							ResourceNodeTypeId: resourceNodeV1.ResourceNodeTypeId_RESOURCE_NODE_TYPE_ID_HERB_PATCH,
 							ChunkX:             10,
 							ChunkY:             20,
-							PosX:               150,
-							PosY:               250,
+							X:               150,
+							Y:               250,
 							Size:               1,
 							CreatedAt:          timestamppb.New(time.Now()),
 						},
@@ -437,8 +437,8 @@ func TestResourceNodeHandler_GetResourcesInChunks(t *testing.T) {
 							ResourceNodeTypeId: resourceNodeV1.ResourceNodeTypeId_RESOURCE_NODE_TYPE_ID_BERRY_BUSH,
 							ChunkX:             11,
 							ChunkY:             21,
-							PosX:               300,
-							PosY:               400,
+							X:               300,
+							Y:               400,
 							Size:               2,
 							CreatedAt:          timestamppb.New(time.Now()),
 						},
@@ -860,8 +860,8 @@ func BenchmarkResourceNodeHandler_GetResourcesInChunk(b *testing.B) {
 				ResourceNodeTypeId: resourceNodeV1.ResourceNodeTypeId_RESOURCE_NODE_TYPE_ID_HERB_PATCH,
 				ChunkX:             10,
 				ChunkY:             20,
-				PosX:               150,
-				PosY:               250,
+				X:               150,
+				Y:               250,
 				Size:               1,
 				CreatedAt:          timestamppb.New(time.Now()),
 			},
@@ -906,8 +906,8 @@ func BenchmarkResourceNodeHandler_GetResourcesInChunks(b *testing.B) {
 				ResourceNodeTypeId: resourceNodeV1.ResourceNodeTypeId_RESOURCE_NODE_TYPE_ID_HERB_PATCH,
 				ChunkX:             10,
 				ChunkY:             20,
-				PosX:               150,
-				PosY:               250,
+				X:               150,
+				Y:               250,
 				Size:               1,
 				CreatedAt:          timestamppb.New(time.Now()),
 			},
@@ -916,8 +916,8 @@ func BenchmarkResourceNodeHandler_GetResourcesInChunks(b *testing.B) {
 				ResourceNodeTypeId: resourceNodeV1.ResourceNodeTypeId_RESOURCE_NODE_TYPE_ID_BERRY_BUSH,
 				ChunkX:             11,
 				ChunkY:             21,
-				PosX:               300,
-				PosY:               400,
+				X:               300,
+				Y:               400,
 				Size:               2,
 				CreatedAt:          timestamppb.New(time.Now()),
 			},
@@ -1021,8 +1021,8 @@ func TestResourceNodeHandler_ProtocolBufferMessageValidation(t *testing.T) {
 					ResourceNodeTypeId: resourceNodeV1.ResourceNodeTypeId_RESOURCE_NODE_TYPE_ID_HERB_PATCH,
 					ChunkX:             10,
 					ChunkY:             20,
-					PosX:               150,
-					PosY:               250,
+					X:               150,
+					Y:               250,
 					Size:               1,
 					CreatedAt:          timestamppb.New(now),
 				},
@@ -1129,8 +1129,8 @@ func TestResourceNodeHandler_EdgeCases(t *testing.T) {
 							ResourceNodeTypeId: resourceNodeV1.ResourceNodeTypeId_RESOURCE_NODE_TYPE_ID_HERB_PATCH,
 							ChunkX:             2147483647, // max int32
 							ChunkY:             2147483647, // max int32
-							PosX:               2147483647,
-							PosY:               2147483647,
+							X:               2147483647,
+							Y:               2147483647,
 							Size:               1,
 							CreatedAt:          timestamppb.New(time.Now()),
 						},
@@ -1160,8 +1160,8 @@ func TestResourceNodeHandler_EdgeCases(t *testing.T) {
 							ResourceNodeTypeId: resourceNodeV1.ResourceNodeTypeId_RESOURCE_NODE_TYPE_ID_HERB_PATCH,
 							ChunkX:             -2147483648, // min int32
 							ChunkY:             -2147483648, // min int32
-							PosX:               -2147483648,
-							PosY:               -2147483648,
+							X:               -2147483648,
+							Y:               -2147483648,
 							Size:               1,
 							CreatedAt:          timestamppb.New(time.Now()),
 						},
@@ -1191,8 +1191,8 @@ func TestResourceNodeHandler_EdgeCases(t *testing.T) {
 						ResourceNodeTypeId: resourceNodeV1.ResourceNodeTypeId_RESOURCE_NODE_TYPE_ID_HERB_PATCH,
 						ChunkX:             10,
 						ChunkY:             20,
-						PosX:               int32(i % 32 * 32), // Spread across chunk
-						PosY:               int32(i / 32 * 32),
+						X:               int32(i % 32 * 32), // Spread across chunk
+						Y:               int32(i / 32 * 32),
 						Size:               int32((i % 3) + 1), // Size 1-3
 						CreatedAt:          timestamppb.New(time.Now()),
 					}

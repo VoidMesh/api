@@ -20,12 +20,12 @@ type Character struct {
 }
 
 type CharacterInventory struct {
-	ID                 int32
-	CharacterID        pgtype.UUID
-	ResourceNodeTypeID int32
-	Quantity           int32
-	CreatedAt          pgtype.Timestamp
-	UpdatedAt          pgtype.Timestamp
+	ID          int32
+	CharacterID pgtype.UUID
+	ItemID      int32
+	Quantity    int32
+	CreatedAt   pgtype.Timestamp
+	UpdatedAt   pgtype.Timestamp
 }
 
 type Chunk struct {
@@ -36,6 +36,17 @@ type Chunk struct {
 	GeneratedAt pgtype.Timestamp
 }
 
+type Item struct {
+	ID          int32
+	Name        string
+	Description string
+	ItemType    string
+	Rarity      string
+	StackSize   int32
+	VisualData  []byte
+	CreatedAt   pgtype.Timestamp
+}
+
 type ResourceNode struct {
 	ID                 int32
 	ResourceNodeTypeID int32
@@ -43,9 +54,19 @@ type ResourceNode struct {
 	ChunkX             int32
 	ChunkY             int32
 	ClusterID          string
-	PosX               int32
-	PosY               int32
+	X                  int32
+	Y                  int32
 	Size               int32
+	CreatedAt          pgtype.Timestamp
+}
+
+type ResourceNodeDrop struct {
+	ID                 int32
+	ResourceNodeTypeID int32
+	ItemID             int32
+	Chance             pgtype.Numeric
+	MinQuantity        int32
+	MaxQuantity        int32
 	CreatedAt          pgtype.Timestamp
 }
 

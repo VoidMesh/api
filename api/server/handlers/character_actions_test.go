@@ -6,7 +6,6 @@ import (
 
 	characterActionsV1 "github.com/VoidMesh/api/api/proto/character_actions/v1"
 	inventoryV1 "github.com/VoidMesh/api/api/proto/inventory/v1"
-	resourceNodeV1 "github.com/VoidMesh/api/api/proto/resource_node/v1"
 	"github.com/VoidMesh/api/api/server/middleware"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -21,8 +20,8 @@ type MockCharacterActionsService struct {
 	mock.Mock
 }
 
-func (m *MockCharacterActionsService) HarvestResource(ctx context.Context, characterID string, resourceNodeID int32) ([]*characterActionsV1.HarvestResult, *inventoryV1.InventoryItem, error) {
-	args := m.Called(ctx, characterID, resourceNodeID)
+func (m *MockCharacterActionsService) HarvestResource(ctx context.Context, userID string, characterID string, resourceNodeID int32) ([]*characterActionsV1.HarvestResult, *inventoryV1.InventoryItem, error) {
+	args := m.Called(ctx, userID, characterID, resourceNodeID)
 	if args.Get(0) == nil {
 		return nil, args.Get(1).(*inventoryV1.InventoryItem), args.Error(2)
 	}
@@ -56,16 +55,20 @@ func TestCharacterActionsServer_HarvestResource_Success(t *testing.T) {
 	}
 
 	updatedItem := &inventoryV1.InventoryItem{
-		Id:                 1,
-		CharacterId:        req.CharacterId,
-		ResourceNodeTypeId: resourceNodeV1.ResourceNodeTypeId(1), // Use numeric value instead of enum
-		Quantity:           5,
-		CreatedAt:          timestamppb.Now(),
-		UpdatedAt:          timestamppb.Now(),
+		Id:          1,
+		CharacterId: req.CharacterId,
+		ItemId:      1,
+		Quantity:    5,
+		CreatedAt:   timestamppb.Now(),
+		UpdatedAt:   timestamppb.Now(),
+		ItemName:    "Herb Patch",
+		ItemType:    "resource",
+		Rarity:      "common",
+		StackSize:   100,
 	}
 
 	// Setup expectations
-	mockService.On("HarvestResource", ctx, req.CharacterId, req.ResourceNodeId).Return(harvestResults, updatedItem, nil)
+	mockService.On("HarvestResource", ctx, "user123", req.CharacterId, req.ResourceNodeId).Return(harvestResults, updatedItem, nil)
 
 	// Execute
 	resp, err := server.HarvestResource(ctx, req)
@@ -182,7 +185,7 @@ func TestCharacterActionsServer_HarvestResource_ServiceError(t *testing.T) {
 
 	// Setup service to return error
 	serviceErr := status.Errorf(codes.NotFound, "character not found")
-	mockService.On("HarvestResource", ctx, req.CharacterId, req.ResourceNodeId).Return(nil, (*inventoryV1.InventoryItem)(nil), serviceErr)
+	mockService.On("HarvestResource", ctx, "user123", req.CharacterId, req.ResourceNodeId).Return(nil, (*inventoryV1.InventoryItem)(nil), serviceErr)
 
 	// Execute
 	resp, err := server.HarvestResource(ctx, req)
@@ -203,12 +206,16 @@ func TestCharacterActionsServiceAdapter_HarvestResource(t *testing.T) {
 
 	// Create mock service that returns inventoryV1.InventoryItem
 	inventoryItem := &inventoryV1.InventoryItem{
-		Id:                 1,
-		CharacterId:        "test-char",
-		ResourceNodeTypeId: resourceNodeV1.ResourceNodeTypeId(1), // Use numeric value
-		Quantity:           5,
-		CreatedAt:          timestamppb.Now(),
-		UpdatedAt:          timestamppb.Now(),
+		Id:          1,
+		CharacterId: "test-char",
+		ItemId:      1,
+		Quantity:    5,
+		CreatedAt:   timestamppb.Now(),
+		UpdatedAt:   timestamppb.Now(),
+		ItemName:    "Wood",
+		ItemType:    "resource",
+		Rarity:      "common",
+		StackSize:   50,
 	}
 
 	harvestResults := []*characterActionsV1.HarvestResult{
@@ -217,9 +224,9 @@ func TestCharacterActionsServiceAdapter_HarvestResource(t *testing.T) {
 
 	// Create a mock character actions service that we can adapt
 	mockCharacterActionsService := &struct {
-		HarvestResourceFunc func(ctx context.Context, characterID string, resourceNodeID int32) ([]*characterActionsV1.HarvestResult, *inventoryV1.InventoryItem, error)
+		HarvestResourceFunc func(ctx context.Context, userID string, characterID string, resourceNodeID int32) ([]*characterActionsV1.HarvestResult, *inventoryV1.InventoryItem, error)
 	}{
-		HarvestResourceFunc: func(ctx context.Context, characterID string, resourceNodeID int32) ([]*characterActionsV1.HarvestResult, *inventoryV1.InventoryItem, error) {
+		HarvestResourceFunc: func(ctx context.Context, userID string, characterID string, resourceNodeID int32) ([]*characterActionsV1.HarvestResult, *inventoryV1.InventoryItem, error) {
 			return harvestResults, inventoryItem, nil
 		},
 	}

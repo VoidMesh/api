@@ -16,23 +16,23 @@ UPDATE character_inventories
 SET 
   quantity = quantity + $3,
   updated_at = NOW()
-WHERE character_id = $1 AND resource_node_type_id = $2
-RETURNING id, character_id, resource_node_type_id, quantity, created_at, updated_at
+WHERE character_id = $1 AND item_id = $2
+RETURNING id, character_id, item_id, quantity, created_at, updated_at
 `
 
 type AddInventoryItemQuantityParams struct {
-	CharacterID        pgtype.UUID
-	ResourceNodeTypeID int32
-	Quantity           int32
+	CharacterID pgtype.UUID
+	ItemID      int32
+	Quantity    int32
 }
 
 func (q *Queries) AddInventoryItemQuantity(ctx context.Context, arg AddInventoryItemQuantityParams) (CharacterInventory, error) {
-	row := q.db.QueryRow(ctx, addInventoryItemQuantity, arg.CharacterID, arg.ResourceNodeTypeID, arg.Quantity)
+	row := q.db.QueryRow(ctx, addInventoryItemQuantity, arg.CharacterID, arg.ItemID, arg.Quantity)
 	var i CharacterInventory
 	err := row.Scan(
 		&i.ID,
 		&i.CharacterID,
-		&i.ResourceNodeTypeID,
+		&i.ItemID,
 		&i.Quantity,
 		&i.CreatedAt,
 		&i.UpdatedAt,
@@ -43,26 +43,26 @@ func (q *Queries) AddInventoryItemQuantity(ctx context.Context, arg AddInventory
 const createInventoryItem = `-- name: CreateInventoryItem :one
 INSERT INTO character_inventories (
   character_id,
-  resource_node_type_id,
+  item_id,
   quantity
 )
 VALUES ($1, $2, $3)
-RETURNING id, character_id, resource_node_type_id, quantity, created_at, updated_at
+RETURNING id, character_id, item_id, quantity, created_at, updated_at
 `
 
 type CreateInventoryItemParams struct {
-	CharacterID        pgtype.UUID
-	ResourceNodeTypeID int32
-	Quantity           int32
+	CharacterID pgtype.UUID
+	ItemID      int32
+	Quantity    int32
 }
 
 func (q *Queries) CreateInventoryItem(ctx context.Context, arg CreateInventoryItemParams) (CharacterInventory, error) {
-	row := q.db.QueryRow(ctx, createInventoryItem, arg.CharacterID, arg.ResourceNodeTypeID, arg.Quantity)
+	row := q.db.QueryRow(ctx, createInventoryItem, arg.CharacterID, arg.ItemID, arg.Quantity)
 	var i CharacterInventory
 	err := row.Scan(
 		&i.ID,
 		&i.CharacterID,
-		&i.ResourceNodeTypeID,
+		&i.ItemID,
 		&i.Quantity,
 		&i.CreatedAt,
 		&i.UpdatedAt,
@@ -82,16 +82,16 @@ func (q *Queries) DeleteEmptyInventoryItems(ctx context.Context, characterID pgt
 
 const deleteInventoryItem = `-- name: DeleteInventoryItem :exec
 DELETE FROM character_inventories
-WHERE character_id = $1 AND resource_node_type_id = $2
+WHERE character_id = $1 AND item_id = $2
 `
 
 type DeleteInventoryItemParams struct {
-	CharacterID        pgtype.UUID
-	ResourceNodeTypeID int32
+	CharacterID pgtype.UUID
+	ItemID      int32
 }
 
 func (q *Queries) DeleteInventoryItem(ctx context.Context, arg DeleteInventoryItemParams) error {
-	_, err := q.db.Exec(ctx, deleteInventoryItem, arg.CharacterID, arg.ResourceNodeTypeID)
+	_, err := q.db.Exec(ctx, deleteInventoryItem, arg.CharacterID, arg.ItemID)
 	return err
 }
 
@@ -100,32 +100,60 @@ const getCharacterInventory = `-- name: GetCharacterInventory :many
 SELECT
   ci.id,
   ci.character_id,
-  ci.resource_node_type_id,
+  ci.item_id,
   ci.quantity,
   ci.created_at,
-  ci.updated_at
+  ci.updated_at,
+  i.name as item_name,
+  i.description as item_description,
+  i.item_type,
+  i.rarity,
+  i.stack_size,
+  i.visual_data
 FROM character_inventories ci
+JOIN items i ON ci.item_id = i.id
 WHERE ci.character_id = $1
-ORDER BY ci.created_at DESC
+ORDER BY i.name
 `
 
+type GetCharacterInventoryRow struct {
+	ID              int32
+	CharacterID     pgtype.UUID
+	ItemID          int32
+	Quantity        int32
+	CreatedAt       pgtype.Timestamp
+	UpdatedAt       pgtype.Timestamp
+	ItemName        string
+	ItemDescription string
+	ItemType        string
+	Rarity          string
+	StackSize       int32
+	VisualData      []byte
+}
+
 // Character inventory operations
-func (q *Queries) GetCharacterInventory(ctx context.Context, characterID pgtype.UUID) ([]CharacterInventory, error) {
+func (q *Queries) GetCharacterInventory(ctx context.Context, characterID pgtype.UUID) ([]GetCharacterInventoryRow, error) {
 	rows, err := q.db.Query(ctx, getCharacterInventory, characterID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []CharacterInventory
+	var items []GetCharacterInventoryRow
 	for rows.Next() {
-		var i CharacterInventory
+		var i GetCharacterInventoryRow
 		if err := rows.Scan(
 			&i.ID,
 			&i.CharacterID,
-			&i.ResourceNodeTypeID,
+			&i.ItemID,
 			&i.Quantity,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.ItemName,
+			&i.ItemDescription,
+			&i.ItemType,
+			&i.Rarity,
+			&i.StackSize,
+			&i.VisualData,
 		); err != nil {
 			return nil, err
 		}
@@ -141,29 +169,57 @@ const getInventoryItem = `-- name: GetInventoryItem :one
 SELECT
   ci.id,
   ci.character_id,
-  ci.resource_node_type_id,
+  ci.item_id,
   ci.quantity,
   ci.created_at,
-  ci.updated_at
+  ci.updated_at,
+  i.name as item_name,
+  i.description as item_description,
+  i.item_type,
+  i.rarity,
+  i.stack_size,
+  i.visual_data
 FROM character_inventories ci
-WHERE ci.character_id = $1 AND ci.resource_node_type_id = $2
+JOIN items i ON ci.item_id = i.id
+WHERE ci.character_id = $1 AND ci.item_id = $2
 `
 
 type GetInventoryItemParams struct {
-	CharacterID        pgtype.UUID
-	ResourceNodeTypeID int32
+	CharacterID pgtype.UUID
+	ItemID      int32
 }
 
-func (q *Queries) GetInventoryItem(ctx context.Context, arg GetInventoryItemParams) (CharacterInventory, error) {
-	row := q.db.QueryRow(ctx, getInventoryItem, arg.CharacterID, arg.ResourceNodeTypeID)
-	var i CharacterInventory
+type GetInventoryItemRow struct {
+	ID              int32
+	CharacterID     pgtype.UUID
+	ItemID          int32
+	Quantity        int32
+	CreatedAt       pgtype.Timestamp
+	UpdatedAt       pgtype.Timestamp
+	ItemName        string
+	ItemDescription string
+	ItemType        string
+	Rarity          string
+	StackSize       int32
+	VisualData      []byte
+}
+
+func (q *Queries) GetInventoryItem(ctx context.Context, arg GetInventoryItemParams) (GetInventoryItemRow, error) {
+	row := q.db.QueryRow(ctx, getInventoryItem, arg.CharacterID, arg.ItemID)
+	var i GetInventoryItemRow
 	err := row.Scan(
 		&i.ID,
 		&i.CharacterID,
-		&i.ResourceNodeTypeID,
+		&i.ItemID,
 		&i.Quantity,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.ItemName,
+		&i.ItemDescription,
+		&i.ItemType,
+		&i.Rarity,
+		&i.StackSize,
+		&i.VisualData,
 	)
 	return i, err
 }
@@ -195,17 +251,17 @@ func (q *Queries) GetInventoryItemTotalQuantity(ctx context.Context, characterID
 const inventoryItemExists = `-- name: InventoryItemExists :one
 SELECT EXISTS(
   SELECT 1 FROM character_inventories
-  WHERE character_id = $1 AND resource_node_type_id = $2
+  WHERE character_id = $1 AND item_id = $2
 )
 `
 
 type InventoryItemExistsParams struct {
-	CharacterID        pgtype.UUID
-	ResourceNodeTypeID int32
+	CharacterID pgtype.UUID
+	ItemID      int32
 }
 
 func (q *Queries) InventoryItemExists(ctx context.Context, arg InventoryItemExistsParams) (bool, error) {
-	row := q.db.QueryRow(ctx, inventoryItemExists, arg.CharacterID, arg.ResourceNodeTypeID)
+	row := q.db.QueryRow(ctx, inventoryItemExists, arg.CharacterID, arg.ItemID)
 	var exists bool
 	err := row.Scan(&exists)
 	return exists, err
@@ -216,23 +272,23 @@ UPDATE character_inventories
 SET 
   quantity = quantity - $3,
   updated_at = NOW()
-WHERE character_id = $1 AND resource_node_type_id = $2 AND quantity >= $3
-RETURNING id, character_id, resource_node_type_id, quantity, created_at, updated_at
+WHERE character_id = $1 AND item_id = $2 AND quantity >= $3
+RETURNING id, character_id, item_id, quantity, created_at, updated_at
 `
 
 type RemoveInventoryItemQuantityParams struct {
-	CharacterID        pgtype.UUID
-	ResourceNodeTypeID int32
-	Quantity           int32
+	CharacterID pgtype.UUID
+	ItemID      int32
+	Quantity    int32
 }
 
 func (q *Queries) RemoveInventoryItemQuantity(ctx context.Context, arg RemoveInventoryItemQuantityParams) (CharacterInventory, error) {
-	row := q.db.QueryRow(ctx, removeInventoryItemQuantity, arg.CharacterID, arg.ResourceNodeTypeID, arg.Quantity)
+	row := q.db.QueryRow(ctx, removeInventoryItemQuantity, arg.CharacterID, arg.ItemID, arg.Quantity)
 	var i CharacterInventory
 	err := row.Scan(
 		&i.ID,
 		&i.CharacterID,
-		&i.ResourceNodeTypeID,
+		&i.ItemID,
 		&i.Quantity,
 		&i.CreatedAt,
 		&i.UpdatedAt,
@@ -245,23 +301,23 @@ UPDATE character_inventories
 SET 
   quantity = $3,
   updated_at = NOW()
-WHERE character_id = $1 AND resource_node_type_id = $2
-RETURNING id, character_id, resource_node_type_id, quantity, created_at, updated_at
+WHERE character_id = $1 AND item_id = $2
+RETURNING id, character_id, item_id, quantity, created_at, updated_at
 `
 
 type UpdateInventoryItemQuantityParams struct {
-	CharacterID        pgtype.UUID
-	ResourceNodeTypeID int32
-	Quantity           int32
+	CharacterID pgtype.UUID
+	ItemID      int32
+	Quantity    int32
 }
 
 func (q *Queries) UpdateInventoryItemQuantity(ctx context.Context, arg UpdateInventoryItemQuantityParams) (CharacterInventory, error) {
-	row := q.db.QueryRow(ctx, updateInventoryItemQuantity, arg.CharacterID, arg.ResourceNodeTypeID, arg.Quantity)
+	row := q.db.QueryRow(ctx, updateInventoryItemQuantity, arg.CharacterID, arg.ItemID, arg.Quantity)
 	var i CharacterInventory
 	err := row.Scan(
 		&i.ID,
 		&i.CharacterID,
-		&i.ResourceNodeTypeID,
+		&i.ItemID,
 		&i.Quantity,
 		&i.CreatedAt,
 		&i.UpdatedAt,

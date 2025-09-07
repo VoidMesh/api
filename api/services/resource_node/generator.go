@@ -222,13 +222,17 @@ func (s *NodeService) GenerateResourcesForChunk(ctx context.Context, chunk *chun
 				posKey := fmt.Sprintf("%d,%d", point.x, point.y)
 				if !occupiedPositions[posKey] {
 					// Create the resource node
+					// Convert chunk-local coordinates to global coordinates
+					globalX := chunk.ChunkX*ChunkSize + point.x
+					globalY := chunk.ChunkY*ChunkSize + point.y
+					
 					resourceNode := &resourceNodeV1.ResourceNode{
 						ResourceNodeType:   resourceNodeType,
 						ResourceNodeTypeId: resourceNodeV1.ResourceNodeTypeId(resourceNodeType.Id),
 						ChunkX:             chunk.ChunkX,
 						ChunkY:             chunk.ChunkY,
-						PosX:               point.x,
-						PosY:               point.y,
+						X:                  globalX,
+						Y:                  globalY,
 						ClusterId:          clusterID,
 						Size:               1,
 						CreatedAt:          timestamppb.Now(),
@@ -355,9 +359,9 @@ func (s *NodeService) generateClusterNodes(
 	maxAttempts := numNodes * 3 // Allow multiple attempts
 
 	for attempt := 0; attempt < maxAttempts && nodesCreated < numNodes; attempt++ {
-		// Start at the center
-		baseX := centerNode.PosX
-		baseY := centerNode.PosY
+		// Start at the center (convert global back to chunk-local for cluster expansion)
+		baseX := centerNode.X % ChunkSize
+		baseY := centerNode.Y % ChunkSize
 
 		// Choose a random direction and distance
 		dir := directions[s.rnd.Intn(len(directions))]
@@ -396,13 +400,17 @@ func (s *NodeService) generateClusterNodes(
 		}
 
 		// Create a new node
+		// Convert chunk-local coordinates to global coordinates
+		globalX := centerNode.ChunkX*ChunkSize + newX
+		globalY := centerNode.ChunkY*ChunkSize + newY
+		
 		resourceNode := &resourceNodeV1.ResourceNode{
 			ResourceNodeType:   centerNode.ResourceNodeType,
 			ResourceNodeTypeId: centerNode.ResourceNodeTypeId,
 			ChunkX:             centerNode.ChunkX,
 			ChunkY:             centerNode.ChunkY,
-			PosX:               newX,
-			PosY:               newY,
+			X:                  globalX,
+			Y:                  globalY,
 			ClusterId:          centerNode.ClusterId,
 			Size:               1,
 			CreatedAt:          timestamppb.Now(),
@@ -743,8 +751,8 @@ func (s *NodeService) StoreResourceNodes(ctx context.Context, chunkX, chunkY int
 			ChunkX:             resource.ChunkX,
 			ChunkY:             resource.ChunkY,
 			ClusterID:          resource.ClusterId,
-			PosX:               resource.PosX,
-			PosY:               resource.PosY,
+			X:                  resource.X,
+			Y:                  resource.Y,
 			Size:               resource.Size,
 		})
 		if err != nil {
@@ -978,8 +986,8 @@ func (s *NodeService) convertResourceRows(dbResources []db.ResourceNode) []*reso
 			ResourceNodeType:   resourceNodeType,
 			ChunkX:             r.ChunkX,
 			ChunkY:             r.ChunkY,
-			PosX:               r.PosX,
-			PosY:               r.PosY,
+			X:                  r.X,
+			Y:                  r.Y,
 			ClusterId:          r.ClusterID,
 			Size:               r.Size,
 			CreatedAt:          createdAt,

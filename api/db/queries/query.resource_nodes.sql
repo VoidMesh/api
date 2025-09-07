@@ -7,8 +7,8 @@ INSERT INTO resource_nodes (
   chunk_x,
   chunk_y,
   cluster_id,
-  pos_x,
-  pos_y,
+  x,
+  y,
   size
 )
 VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
@@ -59,7 +59,7 @@ WHERE world_id = $1 AND chunk_x = $2 AND chunk_y = $3;
 -- name: ResourceNodeExistsAtPosition :one
 SELECT EXISTS(
   SELECT 1 FROM resource_nodes
-  WHERE world_id = $1 AND chunk_x = $2 AND chunk_y = $3 AND pos_x = $4 AND pos_y = $5
+  WHERE world_id = $1 AND x = $2 AND y = $3
 );
 
 -- name: CountResourceNodesInChunk :one

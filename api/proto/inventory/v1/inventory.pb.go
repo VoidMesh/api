@@ -7,7 +7,6 @@
 package v1
 
 import (
-	v1 "github.com/VoidMesh/api/api/proto/resource_node/v1"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
@@ -23,18 +22,24 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// Inventory item representing a resource in character's inventory
+// Inventory item representing any harvestable item in character's inventory
 type InventoryItem struct {
-	state              protoimpl.MessageState `protogen:"open.v1"`
-	Id                 int32                  `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
-	CharacterId        string                 `protobuf:"bytes,2,opt,name=character_id,json=characterId,proto3" json:"character_id,omitempty"`
-	ResourceNodeTypeId v1.ResourceNodeTypeId  `protobuf:"varint,3,opt,name=resource_node_type_id,json=resourceNodeTypeId,proto3,enum=resource_node.v1.ResourceNodeTypeId" json:"resource_node_type_id,omitempty"`
-	ResourceNodeType   *v1.ResourceNodeType   `protobuf:"bytes,4,opt,name=resource_node_type,json=resourceNodeType,proto3" json:"resource_node_type,omitempty"` // Populated for display
-	Quantity           int32                  `protobuf:"varint,5,opt,name=quantity,proto3" json:"quantity,omitempty"`
-	CreatedAt          *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
-	UpdatedAt          *timestamppb.Timestamp `protobuf:"bytes,7,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
-	unknownFields      protoimpl.UnknownFields
-	sizeCache          protoimpl.SizeCache
+	state       protoimpl.MessageState `protogen:"open.v1"`
+	Id          int32                  `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	CharacterId string                 `protobuf:"bytes,2,opt,name=character_id,json=characterId,proto3" json:"character_id,omitempty"`
+	ItemId      int32                  `protobuf:"varint,3,opt,name=item_id,json=itemId,proto3" json:"item_id,omitempty"` // References items table
+	Quantity    int32                  `protobuf:"varint,4,opt,name=quantity,proto3" json:"quantity,omitempty"`
+	CreatedAt   *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	UpdatedAt   *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
+	// Item details (populated from JOIN with items table)
+	ItemName      string `protobuf:"bytes,7,opt,name=item_name,json=itemName,proto3" json:"item_name,omitempty"`
+	Description   string `protobuf:"bytes,8,opt,name=description,proto3" json:"description,omitempty"`
+	ItemType      string `protobuf:"bytes,9,opt,name=item_type,json=itemType,proto3" json:"item_type,omitempty"`
+	Rarity        string `protobuf:"bytes,10,opt,name=rarity,proto3" json:"rarity,omitempty"`
+	StackSize     int32  `protobuf:"varint,11,opt,name=stack_size,json=stackSize,proto3" json:"stack_size,omitempty"`
+	VisualData    []byte `protobuf:"bytes,12,opt,name=visual_data,json=visualData,proto3" json:"visual_data,omitempty"` // JSON data for sprite, color, etc.
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *InventoryItem) Reset() {
@@ -81,18 +86,11 @@ func (x *InventoryItem) GetCharacterId() string {
 	return ""
 }
 
-func (x *InventoryItem) GetResourceNodeTypeId() v1.ResourceNodeTypeId {
+func (x *InventoryItem) GetItemId() int32 {
 	if x != nil {
-		return x.ResourceNodeTypeId
+		return x.ItemId
 	}
-	return v1.ResourceNodeTypeId(0)
-}
-
-func (x *InventoryItem) GetResourceNodeType() *v1.ResourceNodeType {
-	if x != nil {
-		return x.ResourceNodeType
-	}
-	return nil
+	return 0
 }
 
 func (x *InventoryItem) GetQuantity() int32 {
@@ -112,6 +110,48 @@ func (x *InventoryItem) GetCreatedAt() *timestamppb.Timestamp {
 func (x *InventoryItem) GetUpdatedAt() *timestamppb.Timestamp {
 	if x != nil {
 		return x.UpdatedAt
+	}
+	return nil
+}
+
+func (x *InventoryItem) GetItemName() string {
+	if x != nil {
+		return x.ItemName
+	}
+	return ""
+}
+
+func (x *InventoryItem) GetDescription() string {
+	if x != nil {
+		return x.Description
+	}
+	return ""
+}
+
+func (x *InventoryItem) GetItemType() string {
+	if x != nil {
+		return x.ItemType
+	}
+	return ""
+}
+
+func (x *InventoryItem) GetRarity() string {
+	if x != nil {
+		return x.Rarity
+	}
+	return ""
+}
+
+func (x *InventoryItem) GetStackSize() int32 {
+	if x != nil {
+		return x.StackSize
+	}
+	return 0
+}
+
+func (x *InventoryItem) GetVisualData() []byte {
+	if x != nil {
+		return x.VisualData
 	}
 	return nil
 }
@@ -215,12 +255,12 @@ func (x *GetCharacterInventoryResponse) GetTotalItems() int32 {
 
 // Add inventory item
 type AddInventoryItemRequest struct {
-	state              protoimpl.MessageState `protogen:"open.v1"`
-	CharacterId        string                 `protobuf:"bytes,1,opt,name=character_id,json=characterId,proto3" json:"character_id,omitempty"`
-	ResourceNodeTypeId v1.ResourceNodeTypeId  `protobuf:"varint,2,opt,name=resource_node_type_id,json=resourceNodeTypeId,proto3,enum=resource_node.v1.ResourceNodeTypeId" json:"resource_node_type_id,omitempty"`
-	Quantity           int32                  `protobuf:"varint,3,opt,name=quantity,proto3" json:"quantity,omitempty"`
-	unknownFields      protoimpl.UnknownFields
-	sizeCache          protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	CharacterId   string                 `protobuf:"bytes,1,opt,name=character_id,json=characterId,proto3" json:"character_id,omitempty"`
+	ItemId        int32                  `protobuf:"varint,2,opt,name=item_id,json=itemId,proto3" json:"item_id,omitempty"`
+	Quantity      int32                  `protobuf:"varint,3,opt,name=quantity,proto3" json:"quantity,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *AddInventoryItemRequest) Reset() {
@@ -260,11 +300,11 @@ func (x *AddInventoryItemRequest) GetCharacterId() string {
 	return ""
 }
 
-func (x *AddInventoryItemRequest) GetResourceNodeTypeId() v1.ResourceNodeTypeId {
+func (x *AddInventoryItemRequest) GetItemId() int32 {
 	if x != nil {
-		return x.ResourceNodeTypeId
+		return x.ItemId
 	}
-	return v1.ResourceNodeTypeId(0)
+	return 0
 }
 
 func (x *AddInventoryItemRequest) GetQuantity() int32 {
@@ -336,12 +376,12 @@ func (x *AddInventoryItemResponse) GetErrorMessage() string {
 
 // Remove inventory item
 type RemoveInventoryItemRequest struct {
-	state              protoimpl.MessageState `protogen:"open.v1"`
-	CharacterId        string                 `protobuf:"bytes,1,opt,name=character_id,json=characterId,proto3" json:"character_id,omitempty"`
-	ResourceNodeTypeId v1.ResourceNodeTypeId  `protobuf:"varint,2,opt,name=resource_node_type_id,json=resourceNodeTypeId,proto3,enum=resource_node.v1.ResourceNodeTypeId" json:"resource_node_type_id,omitempty"`
-	Quantity           int32                  `protobuf:"varint,3,opt,name=quantity,proto3" json:"quantity,omitempty"`
-	unknownFields      protoimpl.UnknownFields
-	sizeCache          protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	CharacterId   string                 `protobuf:"bytes,1,opt,name=character_id,json=characterId,proto3" json:"character_id,omitempty"`
+	ItemId        int32                  `protobuf:"varint,2,opt,name=item_id,json=itemId,proto3" json:"item_id,omitempty"`
+	Quantity      int32                  `protobuf:"varint,3,opt,name=quantity,proto3" json:"quantity,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *RemoveInventoryItemRequest) Reset() {
@@ -381,11 +421,11 @@ func (x *RemoveInventoryItemRequest) GetCharacterId() string {
 	return ""
 }
 
-func (x *RemoveInventoryItemRequest) GetResourceNodeTypeId() v1.ResourceNodeTypeId {
+func (x *RemoveInventoryItemRequest) GetItemId() int32 {
 	if x != nil {
-		return x.ResourceNodeTypeId
+		return x.ItemId
 	}
-	return v1.ResourceNodeTypeId(0)
+	return 0
 }
 
 func (x *RemoveInventoryItemRequest) GetQuantity() int32 {
@@ -457,12 +497,12 @@ func (x *RemoveInventoryItemResponse) GetErrorMessage() string {
 
 // Update item quantity
 type UpdateItemQuantityRequest struct {
-	state              protoimpl.MessageState `protogen:"open.v1"`
-	CharacterId        string                 `protobuf:"bytes,1,opt,name=character_id,json=characterId,proto3" json:"character_id,omitempty"`
-	ResourceNodeTypeId v1.ResourceNodeTypeId  `protobuf:"varint,2,opt,name=resource_node_type_id,json=resourceNodeTypeId,proto3,enum=resource_node.v1.ResourceNodeTypeId" json:"resource_node_type_id,omitempty"`
-	NewQuantity        int32                  `protobuf:"varint,3,opt,name=new_quantity,json=newQuantity,proto3" json:"new_quantity,omitempty"`
-	unknownFields      protoimpl.UnknownFields
-	sizeCache          protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	CharacterId   string                 `protobuf:"bytes,1,opt,name=character_id,json=characterId,proto3" json:"character_id,omitempty"`
+	ItemId        int32                  `protobuf:"varint,2,opt,name=item_id,json=itemId,proto3" json:"item_id,omitempty"`
+	NewQuantity   int32                  `protobuf:"varint,3,opt,name=new_quantity,json=newQuantity,proto3" json:"new_quantity,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *UpdateItemQuantityRequest) Reset() {
@@ -502,11 +542,11 @@ func (x *UpdateItemQuantityRequest) GetCharacterId() string {
 	return ""
 }
 
-func (x *UpdateItemQuantityRequest) GetResourceNodeTypeId() v1.ResourceNodeTypeId {
+func (x *UpdateItemQuantityRequest) GetItemId() int32 {
 	if x != nil {
-		return x.ResourceNodeTypeId
+		return x.ItemId
 	}
-	return v1.ResourceNodeTypeId(0)
+	return 0
 }
 
 func (x *UpdateItemQuantityRequest) GetNewQuantity() int32 {
@@ -580,42 +620,50 @@ var File_inventory_v1_inventory_proto protoreflect.FileDescriptor
 
 const file_inventory_v1_inventory_proto_rawDesc = "" +
 	"\n" +
-	"\x1cinventory/v1/inventory.proto\x12\finventory.v1\x1a\x1fgoogle/protobuf/timestamp.proto\x1a$resource_node/v1/resource_node.proto\"\xff\x02\n" +
+	"\x1cinventory/v1/inventory.proto\x12\finventory.v1\x1a\x1fgoogle/protobuf/timestamp.proto\"\xa1\x03\n" +
 	"\rInventoryItem\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x05R\x02id\x12!\n" +
-	"\fcharacter_id\x18\x02 \x01(\tR\vcharacterId\x12W\n" +
-	"\x15resource_node_type_id\x18\x03 \x01(\x0e2$.resource_node.v1.ResourceNodeTypeIdR\x12resourceNodeTypeId\x12P\n" +
-	"\x12resource_node_type\x18\x04 \x01(\v2\".resource_node.v1.ResourceNodeTypeR\x10resourceNodeType\x12\x1a\n" +
-	"\bquantity\x18\x05 \x01(\x05R\bquantity\x129\n" +
+	"\fcharacter_id\x18\x02 \x01(\tR\vcharacterId\x12\x17\n" +
+	"\aitem_id\x18\x03 \x01(\x05R\x06itemId\x12\x1a\n" +
+	"\bquantity\x18\x04 \x01(\x05R\bquantity\x129\n" +
 	"\n" +
-	"created_at\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x129\n" +
+	"created_at\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x129\n" +
 	"\n" +
-	"updated_at\x18\a \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAt\"A\n" +
+	"updated_at\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAt\x12\x1b\n" +
+	"\titem_name\x18\a \x01(\tR\bitemName\x12 \n" +
+	"\vdescription\x18\b \x01(\tR\vdescription\x12\x1b\n" +
+	"\titem_type\x18\t \x01(\tR\bitemType\x12\x16\n" +
+	"\x06rarity\x18\n" +
+	" \x01(\tR\x06rarity\x12\x1d\n" +
+	"\n" +
+	"stack_size\x18\v \x01(\x05R\tstackSize\x12\x1f\n" +
+	"\vvisual_data\x18\f \x01(\fR\n" +
+	"visualData\"A\n" +
 	"\x1cGetCharacterInventoryRequest\x12!\n" +
 	"\fcharacter_id\x18\x01 \x01(\tR\vcharacterId\"s\n" +
 	"\x1dGetCharacterInventoryResponse\x121\n" +
 	"\x05items\x18\x01 \x03(\v2\x1b.inventory.v1.InventoryItemR\x05items\x12\x1f\n" +
 	"\vtotal_items\x18\x02 \x01(\x05R\n" +
-	"totalItems\"\xb1\x01\n" +
+	"totalItems\"q\n" +
 	"\x17AddInventoryItemRequest\x12!\n" +
-	"\fcharacter_id\x18\x01 \x01(\tR\vcharacterId\x12W\n" +
-	"\x15resource_node_type_id\x18\x02 \x01(\x0e2$.resource_node.v1.ResourceNodeTypeIdR\x12resourceNodeTypeId\x12\x1a\n" +
+	"\fcharacter_id\x18\x01 \x01(\tR\vcharacterId\x12\x17\n" +
+	"\aitem_id\x18\x02 \x01(\x05R\x06itemId\x12\x1a\n" +
 	"\bquantity\x18\x03 \x01(\x05R\bquantity\"\x8a\x01\n" +
 	"\x18AddInventoryItemResponse\x12/\n" +
 	"\x04item\x18\x01 \x01(\v2\x1b.inventory.v1.InventoryItemR\x04item\x12\x18\n" +
 	"\asuccess\x18\x02 \x01(\bR\asuccess\x12#\n" +
-	"\rerror_message\x18\x03 \x01(\tR\ferrorMessage\"\xb4\x01\n" +
+	"\rerror_message\x18\x03 \x01(\tR\ferrorMessage\"t\n" +
 	"\x1aRemoveInventoryItemRequest\x12!\n" +
-	"\fcharacter_id\x18\x01 \x01(\tR\vcharacterId\x12W\n" +
-	"\x15resource_node_type_id\x18\x02 \x01(\x0e2$.resource_node.v1.ResourceNodeTypeIdR\x12resourceNodeTypeId\x12\x1a\n" +
+	"\fcharacter_id\x18\x01 \x01(\tR\vcharacterId\x12\x17\n" +
+	"\aitem_id\x18\x02 \x01(\x05R\x06itemId\x12\x1a\n" +
 	"\bquantity\x18\x03 \x01(\x05R\bquantity\"\x8d\x01\n" +
 	"\x1bRemoveInventoryItemResponse\x12/\n" +
 	"\x04item\x18\x01 \x01(\v2\x1b.inventory.v1.InventoryItemR\x04item\x12\x18\n" +
 	"\asuccess\x18\x02 \x01(\bR\asuccess\x12#\n" +
-	"\rerror_message\x18\x03 \x01(\tR\ferrorMessage\"\xba\x01\n" +
+	"\rerror_message\x18\x03 \x01(\tR\ferrorMessage\"z\n" +
 	"\x19UpdateItemQuantityRequest\x12!\n" +
-	"\fcharacter_id\x18\x01 \x01(\tR\vcharacterId\x12W\n" +
-	"\x15resource_node_type_id\x18\x02 \x01(\x0e2$.resource_node.v1.ResourceNodeTypeIdR\x12resourceNodeTypeId\x12!\n" +
+	"\fcharacter_id\x18\x01 \x01(\tR\vcharacterId\x12\x17\n" +
+	"\aitem_id\x18\x02 \x01(\x05R\x06itemId\x12!\n" +
 	"\fnew_quantity\x18\x03 \x01(\x05R\vnewQuantity\"\x8c\x01\n" +
 	"\x1aUpdateItemQuantityResponse\x12/\n" +
 	"\x04item\x18\x01 \x01(\v2\x1b.inventory.v1.InventoryItemR\x04item\x12\x18\n" +
@@ -650,35 +698,28 @@ var file_inventory_v1_inventory_proto_goTypes = []any{
 	(*RemoveInventoryItemResponse)(nil),   // 6: inventory.v1.RemoveInventoryItemResponse
 	(*UpdateItemQuantityRequest)(nil),     // 7: inventory.v1.UpdateItemQuantityRequest
 	(*UpdateItemQuantityResponse)(nil),    // 8: inventory.v1.UpdateItemQuantityResponse
-	(v1.ResourceNodeTypeId)(0),            // 9: resource_node.v1.ResourceNodeTypeId
-	(*v1.ResourceNodeType)(nil),           // 10: resource_node.v1.ResourceNodeType
-	(*timestamppb.Timestamp)(nil),         // 11: google.protobuf.Timestamp
+	(*timestamppb.Timestamp)(nil),         // 9: google.protobuf.Timestamp
 }
 var file_inventory_v1_inventory_proto_depIdxs = []int32{
-	9,  // 0: inventory.v1.InventoryItem.resource_node_type_id:type_name -> resource_node.v1.ResourceNodeTypeId
-	10, // 1: inventory.v1.InventoryItem.resource_node_type:type_name -> resource_node.v1.ResourceNodeType
-	11, // 2: inventory.v1.InventoryItem.created_at:type_name -> google.protobuf.Timestamp
-	11, // 3: inventory.v1.InventoryItem.updated_at:type_name -> google.protobuf.Timestamp
-	0,  // 4: inventory.v1.GetCharacterInventoryResponse.items:type_name -> inventory.v1.InventoryItem
-	9,  // 5: inventory.v1.AddInventoryItemRequest.resource_node_type_id:type_name -> resource_node.v1.ResourceNodeTypeId
-	0,  // 6: inventory.v1.AddInventoryItemResponse.item:type_name -> inventory.v1.InventoryItem
-	9,  // 7: inventory.v1.RemoveInventoryItemRequest.resource_node_type_id:type_name -> resource_node.v1.ResourceNodeTypeId
-	0,  // 8: inventory.v1.RemoveInventoryItemResponse.item:type_name -> inventory.v1.InventoryItem
-	9,  // 9: inventory.v1.UpdateItemQuantityRequest.resource_node_type_id:type_name -> resource_node.v1.ResourceNodeTypeId
-	0,  // 10: inventory.v1.UpdateItemQuantityResponse.item:type_name -> inventory.v1.InventoryItem
-	1,  // 11: inventory.v1.InventoryService.GetCharacterInventory:input_type -> inventory.v1.GetCharacterInventoryRequest
-	3,  // 12: inventory.v1.InventoryService.AddInventoryItem:input_type -> inventory.v1.AddInventoryItemRequest
-	5,  // 13: inventory.v1.InventoryService.RemoveInventoryItem:input_type -> inventory.v1.RemoveInventoryItemRequest
-	7,  // 14: inventory.v1.InventoryService.UpdateItemQuantity:input_type -> inventory.v1.UpdateItemQuantityRequest
-	2,  // 15: inventory.v1.InventoryService.GetCharacterInventory:output_type -> inventory.v1.GetCharacterInventoryResponse
-	4,  // 16: inventory.v1.InventoryService.AddInventoryItem:output_type -> inventory.v1.AddInventoryItemResponse
-	6,  // 17: inventory.v1.InventoryService.RemoveInventoryItem:output_type -> inventory.v1.RemoveInventoryItemResponse
-	8,  // 18: inventory.v1.InventoryService.UpdateItemQuantity:output_type -> inventory.v1.UpdateItemQuantityResponse
-	15, // [15:19] is the sub-list for method output_type
-	11, // [11:15] is the sub-list for method input_type
-	11, // [11:11] is the sub-list for extension type_name
-	11, // [11:11] is the sub-list for extension extendee
-	0,  // [0:11] is the sub-list for field type_name
+	9,  // 0: inventory.v1.InventoryItem.created_at:type_name -> google.protobuf.Timestamp
+	9,  // 1: inventory.v1.InventoryItem.updated_at:type_name -> google.protobuf.Timestamp
+	0,  // 2: inventory.v1.GetCharacterInventoryResponse.items:type_name -> inventory.v1.InventoryItem
+	0,  // 3: inventory.v1.AddInventoryItemResponse.item:type_name -> inventory.v1.InventoryItem
+	0,  // 4: inventory.v1.RemoveInventoryItemResponse.item:type_name -> inventory.v1.InventoryItem
+	0,  // 5: inventory.v1.UpdateItemQuantityResponse.item:type_name -> inventory.v1.InventoryItem
+	1,  // 6: inventory.v1.InventoryService.GetCharacterInventory:input_type -> inventory.v1.GetCharacterInventoryRequest
+	3,  // 7: inventory.v1.InventoryService.AddInventoryItem:input_type -> inventory.v1.AddInventoryItemRequest
+	5,  // 8: inventory.v1.InventoryService.RemoveInventoryItem:input_type -> inventory.v1.RemoveInventoryItemRequest
+	7,  // 9: inventory.v1.InventoryService.UpdateItemQuantity:input_type -> inventory.v1.UpdateItemQuantityRequest
+	2,  // 10: inventory.v1.InventoryService.GetCharacterInventory:output_type -> inventory.v1.GetCharacterInventoryResponse
+	4,  // 11: inventory.v1.InventoryService.AddInventoryItem:output_type -> inventory.v1.AddInventoryItemResponse
+	6,  // 12: inventory.v1.InventoryService.RemoveInventoryItem:output_type -> inventory.v1.RemoveInventoryItemResponse
+	8,  // 13: inventory.v1.InventoryService.UpdateItemQuantity:output_type -> inventory.v1.UpdateItemQuantityResponse
+	10, // [10:14] is the sub-list for method output_type
+	6,  // [6:10] is the sub-list for method input_type
+	6,  // [6:6] is the sub-list for extension type_name
+	6,  // [6:6] is the sub-list for extension extendee
+	0,  // [0:6] is the sub-list for field type_name
 }
 
 func init() { file_inventory_v1_inventory_proto_init() }

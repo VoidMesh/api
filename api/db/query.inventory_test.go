@@ -22,14 +22,14 @@ func TestCreateInventoryItem(t *testing.T) {
 		{
 			name: "successful inventory item creation",
 			params: CreateInventoryItemParams{
-				CharacterID:        mustParseUUID("750e8400-e29b-41d4-a716-446655440000"),
-				ResourceNodeTypeID: 1, // Wood
-				Quantity:           10,
+				CharacterID: mustParseUUID("750e8400-e29b-41d4-a716-446655440000"),
+				ItemID:      1, // Wood item
+				Quantity:    10,
 			},
 			setupMock: func(mock pgxmock.PgxPoolIface) {
 				now := time.Now()
 				rows := pgxmock.NewRows([]string{
-					"id", "character_id", "resource_node_type_id", "quantity", "created_at", "updated_at",
+					"id", "character_id", "item_id", "quantity", "created_at", "updated_at",
 				}).AddRow(
 					int32(1), "750e8400-e29b-41d4-a716-446655440000", int32(1), int32(10), 
 					pgtype.Timestamp{Time: now, Valid: true}, pgtype.Timestamp{Time: now, Valid: true},
@@ -41,7 +41,7 @@ func TestCreateInventoryItem(t *testing.T) {
 			wantErr: false,
 			checkResult: func(t *testing.T, item CharacterInventory) {
 				assert.Equal(t, mustParseUUID("750e8400-e29b-41d4-a716-446655440000"), item.CharacterID)
-				assert.Equal(t, int32(1), item.ResourceNodeTypeID)
+				assert.Equal(t, int32(1), item.ItemID)
 				assert.Equal(t, int32(10), item.Quantity)
 				assert.True(t, item.CreatedAt.Valid)
 				assert.True(t, item.UpdatedAt.Valid)
@@ -51,13 +51,13 @@ func TestCreateInventoryItem(t *testing.T) {
 			name: "create inventory item with minimum quantity",
 			params: CreateInventoryItemParams{
 				CharacterID:        mustParseUUID("750e8400-e29b-41d4-a716-446655440000"),
-				ResourceNodeTypeID: 2, // Stone
+				ItemID: 2, // Stone
 				Quantity:           1,
 			},
 			setupMock: func(mock pgxmock.PgxPoolIface) {
 				now := time.Now()
 				rows := pgxmock.NewRows([]string{
-					"id", "character_id", "resource_node_type_id", "quantity", "created_at", "updated_at",
+					"id", "character_id", "item_id", "quantity", "created_at", "updated_at",
 				}).AddRow(
 					int32(2), "750e8400-e29b-41d4-a716-446655440000", int32(2), int32(1), 
 					pgtype.Timestamp{Time: now, Valid: true}, pgtype.Timestamp{Time: now, Valid: true},
@@ -68,7 +68,7 @@ func TestCreateInventoryItem(t *testing.T) {
 			},
 			wantErr: false,
 			checkResult: func(t *testing.T, item CharacterInventory) {
-				assert.Equal(t, int32(2), item.ResourceNodeTypeID)
+				assert.Equal(t, int32(2), item.ItemID)
 				assert.Equal(t, int32(1), item.Quantity)
 			},
 		},
@@ -76,13 +76,13 @@ func TestCreateInventoryItem(t *testing.T) {
 			name: "create inventory item with large quantity",
 			params: CreateInventoryItemParams{
 				CharacterID:        mustParseUUID("750e8400-e29b-41d4-a716-446655440000"),
-				ResourceNodeTypeID: 3, // Iron
+				ItemID: 3, // Iron
 				Quantity:           999999,
 			},
 			setupMock: func(mock pgxmock.PgxPoolIface) {
 				now := time.Now()
 				rows := pgxmock.NewRows([]string{
-					"id", "character_id", "resource_node_type_id", "quantity", "created_at", "updated_at",
+					"id", "character_id", "item_id", "quantity", "created_at", "updated_at",
 				}).AddRow(
 					int32(3), "750e8400-e29b-41d4-a716-446655440000", int32(3), int32(999999), 
 					pgtype.Timestamp{Time: now, Valid: true}, pgtype.Timestamp{Time: now, Valid: true},
@@ -93,7 +93,7 @@ func TestCreateInventoryItem(t *testing.T) {
 			},
 			wantErr: false,
 			checkResult: func(t *testing.T, item CharacterInventory) {
-				assert.Equal(t, int32(3), item.ResourceNodeTypeID)
+				assert.Equal(t, int32(3), item.ItemID)
 				assert.Equal(t, int32(999999), item.Quantity)
 			},
 		},
@@ -101,7 +101,7 @@ func TestCreateInventoryItem(t *testing.T) {
 			name: "duplicate inventory item - unique constraint violation",
 			params: CreateInventoryItemParams{
 				CharacterID:        mustParseUUID("750e8400-e29b-41d4-a716-446655440000"),
-				ResourceNodeTypeID: 1, // Already exists for this character
+				ItemID: 1, // Already exists for this character
 				Quantity:           5,
 			},
 			setupMock: func(mock pgxmock.PgxPoolIface) {
@@ -115,7 +115,7 @@ func TestCreateInventoryItem(t *testing.T) {
 			name: "invalid character foreign key",
 			params: CreateInventoryItemParams{
 				CharacterID:        mustParseUUID("999e8400-e29b-41d4-a716-446655440000"), // Non-existent character
-				ResourceNodeTypeID: 1,
+				ItemID: 1,
 				Quantity:           10,
 			},
 			setupMock: func(mock pgxmock.PgxPoolIface) {
@@ -129,13 +129,13 @@ func TestCreateInventoryItem(t *testing.T) {
 			name: "zero quantity inventory item",
 			params: CreateInventoryItemParams{
 				CharacterID:        mustParseUUID("750e8400-e29b-41d4-a716-446655440000"),
-				ResourceNodeTypeID: 4,
+				ItemID: 4,
 				Quantity:           0,
 			},
 			setupMock: func(mock pgxmock.PgxPoolIface) {
 				now := time.Now()
 				rows := pgxmock.NewRows([]string{
-					"id", "character_id", "resource_node_type_id", "quantity", "created_at", "updated_at",
+					"id", "character_id", "item_id", "quantity", "created_at", "updated_at",
 				}).AddRow(
 					int32(4), "750e8400-e29b-41d4-a716-446655440000", int32(4), int32(0), 
 					pgtype.Timestamp{Time: now, Valid: true}, pgtype.Timestamp{Time: now, Valid: true},
@@ -180,7 +180,7 @@ func TestGetCharacterInventory(t *testing.T) {
 		characterID pgtype.UUID
 		setupMock   func(mock pgxmock.PgxPoolIface)
 		wantErr     bool
-		checkResult func(t *testing.T, inventory []CharacterInventory)
+		checkResult func(t *testing.T, inventory []GetCharacterInventoryRow)
 	}{
 		{
 			name:        "full inventory retrieval",
@@ -188,33 +188,38 @@ func TestGetCharacterInventory(t *testing.T) {
 			setupMock: func(mock pgxmock.PgxPoolIface) {
 				now := time.Now()
 				rows := pgxmock.NewRows([]string{
-					"id", "character_id", "resource_node_type_id", "quantity", "created_at", "updated_at",
+					"id", "character_id", "item_id", "quantity", "created_at", "updated_at",
+					"item_name", "item_description", "item_type", "rarity", "stack_size", "visual_data",
 				}).
 					AddRow(
 						int32(3), "750e8400-e29b-41d4-a716-446655440000", int32(3), int32(50), 
 						pgtype.Timestamp{Time: now, Valid: true}, pgtype.Timestamp{Time: now, Valid: true},
+						"Iron", "Metal ore", "material", "common", int32(64), []byte(`{"sprite": "iron"}`),
 					).
 					AddRow(
 						int32(2), "750e8400-e29b-41d4-a716-446655440000", int32(2), int32(25), 
 						pgtype.Timestamp{Time: now.Add(-time.Hour), Valid: true}, pgtype.Timestamp{Time: now.Add(-time.Hour), Valid: true},
+						"Stone", "Common stone", "material", "common", int32(64), []byte(`{"sprite": "stone"}`),
 					).
 					AddRow(
 						int32(1), "750e8400-e29b-41d4-a716-446655440000", int32(1), int32(100), 
 						pgtype.Timestamp{Time: now.Add(-2*time.Hour), Valid: true}, pgtype.Timestamp{Time: now.Add(-2*time.Hour), Valid: true},
+						"Wood", "Basic wood", "material", "common", int32(64), []byte(`{"sprite": "wood"}`),
 					)
-				mock.ExpectQuery("SELECT (.+) FROM character_inventories ci WHERE ci.character_id = \\$1 ORDER BY ci.created_at DESC").
+				mock.ExpectQuery("SELECT (.+) FROM character_inventories ci JOIN items i ON ci.item_id = i.id WHERE ci.character_id = \\$1 ORDER BY i.name").
 					WithArgs(mustParseUUID("750e8400-e29b-41d4-a716-446655440000")).
 					WillReturnRows(rows)
 			},
 			wantErr: false,
-			checkResult: func(t *testing.T, inventory []CharacterInventory) {
+			checkResult: func(t *testing.T, inventory []GetCharacterInventoryRow) {
 				assert.Len(t, inventory, 3)
-				// Verify ordering by created_at DESC (most recent first)
-				assert.Equal(t, int32(3), inventory[0].ResourceNodeTypeID) // Most recent
-				assert.Equal(t, int32(2), inventory[1].ResourceNodeTypeID)
-				assert.Equal(t, int32(1), inventory[2].ResourceNodeTypeID) // Oldest
-				assert.True(t, inventory[0].CreatedAt.Time.After(inventory[1].CreatedAt.Time))
-				assert.True(t, inventory[1].CreatedAt.Time.After(inventory[2].CreatedAt.Time))
+				// Verify ordering by item name (alphabetical)
+				assert.Equal(t, "Iron", inventory[0].ItemName)
+				assert.Equal(t, "Stone", inventory[1].ItemName)
+				assert.Equal(t, "Wood", inventory[2].ItemName)
+				assert.Equal(t, int32(3), inventory[0].ItemID) // Iron
+				assert.Equal(t, int32(2), inventory[1].ItemID) // Stone
+				assert.Equal(t, int32(1), inventory[2].ItemID) // Wood
 			},
 		},
 		{
@@ -222,14 +227,15 @@ func TestGetCharacterInventory(t *testing.T) {
 			characterID: mustParseUUID("750e8400-e29b-41d4-a716-446655440000"),
 			setupMock: func(mock pgxmock.PgxPoolIface) {
 				rows := pgxmock.NewRows([]string{
-					"id", "character_id", "resource_node_type_id", "quantity", "created_at", "updated_at",
+					"id", "character_id", "item_id", "quantity", "created_at", "updated_at",
+					"item_name", "item_description", "item_type", "rarity", "stack_size", "visual_data",
 				})
-				mock.ExpectQuery("SELECT (.+) FROM character_inventories ci WHERE ci.character_id = \\$1 ORDER BY ci.created_at DESC").
+				mock.ExpectQuery("SELECT (.+) FROM character_inventories ci JOIN items i ON ci.item_id = i.id WHERE ci.character_id = \\$1 ORDER BY i.name").
 					WithArgs(mustParseUUID("750e8400-e29b-41d4-a716-446655440000")).
 					WillReturnRows(rows)
 			},
 			wantErr: false,
-			checkResult: func(t *testing.T, inventory []CharacterInventory) {
+			checkResult: func(t *testing.T, inventory []GetCharacterInventoryRow) {
 				assert.Empty(t, inventory)
 			},
 		},
@@ -239,19 +245,21 @@ func TestGetCharacterInventory(t *testing.T) {
 			setupMock: func(mock pgxmock.PgxPoolIface) {
 				now := time.Now()
 				rows := pgxmock.NewRows([]string{
-					"id", "character_id", "resource_node_type_id", "quantity", "created_at", "updated_at",
+					"id", "character_id", "item_id", "quantity", "created_at", "updated_at",
+					"item_name", "item_description", "item_type", "rarity", "stack_size", "visual_data",
 				}).AddRow(
 					int32(1), "750e8400-e29b-41d4-a716-446655440000", int32(1), int32(42), 
 					pgtype.Timestamp{Time: now, Valid: true}, pgtype.Timestamp{Time: now, Valid: true},
+					"Test Item", "Test item description", "material", "common", int32(64), []byte(`{"sprite": "test"}`),
 				)
-				mock.ExpectQuery("SELECT (.+) FROM character_inventories ci WHERE ci.character_id = \\$1 ORDER BY ci.created_at DESC").
+				mock.ExpectQuery("SELECT (.+) FROM character_inventories ci JOIN items i ON ci.item_id = i.id WHERE ci.character_id = \\$1 ORDER BY i.name").
 					WithArgs(mustParseUUID("750e8400-e29b-41d4-a716-446655440000")).
 					WillReturnRows(rows)
 			},
 			wantErr: false,
-			checkResult: func(t *testing.T, inventory []CharacterInventory) {
+			checkResult: func(t *testing.T, inventory []GetCharacterInventoryRow) {
 				assert.Len(t, inventory, 1)
-				assert.Equal(t, int32(1), inventory[0].ResourceNodeTypeID)
+				assert.Equal(t, int32(1), inventory[0].ItemID)
 				assert.Equal(t, int32(42), inventory[0].Quantity)
 			},
 		},
@@ -260,14 +268,14 @@ func TestGetCharacterInventory(t *testing.T) {
 			characterID: mustParseUUID("999e8400-e29b-41d4-a716-446655440000"),
 			setupMock: func(mock pgxmock.PgxPoolIface) {
 				rows := pgxmock.NewRows([]string{
-					"id", "character_id", "resource_node_type_id", "quantity", "created_at", "updated_at",
+					"id", "character_id", "item_id", "quantity", "created_at", "updated_at",
 				})
-				mock.ExpectQuery("SELECT (.+) FROM character_inventories ci WHERE ci.character_id = \\$1 ORDER BY ci.created_at DESC").
+				mock.ExpectQuery("SELECT (.+) FROM character_inventories ci JOIN items i ON ci.item_id = i.id WHERE ci.character_id = \\$1 ORDER BY i.name").
 					WithArgs(mustParseUUID("999e8400-e29b-41d4-a716-446655440000")).
 					WillReturnRows(rows)
 			},
 			wantErr: false,
-			checkResult: func(t *testing.T, inventory []CharacterInventory) {
+			checkResult: func(t *testing.T, inventory []GetCharacterInventoryRow) {
 				assert.Empty(t, inventory) // No inventory for non-existent character
 			},
 		},
@@ -302,41 +310,45 @@ func TestGetInventoryItem(t *testing.T) {
 		params      GetInventoryItemParams
 		setupMock   func(mock pgxmock.PgxPoolIface)
 		wantErr     bool
-		checkResult func(t *testing.T, item CharacterInventory)
+		checkResult func(t *testing.T, item GetInventoryItemRow)
 	}{
 		{
 			name: "existing inventory item retrieval",
 			params: GetInventoryItemParams{
 				CharacterID:        mustParseUUID("750e8400-e29b-41d4-a716-446655440000"),
-				ResourceNodeTypeID: 1,
+				ItemID: 1,
 			},
 			setupMock: func(mock pgxmock.PgxPoolIface) {
 				now := time.Now()
 				rows := pgxmock.NewRows([]string{
-					"id", "character_id", "resource_node_type_id", "quantity", "created_at", "updated_at",
+					"id", "character_id", "item_id", "quantity", "created_at", "updated_at",
+					"item_name", "item_description", "item_type", "rarity", "stack_size", "visual_data",
 				}).AddRow(
 					int32(1), "750e8400-e29b-41d4-a716-446655440000", int32(1), int32(75), 
 					pgtype.Timestamp{Time: now, Valid: true}, pgtype.Timestamp{Time: now, Valid: true},
+					"Test Item", "A test item", "resource", "common", int32(100), []byte{},
 				)
-				mock.ExpectQuery("SELECT (.+) FROM character_inventories ci WHERE ci.character_id = \\$1 AND ci.resource_node_type_id = \\$2").
+				mock.ExpectQuery("SELECT (.+) FROM character_inventories ci JOIN items i ON ci.item_id = i.id WHERE ci.character_id = \\$1 AND ci.item_id = \\$2").
 					WithArgs(mustParseUUID("750e8400-e29b-41d4-a716-446655440000"), int32(1)).
 					WillReturnRows(rows)
 			},
 			wantErr: false,
-			checkResult: func(t *testing.T, item CharacterInventory) {
+			checkResult: func(t *testing.T, item GetInventoryItemRow) {
 				assert.Equal(t, mustParseUUID("750e8400-e29b-41d4-a716-446655440000"), item.CharacterID)
-				assert.Equal(t, int32(1), item.ResourceNodeTypeID)
+				assert.Equal(t, int32(1), item.ItemID)
 				assert.Equal(t, int32(75), item.Quantity)
+				assert.Equal(t, "Test Item", item.ItemName)
+				assert.Equal(t, "resource", item.ItemType)
 			},
 		},
 		{
 			name: "non-existent inventory item",
 			params: GetInventoryItemParams{
 				CharacterID:        mustParseUUID("750e8400-e29b-41d4-a716-446655440000"),
-				ResourceNodeTypeID: 999, // Non-existent resource type
+				ItemID: 999, // Non-existent resource type
 			},
 			setupMock: func(mock pgxmock.PgxPoolIface) {
-				mock.ExpectQuery("SELECT (.+) FROM character_inventories ci WHERE ci.character_id = \\$1 AND ci.resource_node_type_id = \\$2").
+				mock.ExpectQuery("SELECT (.+) FROM character_inventories ci JOIN items i ON ci.item_id = i.id WHERE ci.character_id = \\$1 AND ci.item_id = \\$2").
 					WithArgs(mustParseUUID("750e8400-e29b-41d4-a716-446655440000"), int32(999)).
 					WillReturnError(sql.ErrNoRows)
 			},
@@ -379,19 +391,19 @@ func TestUpdateInventoryItemQuantity(t *testing.T) {
 			name: "successful quantity update",
 			params: UpdateInventoryItemQuantityParams{
 				CharacterID:        mustParseUUID("750e8400-e29b-41d4-a716-446655440000"),
-				ResourceNodeTypeID: 1,
+				ItemID: 1,
 				Quantity:           150,
 			},
 			setupMock: func(mock pgxmock.PgxPoolIface) {
 				now := time.Now()
 				createdAt := now.Add(-time.Hour)
 				rows := pgxmock.NewRows([]string{
-					"id", "character_id", "resource_node_type_id", "quantity", "created_at", "updated_at",
+					"id", "character_id", "item_id", "quantity", "created_at", "updated_at",
 				}).AddRow(
 					int32(1), "750e8400-e29b-41d4-a716-446655440000", int32(1), int32(150), 
 					pgtype.Timestamp{Time: createdAt, Valid: true}, pgtype.Timestamp{Time: now, Valid: true},
 				)
-				mock.ExpectQuery("UPDATE character_inventories SET quantity = \\$3, updated_at = NOW\\(\\) WHERE character_id = \\$1 AND resource_node_type_id = \\$2").
+				mock.ExpectQuery("UPDATE character_inventories SET quantity = \\$3, updated_at = NOW\\(\\) WHERE character_id = \\$1 AND item_id = \\$2").
 					WithArgs(mustParseUUID("750e8400-e29b-41d4-a716-446655440000"), int32(1), int32(150)).
 					WillReturnRows(rows)
 			},
@@ -407,18 +419,18 @@ func TestUpdateInventoryItemQuantity(t *testing.T) {
 			name: "update to zero quantity",
 			params: UpdateInventoryItemQuantityParams{
 				CharacterID:        mustParseUUID("750e8400-e29b-41d4-a716-446655440000"),
-				ResourceNodeTypeID: 1,
+				ItemID: 1,
 				Quantity:           0,
 			},
 			setupMock: func(mock pgxmock.PgxPoolIface) {
 				now := time.Now()
 				rows := pgxmock.NewRows([]string{
-					"id", "character_id", "resource_node_type_id", "quantity", "created_at", "updated_at",
+					"id", "character_id", "item_id", "quantity", "created_at", "updated_at",
 				}).AddRow(
 					int32(1), "750e8400-e29b-41d4-a716-446655440000", int32(1), int32(0), 
 					pgtype.Timestamp{Time: now.Add(-time.Hour), Valid: true}, pgtype.Timestamp{Time: now, Valid: true},
 				)
-				mock.ExpectQuery("UPDATE character_inventories SET quantity = \\$3, updated_at = NOW\\(\\) WHERE character_id = \\$1 AND resource_node_type_id = \\$2").
+				mock.ExpectQuery("UPDATE character_inventories SET quantity = \\$3, updated_at = NOW\\(\\) WHERE character_id = \\$1 AND item_id = \\$2").
 					WithArgs(mustParseUUID("750e8400-e29b-41d4-a716-446655440000"), int32(1), int32(0)).
 					WillReturnRows(rows)
 			},
@@ -431,11 +443,11 @@ func TestUpdateInventoryItemQuantity(t *testing.T) {
 			name: "update non-existent inventory item",
 			params: UpdateInventoryItemQuantityParams{
 				CharacterID:        mustParseUUID("750e8400-e29b-41d4-a716-446655440000"),
-				ResourceNodeTypeID: 999,
+				ItemID: 999,
 				Quantity:           50,
 			},
 			setupMock: func(mock pgxmock.PgxPoolIface) {
-				mock.ExpectQuery("UPDATE character_inventories SET quantity = \\$3, updated_at = NOW\\(\\) WHERE character_id = \\$1 AND resource_node_type_id = \\$2").
+				mock.ExpectQuery("UPDATE character_inventories SET quantity = \\$3, updated_at = NOW\\(\\) WHERE character_id = \\$1 AND item_id = \\$2").
 					WithArgs(mustParseUUID("750e8400-e29b-41d4-a716-446655440000"), int32(999), int32(50)).
 					WillReturnError(sql.ErrNoRows)
 			},
@@ -478,19 +490,19 @@ func TestAddInventoryItemQuantity(t *testing.T) {
 			name: "successful quantity addition",
 			params: AddInventoryItemQuantityParams{
 				CharacterID:        mustParseUUID("750e8400-e29b-41d4-a716-446655440000"),
-				ResourceNodeTypeID: 1,
+				ItemID: 1,
 				Quantity:           25, // Adding 25 to existing quantity
 			},
 			setupMock: func(mock pgxmock.PgxPoolIface) {
 				now := time.Now()
 				createdAt := now.Add(-time.Hour)
 				rows := pgxmock.NewRows([]string{
-					"id", "character_id", "resource_node_type_id", "quantity", "created_at", "updated_at",
+					"id", "character_id", "item_id", "quantity", "created_at", "updated_at",
 				}).AddRow(
 					int32(1), "750e8400-e29b-41d4-a716-446655440000", int32(1), int32(125), // Assuming was 100, now 125
 					pgtype.Timestamp{Time: createdAt, Valid: true}, pgtype.Timestamp{Time: now, Valid: true},
 				)
-				mock.ExpectQuery("UPDATE character_inventories SET quantity = quantity \\+ \\$3, updated_at = NOW\\(\\) WHERE character_id = \\$1 AND resource_node_type_id = \\$2").
+				mock.ExpectQuery("UPDATE character_inventories SET quantity = quantity \\+ \\$3, updated_at = NOW\\(\\) WHERE character_id = \\$1 AND item_id = \\$2").
 					WithArgs(mustParseUUID("750e8400-e29b-41d4-a716-446655440000"), int32(1), int32(25)).
 					WillReturnRows(rows)
 			},
@@ -504,18 +516,18 @@ func TestAddInventoryItemQuantity(t *testing.T) {
 			name: "add large quantity",
 			params: AddInventoryItemQuantityParams{
 				CharacterID:        mustParseUUID("750e8400-e29b-41d4-a716-446655440000"),
-				ResourceNodeTypeID: 2,
+				ItemID: 2,
 				Quantity:           100000,
 			},
 			setupMock: func(mock pgxmock.PgxPoolIface) {
 				now := time.Now()
 				rows := pgxmock.NewRows([]string{
-					"id", "character_id", "resource_node_type_id", "quantity", "created_at", "updated_at",
+					"id", "character_id", "item_id", "quantity", "created_at", "updated_at",
 				}).AddRow(
 					int32(2), "750e8400-e29b-41d4-a716-446655440000", int32(2), int32(100000), 
 					pgtype.Timestamp{Time: now.Add(-time.Hour), Valid: true}, pgtype.Timestamp{Time: now, Valid: true},
 				)
-				mock.ExpectQuery("UPDATE character_inventories SET quantity = quantity \\+ \\$3, updated_at = NOW\\(\\) WHERE character_id = \\$1 AND resource_node_type_id = \\$2").
+				mock.ExpectQuery("UPDATE character_inventories SET quantity = quantity \\+ \\$3, updated_at = NOW\\(\\) WHERE character_id = \\$1 AND item_id = \\$2").
 					WithArgs(mustParseUUID("750e8400-e29b-41d4-a716-446655440000"), int32(2), int32(100000)).
 					WillReturnRows(rows)
 			},
@@ -528,11 +540,11 @@ func TestAddInventoryItemQuantity(t *testing.T) {
 			name: "add to non-existent inventory item",
 			params: AddInventoryItemQuantityParams{
 				CharacterID:        mustParseUUID("750e8400-e29b-41d4-a716-446655440000"),
-				ResourceNodeTypeID: 999,
+				ItemID: 999,
 				Quantity:           10,
 			},
 			setupMock: func(mock pgxmock.PgxPoolIface) {
-				mock.ExpectQuery("UPDATE character_inventories SET quantity = quantity \\+ \\$3, updated_at = NOW\\(\\) WHERE character_id = \\$1 AND resource_node_type_id = \\$2").
+				mock.ExpectQuery("UPDATE character_inventories SET quantity = quantity \\+ \\$3, updated_at = NOW\\(\\) WHERE character_id = \\$1 AND item_id = \\$2").
 					WithArgs(mustParseUUID("750e8400-e29b-41d4-a716-446655440000"), int32(999), int32(10)).
 					WillReturnError(sql.ErrNoRows)
 			},
@@ -575,19 +587,19 @@ func TestRemoveInventoryItemQuantity(t *testing.T) {
 			name: "successful quantity removal",
 			params: RemoveInventoryItemQuantityParams{
 				CharacterID:        mustParseUUID("750e8400-e29b-41d4-a716-446655440000"),
-				ResourceNodeTypeID: 1,
+				ItemID: 1,
 				Quantity:           20, // Removing 20 from existing quantity
 			},
 			setupMock: func(mock pgxmock.PgxPoolIface) {
 				now := time.Now()
 				createdAt := now.Add(-time.Hour)
 				rows := pgxmock.NewRows([]string{
-					"id", "character_id", "resource_node_type_id", "quantity", "created_at", "updated_at",
+					"id", "character_id", "item_id", "quantity", "created_at", "updated_at",
 				}).AddRow(
 					int32(1), "750e8400-e29b-41d4-a716-446655440000", int32(1), int32(80), // Assuming was 100, now 80
 					pgtype.Timestamp{Time: createdAt, Valid: true}, pgtype.Timestamp{Time: now, Valid: true},
 				)
-				mock.ExpectQuery("UPDATE character_inventories SET quantity = quantity - \\$3, updated_at = NOW\\(\\) WHERE character_id = \\$1 AND resource_node_type_id = \\$2 AND quantity >= \\$3").
+				mock.ExpectQuery("UPDATE character_inventories SET quantity = quantity - \\$3, updated_at = NOW\\(\\) WHERE character_id = \\$1 AND item_id = \\$2 AND quantity >= \\$3").
 					WithArgs(mustParseUUID("750e8400-e29b-41d4-a716-446655440000"), int32(1), int32(20)).
 					WillReturnRows(rows)
 			},
@@ -601,18 +613,18 @@ func TestRemoveInventoryItemQuantity(t *testing.T) {
 			name: "remove exact quantity - should result in zero",
 			params: RemoveInventoryItemQuantityParams{
 				CharacterID:        mustParseUUID("750e8400-e29b-41d4-a716-446655440000"),
-				ResourceNodeTypeID: 1,
+				ItemID: 1,
 				Quantity:           50, // Removing all 50
 			},
 			setupMock: func(mock pgxmock.PgxPoolIface) {
 				now := time.Now()
 				rows := pgxmock.NewRows([]string{
-					"id", "character_id", "resource_node_type_id", "quantity", "created_at", "updated_at",
+					"id", "character_id", "item_id", "quantity", "created_at", "updated_at",
 				}).AddRow(
 					int32(1), "750e8400-e29b-41d4-a716-446655440000", int32(1), int32(0), 
 					pgtype.Timestamp{Time: now.Add(-time.Hour), Valid: true}, pgtype.Timestamp{Time: now, Valid: true},
 				)
-				mock.ExpectQuery("UPDATE character_inventories SET quantity = quantity - \\$3, updated_at = NOW\\(\\) WHERE character_id = \\$1 AND resource_node_type_id = \\$2 AND quantity >= \\$3").
+				mock.ExpectQuery("UPDATE character_inventories SET quantity = quantity - \\$3, updated_at = NOW\\(\\) WHERE character_id = \\$1 AND item_id = \\$2 AND quantity >= \\$3").
 					WithArgs(mustParseUUID("750e8400-e29b-41d4-a716-446655440000"), int32(1), int32(50)).
 					WillReturnRows(rows)
 			},
@@ -625,11 +637,11 @@ func TestRemoveInventoryItemQuantity(t *testing.T) {
 			name: "insufficient quantity - cannot remove more than available",
 			params: RemoveInventoryItemQuantityParams{
 				CharacterID:        mustParseUUID("750e8400-e29b-41d4-a716-446655440000"),
-				ResourceNodeTypeID: 1,
+				ItemID: 1,
 				Quantity:           200, // Trying to remove more than available
 			},
 			setupMock: func(mock pgxmock.PgxPoolIface) {
-				mock.ExpectQuery("UPDATE character_inventories SET quantity = quantity - \\$3, updated_at = NOW\\(\\) WHERE character_id = \\$1 AND resource_node_type_id = \\$2 AND quantity >= \\$3").
+				mock.ExpectQuery("UPDATE character_inventories SET quantity = quantity - \\$3, updated_at = NOW\\(\\) WHERE character_id = \\$1 AND item_id = \\$2 AND quantity >= \\$3").
 					WithArgs(mustParseUUID("750e8400-e29b-41d4-a716-446655440000"), int32(1), int32(200)).
 					WillReturnError(sql.ErrNoRows) // No rows affected due to quantity constraint
 			},
@@ -639,11 +651,11 @@ func TestRemoveInventoryItemQuantity(t *testing.T) {
 			name: "remove from non-existent inventory item",
 			params: RemoveInventoryItemQuantityParams{
 				CharacterID:        mustParseUUID("750e8400-e29b-41d4-a716-446655440000"),
-				ResourceNodeTypeID: 999,
+				ItemID: 999,
 				Quantity:           10,
 			},
 			setupMock: func(mock pgxmock.PgxPoolIface) {
-				mock.ExpectQuery("UPDATE character_inventories SET quantity = quantity - \\$3, updated_at = NOW\\(\\) WHERE character_id = \\$1 AND resource_node_type_id = \\$2 AND quantity >= \\$3").
+				mock.ExpectQuery("UPDATE character_inventories SET quantity = quantity - \\$3, updated_at = NOW\\(\\) WHERE character_id = \\$1 AND item_id = \\$2 AND quantity >= \\$3").
 					WithArgs(mustParseUUID("750e8400-e29b-41d4-a716-446655440000"), int32(999), int32(10)).
 					WillReturnError(sql.ErrNoRows)
 			},
@@ -685,10 +697,10 @@ func TestDeleteInventoryItem(t *testing.T) {
 			name: "successful inventory item deletion",
 			params: DeleteInventoryItemParams{
 				CharacterID:        mustParseUUID("750e8400-e29b-41d4-a716-446655440000"),
-				ResourceNodeTypeID: 1,
+				ItemID: 1,
 			},
 			setupMock: func(mock pgxmock.PgxPoolIface) {
-				mock.ExpectExec("DELETE FROM character_inventories WHERE character_id = \\$1 AND resource_node_type_id = \\$2").
+				mock.ExpectExec("DELETE FROM character_inventories WHERE character_id = \\$1 AND item_id = \\$2").
 					WithArgs(mustParseUUID("750e8400-e29b-41d4-a716-446655440000"), int32(1)).
 					WillReturnResult(pgxmock.NewResult("DELETE", 1))
 			},
@@ -698,10 +710,10 @@ func TestDeleteInventoryItem(t *testing.T) {
 			name: "delete non-existent inventory item",
 			params: DeleteInventoryItemParams{
 				CharacterID:        mustParseUUID("750e8400-e29b-41d4-a716-446655440000"),
-				ResourceNodeTypeID: 999,
+				ItemID: 999,
 			},
 			setupMock: func(mock pgxmock.PgxPoolIface) {
-				mock.ExpectExec("DELETE FROM character_inventories WHERE character_id = \\$1 AND resource_node_type_id = \\$2").
+				mock.ExpectExec("DELETE FROM character_inventories WHERE character_id = \\$1 AND item_id = \\$2").
 					WithArgs(mustParseUUID("750e8400-e29b-41d4-a716-446655440000"), int32(999)).
 					WillReturnResult(pgxmock.NewResult("DELETE", 0))
 			},
@@ -794,7 +806,7 @@ func TestInventoryItemExists(t *testing.T) {
 			name: "inventory item exists",
 			params: InventoryItemExistsParams{
 				CharacterID:        mustParseUUID("750e8400-e29b-41d4-a716-446655440000"),
-				ResourceNodeTypeID: 1,
+				ItemID: 1,
 			},
 			setupMock: func(mock pgxmock.PgxPoolIface) {
 				rows := pgxmock.NewRows([]string{"exists"}).AddRow(true)
@@ -809,7 +821,7 @@ func TestInventoryItemExists(t *testing.T) {
 			name: "inventory item does not exist",
 			params: InventoryItemExistsParams{
 				CharacterID:        mustParseUUID("750e8400-e29b-41d4-a716-446655440000"),
-				ResourceNodeTypeID: 999,
+				ItemID: 999,
 			},
 			setupMock: func(mock pgxmock.PgxPoolIface) {
 				rows := pgxmock.NewRows([]string{"exists"}).AddRow(false)
@@ -971,13 +983,13 @@ func TestInventoryBusinessLogic(t *testing.T) {
 
 		params := CreateInventoryItemParams{
 			CharacterID:        mustParseUUID("750e8400-e29b-41d4-a716-446655440000"),
-			ResourceNodeTypeID: 1,
+			ItemID: 1,
 			Quantity:           2147483647, // Max int32
 		}
 
 		now := time.Now()
 		rows := pgxmock.NewRows([]string{
-			"id", "character_id", "resource_node_type_id", "quantity", "created_at", "updated_at",
+			"id", "character_id", "item_id", "quantity", "created_at", "updated_at",
 		}).AddRow(
 			int32(1), "750e8400-e29b-41d4-a716-446655440000", int32(1), int32(2147483647), 
 			pgtype.Timestamp{Time: now, Valid: true}, pgtype.Timestamp{Time: now, Valid: true},
@@ -1004,12 +1016,12 @@ func TestInventoryBusinessLogic(t *testing.T) {
 
 		params := RemoveInventoryItemQuantityParams{
 			CharacterID:        mustParseUUID("750e8400-e29b-41d4-a716-446655440000"),
-			ResourceNodeTypeID: 1,
+			ItemID: 1,
 			Quantity:           50,
 		}
 
 		// Simulate concurrent modification - quantity constraint not met
-		mockPool.ExpectQuery("UPDATE character_inventories SET quantity = quantity - \\$3, updated_at = NOW\\(\\) WHERE character_id = \\$1 AND resource_node_type_id = \\$2 AND quantity >= \\$3").
+		mockPool.ExpectQuery("UPDATE character_inventories SET quantity = quantity - \\$3, updated_at = NOW\\(\\) WHERE character_id = \\$1 AND item_id = \\$2 AND quantity >= \\$3").
 			WithArgs(mustParseUUID("750e8400-e29b-41d4-a716-446655440000"), int32(1), int32(50)).
 			WillReturnError(sql.ErrNoRows) // Another process already modified the quantity
 
@@ -1029,13 +1041,13 @@ func TestInventoryBusinessLogic(t *testing.T) {
 
 		params := CreateInventoryItemParams{
 			CharacterID:        mustParseUUID("750e8400-e29b-41d4-a716-446655440000"),
-			ResourceNodeTypeID: -1, // Negative resource type ID
+			ItemID: -1, // Negative resource type ID
 			Quantity:           10,
 		}
 
 		now := time.Now()
 		rows := pgxmock.NewRows([]string{
-			"id", "character_id", "resource_node_type_id", "quantity", "created_at", "updated_at",
+			"id", "character_id", "item_id", "quantity", "created_at", "updated_at",
 		}).AddRow(
 			int32(1), "750e8400-e29b-41d4-a716-446655440000", int32(-1), int32(10), 
 			pgtype.Timestamp{Time: now, Valid: true}, pgtype.Timestamp{Time: now, Valid: true},
@@ -1047,7 +1059,7 @@ func TestInventoryBusinessLogic(t *testing.T) {
 
 		item, err := queries.CreateInventoryItem(createTestContext(), params)
 		require.NoError(t, err)
-		assert.Equal(t, int32(-1), item.ResourceNodeTypeID)
+		assert.Equal(t, int32(-1), item.ItemID)
 
 		assert.NoError(t, mockPool.ExpectationsWereMet())
 	})
