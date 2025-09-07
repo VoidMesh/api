@@ -125,3 +125,43 @@ INSERT INTO
   worlds (name, seed)
 VALUES
   ('VoidMesh World', floor(random() * 1000000000)::bigint);
+
+-- Insert harvestable items
+INSERT INTO items (name, description, item_type, rarity, stack_size, visual_data) VALUES
+  -- Primary harvest materials
+  ('Herbs', 'Medicinal herbs with healing properties', 'material', 'common', 64, '{"sprite": "herbs", "color": "#7CFC00"}'),
+  ('Berries', 'Sweet, edible berries', 'material', 'common', 64, '{"sprite": "berries", "color": "#8B0000"}'),
+  ('Minerals', 'Valuable minerals and crystals', 'material', 'uncommon', 64, '{"sprite": "minerals", "color": "#A9A9A9"}'),
+  ('Fish', 'Fresh caught fish', 'material', 'common', 64, '{"sprite": "fish", "color": "#1E90FF"}'),
+  
+  -- Secondary drop materials
+  ('Common Grass', 'Common grass found everywhere', 'material', 'common', 64, '{"sprite": "grass", "color": "#228B22"}'),
+  ('Seeds', 'Various plant seeds', 'material', 'common', 64, '{"sprite": "seeds", "color": "#8B4513"}'),
+  ('Twigs', 'Small branches and twigs', 'material', 'common', 64, '{"sprite": "twigs", "color": "#654321"}'),
+  ('Leaves', 'Fallen leaves', 'material', 'common', 64, '{"sprite": "leaves", "color": "#32CD32"}'),
+  ('Stone', 'Common stone pieces', 'material', 'common', 64, '{"sprite": "stone", "color": "#696969"}'),
+  ('Dirt', 'Rich soil and dirt', 'material', 'common', 64, '{"sprite": "dirt", "color": "#8B4513"}'),
+  ('Algae', 'Underwater plant matter', 'material', 'common', 64, '{"sprite": "algae", "color": "#006400"}'),
+  ('Shells', 'Decorative seashells', 'material', 'uncommon', 64, '{"sprite": "shells", "color": "#F5DEB3"}');
+
+-- Insert resource node drop configurations
+INSERT INTO resource_node_drops (resource_node_type_id, item_id, chance, min_quantity, max_quantity) VALUES
+  -- Herb Patch (ID: 1) drops
+  (1, (SELECT id FROM items WHERE name = 'Herbs'), 1.0, 1, 3),                -- Primary drop: Herbs (100% chance, 1-3 yield)
+  (1, (SELECT id FROM items WHERE name = 'Common Grass'), 0.7, 1, 2),         -- Secondary: Common Grass (70% chance, 1-2 amount)
+  (1, (SELECT id FROM items WHERE name = 'Seeds'), 0.3, 1, 1),                -- Secondary: Seeds (30% chance, 1 amount)
+  
+  -- Berry Bush (ID: 2) drops
+  (2, (SELECT id FROM items WHERE name = 'Berries'), 1.0, 2, 5),              -- Primary drop: Berries (100% chance, 2-5 yield)
+  (2, (SELECT id FROM items WHERE name = 'Twigs'), 0.5, 1, 2),                -- Secondary: Twigs (50% chance, 1-2 amount)
+  (2, (SELECT id FROM items WHERE name = 'Leaves'), 0.6, 1, 3),               -- Secondary: Leaves (60% chance, 1-3 amount)
+  
+  -- Mineral Outcropping (ID: 3) drops
+  (3, (SELECT id FROM items WHERE name = 'Minerals'), 1.0, 1, 3),             -- Primary drop: Minerals (100% chance, 1-3 yield)
+  (3, (SELECT id FROM items WHERE name = 'Stone'), 0.8, 1, 3),                -- Secondary: Stone (80% chance, 1-3 amount)
+  (3, (SELECT id FROM items WHERE name = 'Dirt'), 0.4, 1, 2),                 -- Secondary: Dirt (40% chance, 1-2 amount)
+  
+  -- Fishing Spot (ID: 4) drops
+  (4, (SELECT id FROM items WHERE name = 'Fish'), 1.0, 1, 3),                 -- Primary drop: Fish (100% chance, 1-3 yield)
+  (4, (SELECT id FROM items WHERE name = 'Algae'), 0.4, 1, 2),                -- Secondary: Algae (40% chance, 1-2 amount)
+  (4, (SELECT id FROM items WHERE name = 'Shells'), 0.2, 1, 1);               -- Secondary: Shells (20% chance, 1 amount)
