@@ -2,12 +2,12 @@ package character_actions
 
 import (
 	"context"
-	"encoding/hex"
 	"math"
 	"math/rand"
 	"time"
 
 	"github.com/VoidMesh/api/api/db"
+	"github.com/VoidMesh/api/api/internal/uuid"
 	characterActionsV1 "github.com/VoidMesh/api/api/proto/character_actions/v1"
 	inventoryV1 "github.com/VoidMesh/api/api/proto/inventory/v1"
 	resourceNodeV1 "github.com/VoidMesh/api/api/proto/resource_node/v1"
@@ -50,14 +50,9 @@ func (s *Service) HarvestResource(ctx context.Context, userID, characterID strin
 	s.logger.Debug("Harvesting resource node", "user_id", userID, "character_id", characterID, "resource_node_id", resourceNodeID)
 
 	// Validate character ID format
-	characterUUID, err := hex.DecodeString(characterID)
-	if err != nil {
-		s.logger.Warn("Invalid character ID format", "character_id", characterID, "error", err)
+	if !uuid.ValidateFormat(characterID) {
+		s.logger.Warn("Invalid character ID format", "character_id", characterID)
 		return nil, nil, status.Errorf(codes.InvalidArgument, "invalid character ID format")
-	}
-	if len(characterUUID) != 16 {
-		s.logger.Warn("Character ID must be 32 hex characters", "character_id", characterID, "length", len(characterID))
-		return nil, nil, status.Errorf(codes.InvalidArgument, "invalid character ID length")
 	}
 
 	// Get character information
@@ -176,8 +171,8 @@ func (s *Service) isCharacterInRange(character *db.Character, resourceNode *db.R
 
 // validateCharacterOwnership checks if the character belongs to the specified user
 func (s *Service) validateCharacterOwnership(character *db.Character, userID string) error {
-	characterUserID := character.UserID.String()
-	if characterUserID != userID {
+	characterUserID := uuid.PgtypeToString(character.UserID)
+	if !uuid.Compare(characterUserID, userID) {
 		s.logger.Warn("Character ownership validation failed", 
 			"character_id", character.ID.String(), 
 			"character_user_id", characterUserID, 

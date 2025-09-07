@@ -2,14 +2,13 @@ package inventory
 
 import (
 	"context"
-	"encoding/hex"
 
 	"github.com/VoidMesh/api/api/db"
+	"github.com/VoidMesh/api/api/internal/uuid"
 	inventoryV1 "github.com/VoidMesh/api/api/proto/inventory/v1"
 	resourceNodeV1 "github.com/VoidMesh/api/api/proto/resource_node/v1"
 	"github.com/VoidMesh/api/api/services/character"
 	"github.com/VoidMesh/api/api/services/resource_node"
-	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -60,7 +59,7 @@ func NewServiceWithPool(
 func (s *Service) dbInventoryItemToProto(ctx context.Context, item db.CharacterInventory, includeResourceType bool) (*inventoryV1.InventoryItem, error) {
 	protoItem := &inventoryV1.InventoryItem{
 		Id:                 item.ID,
-		CharacterId:        hex.EncodeToString(item.CharacterID.Bytes[:]),
+		CharacterId:        uuid.PgtypeToNormalizedString(item.CharacterID),
 		ResourceNodeTypeId: resourceNodeV1.ResourceNodeTypeId(item.ResourceNodeTypeID),
 		Quantity:           item.Quantity,
 	}
@@ -95,15 +94,16 @@ func (s *Service) GetCharacterInventory(ctx context.Context, characterID string)
 	s.logger.Debug("Getting character inventory", "character_id", characterID)
 
 	// Parse character ID
-	characterUUID, err := hex.DecodeString(characterID)
+	if !uuid.ValidateFormat(characterID) {
+		return nil, status.Errorf(codes.InvalidArgument, "invalid character ID format")
+	}
+
+	characterPgUUID, err := uuid.StringToPgtype(characterID)
 	if err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, "invalid character ID format")
 	}
 
-	var characterUUIDBytes [16]byte
-	copy(characterUUIDBytes[:], characterUUID)
-
-	dbItems, err := s.db.GetCharacterInventory(ctx, pgtype.UUID{Bytes: characterUUIDBytes, Valid: true})
+	dbItems, err := s.db.GetCharacterInventory(ctx, characterPgUUID)
 	if err != nil {
 		s.logger.Error("Failed to get character inventory", "character_id", characterID, "error", err)
 		return nil, status.Errorf(codes.Internal, "failed to retrieve inventory")
@@ -132,17 +132,18 @@ func (s *Service) AddInventoryItem(ctx context.Context, characterID string, reso
 	}
 
 	// Parse character ID
-	characterUUID, err := hex.DecodeString(characterID)
+	if !uuid.ValidateFormat(characterID) {
+		return nil, status.Errorf(codes.InvalidArgument, "invalid character ID format")
+	}
+
+	characterPgUUID, err := uuid.StringToPgtype(characterID)
 	if err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, "invalid character ID format")
 	}
 
-	var characterUUIDBytes [16]byte
-	copy(characterUUIDBytes[:], characterUUID)
-
 	// Check if item already exists
 	exists, err := s.db.InventoryItemExists(ctx, db.InventoryItemExistsParams{
-		CharacterID:        pgtype.UUID{Bytes: characterUUIDBytes, Valid: true},
+		CharacterID:        characterPgUUID,
 		ResourceNodeTypeID: int32(resourceNodeTypeID),
 	})
 	if err != nil {
@@ -154,14 +155,14 @@ func (s *Service) AddInventoryItem(ctx context.Context, characterID string, reso
 	if exists {
 		// Update existing item
 		dbItem, err = s.db.AddInventoryItemQuantity(ctx, db.AddInventoryItemQuantityParams{
-			CharacterID:        pgtype.UUID{Bytes: characterUUIDBytes, Valid: true},
+			CharacterID:        characterPgUUID,
 			ResourceNodeTypeID: int32(resourceNodeTypeID),
 			Quantity:           quantity,
 		})
 	} else {
 		// Create new item
 		dbItem, err = s.db.CreateInventoryItem(ctx, db.CreateInventoryItemParams{
-			CharacterID:        pgtype.UUID{Bytes: characterUUIDBytes, Valid: true},
+			CharacterID:        characterPgUUID,
 			ResourceNodeTypeID: int32(resourceNodeTypeID),
 			Quantity:           quantity,
 		})
@@ -191,17 +192,18 @@ func (s *Service) RemoveInventoryItem(ctx context.Context, characterID string, r
 	}
 
 	// Parse character ID
-	characterUUID, err := hex.DecodeString(characterID)
+	if !uuid.ValidateFormat(characterID) {
+		return nil, status.Errorf(codes.InvalidArgument, "invalid character ID format")
+	}
+
+	characterPgUUID, err := uuid.StringToPgtype(characterID)
 	if err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, "invalid character ID format")
 	}
 
-	var characterUUIDBytes [16]byte
-	copy(characterUUIDBytes[:], characterUUID)
-
 	// Try to remove quantity
 	dbItem, err := s.db.RemoveInventoryItemQuantity(ctx, db.RemoveInventoryItemQuantityParams{
-		CharacterID:        pgtype.UUID{Bytes: characterUUIDBytes, Valid: true},
+		CharacterID:        characterPgUUID,
 		ResourceNodeTypeID: int32(resourceNodeTypeID),
 		Quantity:           quantity,
 	})
@@ -213,7 +215,7 @@ func (s *Service) RemoveInventoryItem(ctx context.Context, characterID string, r
 	// If quantity is now 0 or less, delete the item
 	if dbItem.Quantity <= 0 {
 		err = s.db.DeleteInventoryItem(ctx, db.DeleteInventoryItemParams{
-			CharacterID:        pgtype.UUID{Bytes: characterUUIDBytes, Valid: true},
+			CharacterID:        characterPgUUID,
 			ResourceNodeTypeID: int32(resourceNodeTypeID),
 		})
 		if err != nil {
